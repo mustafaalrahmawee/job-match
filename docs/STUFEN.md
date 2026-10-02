@@ -58,7 +58,7 @@ Fachcode.
 - [x] Gemeinsame ESLint- und Prettier-Konfiguration; `pnpm lint`, `format:check`, `typecheck`,
       `test` laufen über alle Pakete
 - [x] `.env.example`, `.gitignore` für Node, README mit Schnellstart; `docker-compose.yml` behalten
-- [ ] GitHub Actions: Backend (Lint, Typen, Migrationen, Tests mit Postgres-Service) und Frontend
+- [x] GitHub Actions: Backend (Lint, Typen, Migrationen, Tests mit Postgres-Service) und Frontend
 
 **Shared**
 
