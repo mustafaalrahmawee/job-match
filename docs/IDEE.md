@@ -273,23 +273,23 @@ erscheint – zu bestätigen.
 > **Neustart (02.10.2026):** Die App wird mit Express von null neu gebaut, beginnend mit Stufe 0.
 > Konto und Coach-Chat kommen in Stufe 1.
 
-| Stufe   | Danach kannst du …                                                                                                                 |
-| ------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| 0       | – (Fundament, noch nichts für Nutzer)                                                                                              |
-| 1       | dich anmelden, mit dem Coach chatten, Gespräche verwalten                                                                          |
+| Stufe   | Danach kannst du …                                                                                                                                            |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0       | – (Fundament, noch nichts für Nutzer)                                                                                                                         |
+| 1       | dich anmelden, mit dem Coach chatten, Gespräche verwalten                                                                                                     |
 | 2       | **Lebenslauf als PDF hochladen**, einmal analysieren lassen, Rolle bestätigen, neue Fassung hochladen, alte reaktivieren (Archiv); Coach kennt den Lebenslauf |
-|         | ✚ Wünsche im Profil                                                                                                                |
-| 3       | eigene Stellen anlegen (auch per Screenshot), **Match-Analyse** sehen                                                              |
-|         | ✚ zweigeteilte Tipps                                                                                                               |
-| 4       | **Bewerbungen** mit Status und Verlauf führen, **Notizen** schreiben, Coach handelt im Chat, Firma recherchieren                   |
-|         | ✚ Kontakte, ✚ Wiedervorlage, ✚ Board-Ansicht, ✚ Startseite                                                                         |
-| 5       | schriftliches **Interview-Training** mit Bewertung und Abschlussbericht                                                            |
-|         | ✚ Fragen auf Lücken, ✚ Fragenart wählen                                                                                            |
-| 6       | Trainings und Chats beliebig lang führen und später fortsetzen                                                                     |
-|         | ✚ Fortschritt über mehrere Trainings                                                                                               |
-| 7       | im **Stellen-Pool** suchen (regelmäßig von externen Jobbörsen geholt, nur Deutschland), **Job-Empfehlungen** „Top 5 für mich“, typische Fragen je Beruf |
-| 8       | **Anschreiben** als Word-Datei, **Termine** im Kalender                                                                            |
-| Go-live | öffentlich registrieren, Passwort ändern, **Konto löschen**, **Daten herunterladen**; **Nutzungslimit**; ✚ Passwort vergessen, ✚ E-Mail bestätigen |
+|         | ✚ Wünsche im Profil                                                                                                                                           |
+| 3       | eigene Stellen anlegen (auch per Screenshot), **Match-Analyse** sehen                                                                                         |
+|         | ✚ zweigeteilte Tipps                                                                                                                                          |
+| 4       | **Bewerbungen** mit Status und Verlauf führen, **Notizen** schreiben, Coach handelt im Chat, Firma recherchieren                                              |
+|         | ✚ Kontakte, ✚ Wiedervorlage, ✚ Board-Ansicht, ✚ Startseite                                                                                                    |
+| 5       | schriftliches **Interview-Training** mit Bewertung und Abschlussbericht                                                                                       |
+|         | ✚ Fragen auf Lücken, ✚ Fragenart wählen                                                                                                                       |
+| 6       | Trainings und Chats beliebig lang führen und später fortsetzen                                                                                                |
+|         | ✚ Fortschritt über mehrere Trainings                                                                                                                          |
+| 7       | im **Stellen-Pool** suchen (regelmäßig von externen Jobbörsen geholt, nur Deutschland), **Job-Empfehlungen** „Top 5 für mich“, typische Fragen je Beruf       |
+| 8       | **Anschreiben** als Word-Datei, **Termine** im Kalender                                                                                                       |
+| Go-live | öffentlich registrieren, Passwort ändern, **Konto löschen**, **Daten herunterladen**; **Nutzungslimit**; ✚ Passwort vergessen, ✚ E-Mail bestätigen            |
 
 > **Hinweis:** Die Go-live-Punkte müssen fertig sein, **bevor** die App öffentlich wird – egal, nach
 > welcher Stufe das passiert.

@@ -55,6 +55,7 @@ frontend/             Vue-App (TypeScript)
 shared/               Zod-Schemas und Typen des API-Vertrags (Backend + Frontend)
 docs/                 IDEE, STUFEN, STACK, Prompt-Regeln
 docker-compose.yml    Postgres 17 + pgvector (Host-Port 5433)
+docker/initdb/        SQL beim ersten Start des DB-Containers (legt jobmatch_test an)
 pnpm-workspace.yaml   Workspace-Pakete
 .github/workflows/    CI: Lint, Typen und Tests für Backend und Frontend
 ```
@@ -71,10 +72,11 @@ trägt den Domänennamen als Präfix:
 
 ```
 src/
-  index.ts              Startpunkt: Konfiguration laden, App bauen, Server starten
+  index.ts              Startpunkt: baut alle echten Objekte (Config, DB, Services), startet Server
   app.ts                createApp(deps): baut die Express-App, hängt Router und Middleware ein
   config.ts             Konfiguration aus .env, mit Zod beim Start geprüft
-  db.ts                 Drizzle-Verbindung (Pool) und Schema-Sammlung
+  db.ts                 Drizzle-Verbindung (Pool)
+  schema.ts             Sammlung aller Tabellen (re-exportiert die <domäne>.tables.ts)
   logger.ts             pino-Logger mit Redaction, ohne Inhalte
   errors.ts             Basis-Fehlerklasse und zentrale Fehler-Middleware
   llm/                  Anthropic-Client, Modell-Zuordnung, Fehlerübersetzung, Streaming-Hilfen
@@ -128,16 +130,19 @@ Domänen gleich sein.
 - Keine globalen Objekte und kein DI-Container. Jede Schicht ist eine **Fabrik-Funktion**, die ihre
   Abhängigkeiten als Parameter bekommt: `createAuthService({ repository })`,
   `createAuthRouter({ service })`.
-- `createApp(deps)` bekommt Konfiguration, Datenbank und LLM-Client und verdrahtet alles. `index.ts`
-  übergibt die echten Objekte, Tests übergeben Fakes.
+- `index.ts` ist die **einzige** Stelle, die echte Objekte baut: Konfiguration, Logger, Datenbank,
+  LLM-Client, Repositories und Services.
+- `createApp(deps)` bekommt Logger und Services und hängt nur Router und Middleware ein. Tests
+  übergeben Services mit Fake-Repositories bzw. Fake-Client.
 - Der LLM-Client ist immer ein Parameter, nie ein Import im Service.
 
 ### 3.5 Neue Domäne anlegen (Checkliste)
 
 1. Ordner `src/<domäne>/` mit den nötigen Schicht-Dateien.
-2. Tabellen in `<domäne>.tables.ts`, Migration mit `pnpm db:generate` erzeugen und prüfen.
-3. Zod-Schemas in `shared/src/<domäne>.ts`, Service mit Interface-Abhängigkeiten, Router in
-   `app.ts` einhängen.
+2. Tabellen in `<domäne>.tables.ts`, in `src/schema.ts` re-exportieren, Migration mit
+   `pnpm db:generate` erzeugen und prüfen.
+3. Zod-Schemas in `shared/src/<domäne>.ts`, Service mit Interface-Abhängigkeiten, in `index.ts`
+   bauen, Router in `app.ts` einhängen.
 4. Tests: Service mit Fakes, Router mit supertest gegen `createApp`, Repository gegen die Test-DB.
 
 ---
@@ -195,7 +200,8 @@ Domänen gleich sein.
 - **Kein Test ruft ein echtes LLM auf.** Der Client ist ein Fake, der die dokumentierten Antwort-
   und Stream-Formen des SDK nachbildet.
 - Service-Tests mit Fakes (schnell, ohne DB); Router-Tests mit supertest gegen `createApp`;
-  Repository-Tests gegen eine eigene Test-Datenbank in Postgres.
+  Repository-Tests gegen die eigene Test-Datenbank `jobmatch_test` (`TEST_DATABASE_URL`). Tests
+  sehen aus der `.env` nur Variablen mit `TEST_`-Präfix – nie API-Key oder Entwicklungsdatenbank.
 - Testnamen beschreiben das Verhalten (`'login with wrong password returns 401'`).
 - Vor jedem Commit grün: `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`.
 

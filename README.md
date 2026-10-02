@@ -13,9 +13,9 @@ KI-Funktion hat eine Beispiel-Suite (Evals).
 
 ## Stand
 
-**Neustart mit Express.** Die Dokumentation steht, als Nächstes wird Stufe 0 (Fundament) gebaut:
-leeres Express-Backend mit Health-Route und Datenbank-Anbindung, Vue-Frontend mit Statusseite,
-Migrationen, Tests und CI. Plan: [docs/STUFEN.md](docs/STUFEN.md).
+**Stufe 0 (Fundament) steht:** leeres Express-Backend mit Health-Route und Datenbank-Anbindung,
+Vue-Frontend mit Statusseite, gemeinsame Zod-Schemas, Migrationen, Tests und CI. Noch kein
+Fachcode – als Nächstes Stufe 1 (Konto + Coach-Chat). Plan: [docs/STUFEN.md](docs/STUFEN.md).
 
 ## Dokumentation
 
@@ -35,7 +35,62 @@ Migrationen, Tests und CI. Plan: [docs/STUFEN.md](docs/STUFEN.md).
 - **Gemeinsam:** pnpm-Workspace; Zod-Schemas des API-Vertrags in `shared/`
 - **Qualität:** ESLint, Prettier, `tsc`/`vue-tsc`, Vitest, supertest; GitHub Actions
 
-Schnellstart, Befehle und Umgebungsvariablen kommen mit Stufe 0 hierher.
+## Schnellstart
+
+Einmalig: [Docker](https://docs.docker.com/get-started/), [Node.js 24](https://nodejs.org/) und
+[pnpm](https://pnpm.io/) installieren, dann `.env` anlegen:
+
+```bash
+cp .env.example .env   # ANTHROPIC_API_KEY eintragen
+```
+
+```bash
+docker compose up -d   # PostgreSQL 17 + pgvector auf Host-Port 5433, legt auch jobmatch_test an
+```
+
+```bash
+pnpm install && pnpm db:migrate
+```
+
+```bash
+pnpm dev               # Backend auf :8000 und Frontend auf :5173 gleichzeitig
+```
+
+Danach: <http://localhost:5173/status>. Der Vite-Dev-Server leitet `/api` an das Backend weiter.
+
+## Befehle
+
+Alle im Wurzelordner; sie laufen über alle Pakete (`backend`, `frontend`, `shared`).
+
+| Befehl                              | Zweck                                                           |
+| ----------------------------------- | --------------------------------------------------------------- |
+| `pnpm dev`                          | Backend (`tsx watch`) und Frontend (Vite) mit Neustart          |
+| `pnpm lint`                         | ESLint                                                          |
+| `pnpm format` / `pnpm format:check` | Prettier                                                        |
+| `pnpm typecheck`                    | `tsc` bzw. `vue-tsc`                                            |
+| `pnpm test`                         | Vitest (ohne echtes Modell; Repository-Tests gegen Test-DB)     |
+| `pnpm db:generate`                  | neue Migration aus den `*.tables.ts` erzeugen (drizzle-kit)     |
+| `pnpm db:migrate`                   | Migrationen anwenden                                            |
+| `pnpm llm:check`                    | **echter** Modellaufruf: Modell, Effort, Tokens, Dauer (kostet) |
+
+Einzelnes Paket: `pnpm --filter @job-match/backend run test` (bzw. `frontend`, `shared`).
+
+## Umgebungsvariablen
+
+Alle Werte werden beim Start mit Zod geprüft; fehlt oder passt etwas nicht, startet das Backend
+nicht und nennt jedes Problem einzeln.
+
+| Variable              | Pflicht | Default                     | Bedeutung                                                              |
+| --------------------- | ------- | --------------------------- | ---------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`   | ja      | –                           | Key des Anbieters; `changeme` wird abgelehnt                           |
+| `DATABASE_URL`        | ja      | –                           | PostgreSQL-URL (Host-Port 5433 aus Compose)                            |
+| `TEST_DATABASE_URL`   | Tests   | –                           | Test-DB `jobmatch_test`; ohne sie werden Repository-Tests übersprungen |
+| `PORT`                | nein    | `8000`                      | Port des Backends (Ziel des Vite-Proxys)                               |
+| `ANTHROPIC_BASE_URL`  | nein    | `https://api.anthropic.com` | Anthropic-kompatibler Endpunkt; bestimmt die Modell-IDs                |
+| `LLM_MAX_TOKENS`      | nein    | `16000`                     | maximale Antwortlänge inklusive Thinking                               |
+| `LLM_TIMEOUT_SECONDS` | nein    | `60`                        | Timeout bis zum Beginn der Antwort                                     |
+| `LLM_MAX_RETRIES`     | nein    | `2`                         | Wiederholungen des SDK bei 429, 5xx, Verbindungsfehlern                |
+| `LOG_LEVEL`           | nein    | `info`                      | `fatal`, `error`, `warn`, `info`, `debug` oder `trace`                 |
 
 ## Hinweise
 
@@ -43,5 +98,7 @@ Schnellstart, Befehle und Umgebungsvariablen kommen mit Stufe 0 hierher.
   `backend/src/config.ts` und die Tabelle hier in der README.
 - **Postgres-Port:** Compose published den Host-Port **5433** (Container-intern 5432), weil lokal
   häufig bereits ein Postgres auf 5432 läuft.
+- **Test-Datenbank bei bestehendem Volume:** `docker/initdb` läuft nur beim allerersten Start. Gab
+  es das Volume schon: `docker compose exec db createdb -U jobmatch jobmatch_test`.
 - **Kein Test ruft ein echtes Modell auf.** Nur `pnpm llm:check` und die Evals tun das – von Hand,
   und sie kosten Geld.

@@ -30,18 +30,18 @@ grün, CI grün, README aktualisiert, Lernziele abgehakt.
 
 ## 2. Überblick
 
-| Stufe   | Fachlich (siehe IDEE.md)                                  | Claude-Thema                                         |
-| ------- | --------------------------------------------------------- | ---------------------------------------------------- |
-| 0       | Fundament: leeres Backend + Frontend, DB, CI              | Client, Konfiguration, Fake fürs Testen              |
-| 1       | Konto + Coach-Chat                                        | Messages API, Streaming, System-Prompt, Stopp-Gründe |
-| 2       | Lebenslauf-PDF, einmalige Analyse, Rolle, Fassungen       | PDF-Eingabe, Structured Outputs, Effort/Thinking     |
-| 3       | Stellen (Text/Screenshot) + Match-Analyse                 | Vision, Structured Outputs, Evals mit Kriterien      |
-| 4       | Bewerbungen, Notizen, Coach handelt im Chat               | Tool Use, Server-Tool Websuche                       |
-| 5       | Interview-Training (schriftlich)                          | Workflow vs. Agent, Tool Runner                      |
-| 6       | Lange Trainings/Chats, fortsetzen, günstiger              | Prompt Caching, Compaction, Token-Zählung            |
-| 7       | Stellen-Pool (Deutschland), „Top 5 Jobs“                  | RAG mit pgvector, Message Batches                    |
-| 8       | Anschreiben als Word-Datei, Termine im Kalender           | Agent Skills, Files API, MCP                         |
-| Go-live | öffentlich: Registrierung, Konto löschen, Export, Limit   | – (Produkt und Datenschutz)                          |
+| Stufe   | Fachlich (siehe IDEE.md)                                | Claude-Thema                                         |
+| ------- | ------------------------------------------------------- | ---------------------------------------------------- |
+| 0       | Fundament: leeres Backend + Frontend, DB, CI            | Client, Konfiguration, Fake fürs Testen              |
+| 1       | Konto + Coach-Chat                                      | Messages API, Streaming, System-Prompt, Stopp-Gründe |
+| 2       | Lebenslauf-PDF, einmalige Analyse, Rolle, Fassungen     | PDF-Eingabe, Structured Outputs, Effort/Thinking     |
+| 3       | Stellen (Text/Screenshot) + Match-Analyse               | Vision, Structured Outputs, Evals mit Kriterien      |
+| 4       | Bewerbungen, Notizen, Coach handelt im Chat             | Tool Use, Server-Tool Websuche                       |
+| 5       | Interview-Training (schriftlich)                        | Workflow vs. Agent, Tool Runner                      |
+| 6       | Lange Trainings/Chats, fortsetzen, günstiger            | Prompt Caching, Compaction, Token-Zählung            |
+| 7       | Stellen-Pool (Deutschland), „Top 5 Jobs“                | RAG mit pgvector, Message Batches                    |
+| 8       | Anschreiben als Word-Datei, Termine im Kalender         | Agent Skills, Files API, MCP                         |
+| Go-live | öffentlich: Registrierung, Konto löschen, Export, Limit | – (Produkt und Datenschutz)                          |
 
 Go-live kann nach jeder Stufe ab 2 kommen; es muss nur **vor** der Öffnung fertig sein.
 
@@ -54,35 +54,35 @@ Fachcode.
 
 **Repo**
 
-- [ ] pnpm-Workspace im Wurzelordner (`backend`, `frontend`, `shared`), ein Lockfile; Node 24
-- [ ] Gemeinsame ESLint- und Prettier-Konfiguration; `pnpm lint`, `format:check`, `typecheck`,
+- [x] pnpm-Workspace im Wurzelordner (`backend`, `frontend`, `shared`), ein Lockfile; Node 24
+- [x] Gemeinsame ESLint- und Prettier-Konfiguration; `pnpm lint`, `format:check`, `typecheck`,
       `test` laufen über alle Pakete
-- [ ] `.env.example`, `.gitignore` für Node, README mit Schnellstart; `docker-compose.yml` behalten
+- [x] `.env.example`, `.gitignore` für Node, README mit Schnellstart; `docker-compose.yml` behalten
 - [ ] GitHub Actions: Backend (Lint, Typen, Migrationen, Tests mit Postgres-Service) und Frontend
 
 **Shared**
 
-- [ ] Paket `shared/` mit Zod; erstes Schema `HealthResponse`, von Backend und Frontend importiert
+- [x] Paket `shared/` mit Zod; erstes Schema `HealthResponse`, von Backend und Frontend importiert
 
 **Backend**
 
-- [ ] `backend/` mit Express 5, TypeScript strict, `tsx` (`pnpm dev` mit Neustart bei Änderungen)
-- [ ] `config.ts`: Konfiguration aus `.env` (DB-URL, API-Key, Base-URL, Log-Level, Timeouts) mit Zod
+- [x] `backend/` mit Express 5, TypeScript strict, `tsx` (`pnpm dev` mit Neustart bei Änderungen)
+- [x] `config.ts`: Konfiguration aus `.env` (DB-URL, API-Key, Base-URL, Log-Level, Timeouts) mit Zod
       beim Start geprüft; Platzhalter-Key wird abgelehnt
-- [ ] `db.ts` + Drizzle eingerichtet; erste Migration aktiviert `pgvector`
-- [ ] `createApp(deps)` mit `GET /api/health` (prüft auch die DB-Verbindung) und zentraler
+- [x] `db.ts` + Drizzle eingerichtet; erste Migration aktiviert `pgvector`
+- [x] `createApp(deps)` mit `GET /api/health` (prüft auch die DB-Verbindung) und zentraler
       Fehler-Middleware
-- [ ] `llm/`: Client-Fabrik (Anthropic-SDK mit Base-URL, Timeout, Retries) und Modell-Zuordnung je
+- [x] `llm/`: Client-Fabrik (Anthropic-SDK mit Base-URL, Timeout, Retries) und Modell-Zuordnung je
       Anbieter; ein Fake-Client für Tests
-- [ ] `pnpm llm:check`: ein kurzer echter Aufruf, zeigt Modell, Tokens, Dauer (von Hand, kostet)
-- [ ] Logging mit `pino` ohne Inhalte; Vitest + supertest eingerichtet und grün
+- [x] `pnpm llm:check`: ein kurzer echter Aufruf, zeigt Modell, Tokens, Dauer (von Hand, kostet)
+- [x] Logging mit `pino` ohne Inhalte; Vitest + supertest eingerichtet und grün
 
 **Frontend**
 
-- [ ] `frontend/` mit Vite, Vue 3, TypeScript strict, Tailwind v4, shadcn-vue, Pinia, Vue Router
-- [ ] Vite-Proxy `/api` → Backend; Seite `/status` zeigt den Health-Check, Antwort mit dem Schema aus
+- [x] `frontend/` mit Vite, Vue 3, TypeScript strict, Tailwind v4, shadcn-vue, Pinia, Vue Router
+- [x] Vite-Proxy `/api` → Backend; Seite `/status` zeigt den Health-Check, Antwort mit dem Schema aus
       `shared` geprüft
-- [ ] ESLint, Prettier, Vitest, `vue-tsc` grün
+- [x] ESLint, Prettier, Vitest, `vue-tsc` grün
 
 **Lernziele**
 
@@ -120,9 +120,9 @@ gespeichert. Registrierung bleibt bis zum Go-live per Einstellung gesperrt.
 
 **Prompt-Unit `coach_chat`**
 
-| Form              | Archetyp            | Surface           | Slots                                   | Stopp           | Code erzwingt                         |
-| ----------------- | ------------------- | ----------------- | --------------------------------------- | --------------- | ------------------------------------- |
-| multi-turn chat   | advice conversation | Markdown im Chat  | Verlauf (indirekt, begrenzt), Nachricht | eine Antwort    | Markdown bereinigen, Verlaufsgrenze   |
+| Form            | Archetyp            | Surface          | Slots                                   | Stopp        | Code erzwingt                       |
+| --------------- | ------------------- | ---------------- | --------------------------------------- | ------------ | ----------------------------------- |
+| multi-turn chat | advice conversation | Markdown im Chat | Verlauf (indirekt, begrenzt), Nachricht | eine Antwort | Markdown bereinigen, Verlaufsgrenze |
 
 - [ ] Prompt nach Anchor §7 (Frame, Regeln mit Begründung, Scope-Satz) mit Kopfkommentar
 - [ ] Beispiel-Suite `evals/coach_chat/` mit 5–10 typischen Fragen
@@ -157,9 +157,9 @@ neue Fassungen ersetzen die alte; der Coach kennt die aktive Fassung.
 
 **Prompt-Unit `cv_analysis`**
 
-| Form        | Archetyp            | Surface                  | Slots              | Stopp             | Code erzwingt                        |
-| ----------- | ------------------- | ------------------------ | ------------------ | ----------------- | ------------------------------------ |
-| single call | structured document | geprüftes Zod-Objekt     | PDF (direkt)       | Schema erfüllt    | Schema, Rolle aus Liste, Größenlimit |
+| Form        | Archetyp            | Surface              | Slots        | Stopp          | Code erzwingt                        |
+| ----------- | ------------------- | -------------------- | ------------ | -------------- | ------------------------------------ |
+| single call | structured document | geprüftes Zod-Objekt | PDF (direkt) | Schema erfüllt | Schema, Rolle aus Liste, Größenlimit |
 
 - [ ] Beispiel-Suite mit 5–10 echten oder erfundenen Lebensläufen (keine fremden Personendaten)
 
@@ -185,10 +185,10 @@ neue Fassungen ersetzen die alte; der Coach kennt die aktive Fassung.
 
 **Prompt-Units**
 
-| Unit             | Form        | Archetyp            | Surface          | Stopp          | Code erzwingt                    |
-| ---------------- | ----------- | ------------------- | ---------------- | -------------- | -------------------------------- |
-| `job_extraction` | single call | structured document | Zod-Objekt       | Schema erfüllt | Schema, Pflichtfelder            |
-| `match_analysis` | single call | structured document | Ergebnis-Karte   | Schema erfüllt | Score 0–100, Bezug auf Angaben   |
+| Unit             | Form        | Archetyp            | Surface        | Stopp          | Code erzwingt                  |
+| ---------------- | ----------- | ------------------- | -------------- | -------------- | ------------------------------ |
+| `job_extraction` | single call | structured document | Zod-Objekt     | Schema erfüllt | Schema, Pflichtfelder          |
+| `match_analysis` | single call | structured document | Ergebnis-Karte | Schema erfüllt | Score 0–100, Bezug auf Angaben |
 
 - [ ] Beispiel-Suite für `match_analysis` mit **prüfbaren Kriterien** (z. B. erwarteter Score-Bereich
       je Fall) – der erste echte Eval

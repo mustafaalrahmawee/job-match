@@ -1,0 +1,71 @@
+# Lint, Typen und Tests für Backend und Frontend bei jedem Push.
+# Kein Schritt ruft ein echtes Modell auf (docs/STACK.md §5) – der API-Key ist ein Dummy.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend + shared (eslint, tsc, Migrationen, vitest)
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ci-dummy-key
+      DATABASE_URL: postgresql://jobmatch:jobmatch@localhost:5433/jobmatch
+      # Die CI-Datenbank ist ohnehin leer und wegwerfbar – Tests dürfen dieselbe nutzen.
+      TEST_DATABASE_URL: postgresql://jobmatch:jobmatch@localhost:5433/jobmatch
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: jobmatch
+          POSTGRES_PASSWORD: jobmatch
+          POSTGRES_DB: jobmatch
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U jobmatch -d jobmatch"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Abhängigkeiten installieren
+        run: pnpm install --frozen-lockfile
+      - name: prettier
+        run: pnpm format:check
+      - name: eslint
+        run: pnpm --filter @job-match/backend --filter @job-match/shared run lint
+      - name: tsc
+        run: pnpm --filter @job-match/backend --filter @job-match/shared run typecheck
+      - name: Migrationen gegen Postgres
+        run: pnpm db:migrate
+      - name: vitest
+        run: pnpm --filter @job-match/backend run test
+
+  frontend:
+    name: Frontend (eslint, vue-tsc, vitest, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Abhängigkeiten installieren
+        run: pnpm install --frozen-lockfile
+      - name: eslint
+        run: pnpm --filter @job-match/frontend run lint
+      - name: vue-tsc
+        run: pnpm --filter @job-match/frontend run typecheck
+      - name: vitest
+        run: pnpm --filter @job-match/frontend run test
+      - name: build
+        run: pnpm --filter @job-match/frontend run build
