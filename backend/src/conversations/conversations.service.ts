@@ -48,17 +48,12 @@ export function listConversations(db: Db, userId: string) {
     .orderBy(desc(conversations.updatedAt));
 }
 
-export async function assertOwned(db: Db, userId: string, id: string) {
+export async function getConversation(db: Db, userId: string, id: string) {
   const [conversation] = await db
     .select(conversationColumns)
     .from(conversations)
     .where(owned(userId, id));
   if (!conversation) throw new ConversationNotFoundError();
-  return conversation;
-}
-
-export async function getConversation(db: Db, userId: string, id: string) {
-  const conversation = await assertOwned(db, userId, id);
   return { ...conversation, messages: await listMessages(db, userId, id) };
 }
 

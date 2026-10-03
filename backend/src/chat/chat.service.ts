@@ -1,12 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { StopReason } from '@anthropic-ai/sdk/resources/messages';
 import type { ChatEvent, ChatRequest, StoredStopReason } from '@job-match/shared';
 import type { Logger } from 'pino';
 
 import type { Config } from '../config';
 import {
   appendMessage,
-  assertOwned,
   listMessages,
   startConversation,
 } from '../conversations/conversations.service';
@@ -23,12 +21,6 @@ export class NothingToRetryError extends AppError {
   }
 }
 
-function toStoredStopReason(reason: StopReason | null): StoredStopReason {
-  if (reason === 'max_tokens') return 'max_tokens';
-  if (reason === 'model_context_window_exceeded') return 'context_window';
-  return 'end_turn';
-}
-
 export interface ChatDeps {
   readonly db: Db;
   readonly llm: Anthropic;
@@ -37,10 +29,7 @@ export interface ChatDeps {
 }
 
 async function openConversation(db: Db, userId: string, request: ChatRequest): Promise<string> {
-  if (request.conversationId) {
-    await assertOwned(db, userId, request.conversationId);
-    return request.conversationId;
-  }
+  if (request.conversationId) return request.conversationId;
   if (request.message === undefined) throw new NothingToRetryError();
   return (await startConversation(db, userId, request.message)).id;
 }
@@ -131,7 +120,12 @@ export async function startChat(
       return;
     }
 
-    const stopReason = toStoredStopReason(final.stop_reason);
+    const stopReason: StoredStopReason =
+      final.stop_reason === 'max_tokens'
+        ? 'max_tokens'
+        : final.stop_reason === 'model_context_window_exceeded'
+          ? 'context_window'
+          : 'end_turn';
     const saved = await appendMessage(db, userId, conversationId, {
       role: 'assistant',
       content: [{ type: 'text', text: answer }],

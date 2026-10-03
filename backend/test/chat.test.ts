@@ -85,5 +85,11 @@ describe.skipIf(!TEST_DATABASE_URL)('POST /api/chat', () => {
     expect(invalid.status).toBe(400);
     expect(foreign.status).toBe(404);
     expect(foreign.headers['content-type']).toContain('application/json');
+
+    const foreignRetry = await request(app)
+      .post('/api/chat')
+      .set(ben.headers)
+      .send({ conversationId: conversation.id, model: 'standard', effort: 'low' });
+    expect(foreignRetry.status).toBe(400);
   });
 });
