@@ -142,8 +142,10 @@ Migration + Model, Zod-Schema ≈ FormRequest + API-Resource.
   Parameter.
 - `async`/`await` für I/O (HTTP, DB, LLM); Express 5 leitet Fehler aus `async`-Handlern selbst an die
   Fehler-Middleware weiter – kein `try/catch` nur zum Weiterreichen.
-- Daten von außen (Request, `.env`, Modellantwort, DB-JSON) werden mit Zod geprüft, bevor der Code
-  ihnen traut. Interne Werte sind `readonly`-Typen; keine losen Objekte ohne Typ.
+- Daten von außen (Request, `.env`, Modellantwort) werden mit Zod geprüft, bevor der Code ihnen
+  traut. Was nur unser eigener Code in die Datenbank schreibt, wird beim Lesen nicht erneut geprüft;
+  die Spalten tragen ihren Typ per `$type<…>()`. Abfragen holen nur die Spalten, die die Antwort
+  braucht, statt Zeilen nachträglich umzubauen. Interne Werte sind `readonly`-Typen; keine losen Objekte ohne Typ.
 - Fehler: eigene Fehlerklassen je Domäne mit HTTP-Status; die Fehler-Middleware übersetzt sie.
   SDK-Fehler über die Fehlerklassen des SDK unterscheiden (`instanceof`), nie über den Meldungstext.
 - Formatierung mit Prettier, Lint mit ESLint (`typescript-eslint`), Zeilenlänge 100.

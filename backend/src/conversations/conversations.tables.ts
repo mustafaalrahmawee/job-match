@@ -1,4 +1,4 @@
-import type { ContentBlock } from '@job-match/shared';
+import type { ContentBlock, StoredStopReason } from '@job-match/shared';
 import { index, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 import { users } from '../auth/auth.tables';
@@ -26,7 +26,7 @@ export const messages = pgTable(
       .references(() => conversations.id, { onDelete: 'cascade' }),
     role: text().$type<'user' | 'assistant'>().notNull(),
     content: jsonb().$type<ContentBlock[]>().notNull(),
-    stopReason: text(),
+    stopReason: text().$type<StoredStopReason>(),
     model: text(),
     effort: text(),
     inputTokens: integer(),

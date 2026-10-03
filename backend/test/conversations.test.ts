@@ -1,3 +1,4 @@
+import { ConversationDetailSchema, ConversationSchema } from '@job-match/shared';
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
@@ -7,22 +8,27 @@ import {
   listConversations,
   listMessages,
   startConversation,
-  titleFromMessage,
 } from '../src/conversations/conversations.service';
 import { messages } from '../src/conversations/conversations.tables';
 import { TEST_DATABASE_URL, useTestDb } from './helpers';
 
 const text = (value: string) => [{ type: 'text' as const, text: value }];
 
-it('titleFromMessage makes one short line', () => {
-  expect(titleFromMessage('  Wie schreibe\n\nich   ein Anschreiben? ')).toBe(
-    'Wie schreibe ich ein Anschreiben?',
-  );
-  expect(titleFromMessage('a'.repeat(200))).toHaveLength(60);
-});
-
 describe.skipIf(!TEST_DATABASE_URL)('conversations', () => {
   const { db, app, signIn } = useTestDb();
+
+  it('names a new conversation after the first message on one line', async () => {
+    const anna = await signIn();
+
+    const conversation = await startConversation(
+      db,
+      anna.id,
+      `  Wie schreibe\n\nich ${'x'.repeat(80)}`,
+    );
+
+    expect(conversation.title).toMatch(/^Wie schreibe ich x+$/);
+    expect(conversation.title).toHaveLength(60);
+  });
 
   it('lists only the own conversations, newest activity first', async () => {
     const anna = await signIn();
@@ -50,7 +56,8 @@ describe.skipIf(!TEST_DATABASE_URL)('conversations', () => {
       404,
     );
     await expect(listMessages(db, ben.id, conversation.id)).resolves.toEqual([]);
-    expect((await request(app).get(url).set(anna.headers)).status).toBe(200);
+    const own = await request(app).get(url).set(anna.headers);
+    expect(ConversationDetailSchema.parse(own.body).id).toBe(conversation.id);
   });
 
   it('renames, rejects an empty title and deletes with all messages', async () => {
@@ -63,7 +70,7 @@ describe.skipIf(!TEST_DATABASE_URL)('conversations', () => {
     const empty = await request(app).patch(url).set(anna.headers).send({ title: '   ' });
     const deleted = await request(app).delete(url).set(anna.headers);
 
-    expect(renamed.body).toMatchObject({ title: 'Neu' });
+    expect(ConversationSchema.parse(renamed.body).title).toBe('Neu');
     expect(empty.status).toBe(400);
     expect(deleted.status).toBe(204);
     const rows = await db
@@ -83,17 +90,5 @@ describe.skipIf(!TEST_DATABASE_URL)('conversations', () => {
     const last = await listMessages(db, anna.id, conversation.id, 2);
 
     expect(last.map((message) => message.content)).toEqual([text('drei'), text('vier')]);
-  });
-
-  it('refuses to read stored content that does not match the schema', async () => {
-    const anna = await signIn();
-    const conversation = await startConversation(db, anna.id, 'Kaputt');
-    await db.insert(messages).values({
-      conversationId: conversation.id,
-      role: 'user',
-      content: [{ type: 'unknown' }] as never,
-    });
-
-    await expect(listMessages(db, anna.id, conversation.id)).rejects.toThrow();
   });
 });
