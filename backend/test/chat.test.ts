@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 
-import { COACH_CHAT_SYSTEM_PROMPT, boundHistory, buildChatRequest } from '../src/chat/chat.prompts';
+import { COACH_CHAT_SYSTEM_PROMPT, buildChatRequest } from '../src/chat/chat.prompts';
 import { startConversation } from '../src/conversations/conversations.service';
 import { TEST_DATABASE_URL, useTestDb } from './helpers';
 
@@ -14,40 +14,35 @@ const assistant = (text: string) => ({
   content: [{ type: 'text' as const, text }],
 });
 
-describe('boundHistory', () => {
+const build = (history: Parameters<typeof buildChatRequest>[0]['history'], historyLimit = 10) =>
+  buildChatRequest({ history, model: 'm', effort: 'low', maxTokens: 500, historyLimit });
+
+describe('buildChatRequest', () => {
+  it('sends model, limit, system prompt and an explicit effort', () => {
+    expect(build([user('Hallo')])).toMatchObject({
+      model: 'm',
+      max_tokens: 500,
+      output_config: { effort: 'low' },
+      system: COACH_CHAT_SYSTEM_PROMPT,
+    });
+  });
+
   it('keeps only the last messages and starts with a user message', () => {
     const history = [user('1'), assistant('2'), user('3'), assistant('4'), user('5')];
 
-    expect(boundHistory(history, 3).map((message) => message.role)).toEqual([
+    expect(build(history, 3).messages.map((message) => message.role)).toEqual([
       'user',
       'assistant',
       'user',
     ]);
-    expect(boundHistory(history, 2)).toEqual([user('5')]);
-    expect(boundHistory([assistant('x')], 10)).toEqual([]);
+    expect(build(history, 2).messages).toEqual([user('5')]);
+    expect(build([assistant('x')]).messages).toEqual([]);
   });
 
   it('merges consecutive messages of the same role', () => {
-    expect(boundHistory([user('Frage'), user('Noch einmal')], 10)).toEqual([
+    expect(build([user('Frage'), user('Noch einmal')]).messages).toEqual([
       { role: 'user', content: [...user('Frage').content, ...user('Noch einmal').content] },
     ]);
-  });
-});
-
-it('buildChatRequest sends model, limit, system prompt and an explicit effort', () => {
-  const params = buildChatRequest({
-    history: [user('Hallo')],
-    model: 'm',
-    effort: 'low',
-    maxTokens: 500,
-    historyLimit: 10,
-  });
-
-  expect(params).toMatchObject({
-    model: 'm',
-    max_tokens: 500,
-    output_config: { effort: 'low' },
-    system: COACH_CHAT_SYSTEM_PROMPT,
   });
 });
 
