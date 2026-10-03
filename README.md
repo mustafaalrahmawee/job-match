@@ -13,9 +13,10 @@ KI-Funktion hat eine Beispiel-Suite (Evals).
 
 ## Stand
 
-**Stufe 0 (Fundament) steht:** leeres Express-Backend mit Health-Route und Datenbank-Anbindung,
-Vue-Frontend mit Statusseite, gemeinsame Zod-Schemas, Migrationen, Tests und CI. Noch kein
-Fachcode – als Nächstes Stufe 1 (Konto + Coach-Chat). Plan: [docs/STUFEN.md](docs/STUFEN.md).
+**Stufe 1 (Konto + Coach-Chat) steht:** Anmelden mit opaken Tokens, Chat mit dem Karriere-Coach
+(Antworten live per Server-Sent Events, Stopp, „Erneut versuchen“), gespeicherte Gespräche
+(auflisten, umbenennen, löschen), Auswahl von Qualität und Gründlichkeit, Beispiel-Suite für den
+Coach-Prompt. Als Nächstes Stufe 2 (Lebenslauf und Profil). Plan: [docs/STUFEN.md](docs/STUFEN.md).
 
 ## Dokumentation
 
@@ -56,22 +57,31 @@ pnpm install && pnpm db:migrate
 pnpm dev               # Backend auf :8000 und Frontend auf :5173 gleichzeitig
 ```
 
-Danach: <http://localhost:5173/status>. Der Vite-Dev-Server leitet `/api` an das Backend weiter.
+Konten gibt es nur über ein Skript (fragt das Passwort ab, mindestens 10 Zeichen). Für eine
+bestehende E-Mail setzt es das Passwort neu:
+
+```bash
+pnpm user:create dev@example.com
+```
+
+Danach: <http://localhost:5173> (Anmelden, dann Chat). Der
+Vite-Dev-Server leitet `/api` an das Backend weiter.
 
 ## Befehle
 
 Alle im Wurzelordner; sie laufen über alle Pakete (`backend`, `frontend`, `shared`).
 
-| Befehl                              | Zweck                                                           |
-| ----------------------------------- | --------------------------------------------------------------- |
-| `pnpm dev`                          | Backend (`tsx watch`) und Frontend (Vite) mit Neustart          |
-| `pnpm lint`                         | ESLint                                                          |
-| `pnpm format` / `pnpm format:check` | Prettier                                                        |
-| `pnpm typecheck`                    | `tsc` bzw. `vue-tsc`                                            |
-| `pnpm test`                         | Vitest (ohne echtes Modell; Repository-Tests gegen Test-DB)     |
-| `pnpm db:generate`                  | neue Migration aus den `*.tables.ts` erzeugen (drizzle-kit)     |
-| `pnpm db:migrate`                   | Migrationen anwenden                                            |
-| `pnpm llm:check`                    | **echter** Modellaufruf: Modell, Effort, Tokens, Dauer (kostet) |
+| Befehl                              | Zweck                                                        |
+| ----------------------------------- | ------------------------------------------------------------ |
+| `pnpm dev`                          | Backend (`tsx watch`) und Frontend (Vite) mit Neustart       |
+| `pnpm lint`                         | ESLint                                                       |
+| `pnpm format` / `pnpm format:check` | Prettier                                                     |
+| `pnpm typecheck`                    | `tsc` bzw. `vue-tsc`                                         |
+| `pnpm test`                         | Vitest (ohne echtes Modell; Backend-Tests gegen Test-DB)     |
+| `pnpm db:generate`                  | neue Migration aus den `*.tables.ts` erzeugen (drizzle-kit)  |
+| `pnpm db:migrate`                   | Migrationen anwenden                                         |
+| `pnpm user:create <email>`          | Konto anlegen oder Passwort neu setzen                       |
+| `pnpm eval coach_chat`              | Beispiel-Suite des Coach-Prompts, **echtes** Modell (kostet) |
 
 Einzelnes Paket: `pnpm --filter @job-match/backend run test` (bzw. `frontend`, `shared`).
 
@@ -80,17 +90,35 @@ Einzelnes Paket: `pnpm --filter @job-match/backend run test` (bzw. `frontend`, `
 Alle Werte werden beim Start mit Zod geprüft; fehlt oder passt etwas nicht, startet das Backend
 nicht und nennt jedes Problem einzeln.
 
-| Variable              | Pflicht | Default                     | Bedeutung                                                              |
-| --------------------- | ------- | --------------------------- | ---------------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY`   | ja      | –                           | Key des Anbieters; `changeme` wird abgelehnt                           |
-| `DATABASE_URL`        | ja      | –                           | PostgreSQL-URL (Host-Port 5433 aus Compose)                            |
-| `TEST_DATABASE_URL`   | Tests   | –                           | Test-DB `jobmatch_test`; ohne sie werden Repository-Tests übersprungen |
-| `PORT`                | nein    | `8000`                      | Port des Backends (Ziel des Vite-Proxys)                               |
-| `ANTHROPIC_BASE_URL`  | nein    | `https://api.anthropic.com` | Anthropic-kompatibler Endpunkt; bestimmt die Modell-IDs                |
-| `LLM_MAX_TOKENS`      | nein    | `16000`                     | maximale Antwortlänge inklusive Thinking                               |
-| `LLM_TIMEOUT_SECONDS` | nein    | `60`                        | Timeout bis zum Beginn der Antwort                                     |
-| `LLM_MAX_RETRIES`     | nein    | `2`                         | Wiederholungen des SDK bei 429, 5xx, Verbindungsfehlern                |
-| `LOG_LEVEL`           | nein    | `info`                      | `fatal`, `error`, `warn`, `info`, `debug` oder `trace`                 |
+| Variable              | Pflicht | Default                     | Bedeutung                                                      |
+| --------------------- | ------- | --------------------------- | -------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`   | ja      | –                           | Key des Anbieters; `changeme` wird abgelehnt                   |
+| `DATABASE_URL`        | ja      | –                           | PostgreSQL-URL (Host-Port 5433 aus Compose)                    |
+| `TEST_DATABASE_URL`   | Tests   | –                           | Test-DB `jobmatch_test`; ohne sie werden DB-Tests übersprungen |
+| `PORT`                | nein    | `8000`                      | Port des Backends (Ziel des Vite-Proxys)                       |
+| `ANTHROPIC_BASE_URL`  | nein    | `https://api.anthropic.com` | Anthropic-kompatibler Endpunkt; bestimmt die Modell-IDs        |
+| `LLM_MAX_TOKENS`      | nein    | `16000`                     | maximale Antwortlänge inklusive Thinking                       |
+| `LLM_TIMEOUT_SECONDS` | nein    | `60`                        | Timeout bis zum Beginn der Antwort                             |
+| `LLM_MAX_RETRIES`     | nein    | `2`                         | Wiederholungen des SDK bei 429, 5xx, Verbindungsfehlern        |
+| `LOG_LEVEL`           | nein    | `info`                      | `fatal`, `error`, `warn`, `info`, `debug` oder `trace`         |
+| `CHAT_HISTORY_LIMIT`  | nein    | `40`                        | so viele letzte Nachrichten gehen pro Chat-Anfrage ans Modell  |
+
+## API (Stufe 1)
+
+Alle Routen unter `/api`; Fehler haben die Form `{ "error": { "code", "message" } }`. Ab Konto-Routen
+außer Login: `Authorization: Bearer <token>`.
+
+| Route                                 | Zweck                                                                |
+| ------------------------------------- | -------------------------------------------------------------------- |
+| `POST /auth/login`                    | Token holen (30 Tage gültig); 10 Fehlversuche je 15 Min. und IP      |
+| `POST /auth/logout`, `GET /auth/me`   | Token ungültig machen / angemeldeten Nutzer lesen                    |
+| `GET /conversations`                  | eigene Gespräche, neueste Aktivität zuerst                           |
+| `GET/PATCH/DELETE /conversations/:id` | laden (mit Nachrichten), umbenennen, löschen – fremde ID: 404        |
+| `POST /chat`                          | Antwort als SSE: `conversation`, `delta`, `done`, `refusal`, `error` |
+
+`POST /chat` mit `conversationId` und ohne `message` setzt ein Gespräch fort („Erneut versuchen“).
+Trennt der Browser die Verbindung, bricht das Backend die Modellanfrage ab und speichert die
+bisherige Teilantwort.
 
 ## Hinweise
 
@@ -100,5 +128,5 @@ nicht und nennt jedes Problem einzeln.
   häufig bereits ein Postgres auf 5432 läuft.
 - **Test-Datenbank bei bestehendem Volume:** `docker/initdb` läuft nur beim allerersten Start. Gab
   es das Volume schon: `docker compose exec db createdb -U jobmatch jobmatch_test`.
-- **Kein Test ruft ein echtes Modell auf.** Nur `pnpm llm:check` und die Evals tun das – von Hand,
-  und sie kosten Geld.
+- **Kein Test ruft ein echtes Modell auf.** Nur `pnpm eval …` tut das – von Hand, und es kostet
+  Geld.

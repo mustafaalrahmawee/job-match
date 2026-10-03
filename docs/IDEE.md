@@ -97,8 +97,8 @@ Coach-Chat: daneben, jederzeit – kennt deine Lebenslauf-Analyse (und später d
 
 ### 4.1 Konto
 
-- ⬜ Anmelden und abmelden.
-- ⬜ **Registrieren für alle** (heute nur, wenn freigeschaltet).
+- ✅ Anmelden und abmelden.
+- ⬜ **Registrieren für alle** (bis zum Go-live legt nur ein Skript Konten an).
 - ⬜ Passwort ändern.
 - ⬜ **Konto löschen** – dabei verschwinden **alle** Daten (Lebenslauf, Bewerbungen, Chats).
   Bei einer öffentlichen App mit Lebensläufen Pflicht (Datenschutz).
@@ -194,12 +194,12 @@ Coach-Chat: daneben, jederzeit – kennt deine Lebenslauf-Analyse (und später d
 
 ### 4.7 Coach-Chat
 
-- ⬜ Freie Fragen rund um Bewerbung und Karriere; der Bot verhält sich wie ein Karriere-Coach.
-- ⬜ Antworten erscheinen Wort für Wort; du kannst jederzeit **stoppen**.
-- ⬜ Mehrere Gespräche, gespeichert; umbenennen und löschen (mit Rückfrage).
-- ⬜ Antwort-Qualität wählen: **Normal** oder **Erweitert**, Gründlichkeit **Niedrig** oder
+- ✅ Freie Fragen rund um Bewerbung und Karriere; der Bot verhält sich wie ein Karriere-Coach.
+- ✅ Antworten erscheinen Wort für Wort; du kannst jederzeit **stoppen**.
+- ✅ Mehrere Gespräche, gespeichert; umbenennen und löschen (mit Rückfrage).
+- ✅ Antwort-Qualität wählen: **Normal** oder **Erweitert**, Gründlichkeit **Niedrig** oder
   **Hoch**.
-- ⬜ Hinweis, wenn eine Antwort abgeschnitten wurde; „Erneut versuchen“ bei Fehlern.
+- ✅ Hinweis, wenn eine Antwort abgeschnitten wurde; „Erneut versuchen“ bei Fehlern.
 - ✖ Dokumente (Text/PDF) an ein Gespräch hängen – **entfernt** (02.10.2026), ersetzt durch den Lebenslauf
   im Profil.
 - ✖ Belegstellen als Fußnoten – **entfernt** (02.10.2026).

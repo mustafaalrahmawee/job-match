@@ -12,6 +12,11 @@ Was die App fachlich kann: [IDEE.md](IDEE.md). In welcher Reihenfolge gebaut wir
 > **Stand:** Oktober 2026, Neustart mit Express. Versionen und Bibliotheken vor jeder Stufe gegen
 > die offizielle Doku prüfen.
 
+**Leitlinie: einfach vor vollständig.** Der Schwerpunkt ist die KI im Produkt (Structured Outputs,
+Tool Use mit eigener Agent-Schleife, Evals, Kosten und Tokens, Abwehr von Prompt Injection), nicht
+die Node.js-Architektur. Es gibt nur Code, den der Entwickler versteht und selbst erklären kann;
+was nicht gebraucht wird, wird gelöscht. Dateien bleiben dünn.
+
 ---
 
 ## 1. Tech Stack
@@ -25,6 +30,7 @@ Was die App fachlich kann: [IDEE.md](IDEE.md). In welcher Reihenfolge gebaut wir
 | LLM               | `@anthropic-ai/sdk` (offizielles SDK); Anbieter über `ANTHROPIC_BASE_URL`                |
 | Datenbank         | PostgreSQL 17 + pgvector (Docker Compose), **Drizzle ORM** + `drizzle-kit` (Migrationen) |
 | Auth              | eigene opake Tokens (nur SHA-256-Hash in der DB), Passwort-Hash mit `scrypt` (Node)      |
+| Rate-Limit        | `express-rate-limit` für den Login (Zähler im Speicher, eine Instanz)                    |
 | Logging           | `pino` + `pino-http` mit Redaction                                                       |
 | Backend-Qualität  | ESLint + Prettier, `tsc --noEmit`, **Vitest** + supertest                                |
 | Frontend          | Vue 3 (`<script setup lang="ts">`), Vite, TypeScript strict, Tailwind CSS v4, shadcn-vue |
@@ -64,86 +70,64 @@ pnpm-workspace.yaml   Workspace-Pakete
 
 ## 3. Backend-Struktur (`backend/src`)
 
-### 3.1 Ordner = Domäne, Dateien = Schichten
+### 3.1 Ordner = Domäne
 
 Jede Domäne (ein fachlicher Bereich mit eigenen Daten und Regeln, z. B. `auth`, `conversations`,
-`profile`) bekommt **einen Ordner**. Darin liegen nur die Schichten, die sie braucht; jede Datei
-trägt den Domänennamen als Präfix:
+`profile`) bekommt **einen Ordner** mit höchstens vier Dateien; jede trägt den Domänennamen als
+Präfix:
 
 ```
 src/
-  index.ts              Startpunkt: baut alle echten Objekte (Config, DB, Services), startet Server
-  app.ts                createApp(deps): baut die Express-App, hängt Router und Middleware ein
+  index.ts              Startpunkt: Config, Logger, Datenbank, LLM-Client bauen, Server starten
+  app.ts                createApp({ db, llm, logger, config }): Express-App mit allen Routern
   config.ts             Konfiguration aus .env, mit Zod beim Start geprüft
-  db.ts                 Drizzle-Verbindung (Pool)
-  schema.ts             Sammlung aller Tabellen (re-exportiert die <domäne>.tables.ts)
+  db.ts                 Drizzle-Verbindung (`createDatabase`, Typ `Db`)
   logger.ts             pino-Logger mit Redaction, ohne Inhalte
-  errors.ts             Basis-Fehlerklasse und zentrale Fehler-Middleware
-  llm/                  Anthropic-Client, Modell-Zuordnung, Fehlerübersetzung, Streaming-Hilfen
+  errors.ts             `AppError` und zentrale Fehler-Middleware
+  llm/
+    client.ts           Anthropic-Client, Antworttext, Kostenprotokoll (`logLlmCall`)
+    models.ts           Modell-Zuordnung je Anbieter
+    errors.ts           SDK-Fehler → Code und Nutzermeldung
   <domäne>/
-    <domäne>.router.ts      HTTP: Routen, Status-Codes, Validierung – keine Fachlogik
-    <domäne>.service.ts     Fachlogik; kennt weder Express noch Drizzle
-    <domäne>.repository.ts  Datenzugriff: Interface + Drizzle-Implementierung
+    <domäne>.router.ts      HTTP: Routen, Eingabe mit Zod prüfen, Service aufrufen, antworten
+    <domäne>.service.ts     Fachlogik und Drizzle-Abfragen; Fehlerklassen der Domäne
     <domäne>.tables.ts      Drizzle-Tabellen der Domäne
-    <domäne>.middleware.ts  optional: Middleware (z. B. „angemeldet“, „Gespräch gehört dem Nutzer“)
-    <domäne>.errors.ts      optional: Fehlerklassen der Domäne
-    <domäne>.prompts.ts     optional: Prompt-Units der Domäne (nur wenn sie ein Modell aufruft)
+    <domäne>.prompts.ts     nur wenn die Domäne ein Modell aufruft: Prompt-Units
 ```
 
-Die Zod-Schemas des API-Vertrags (Ein- und Ausgaben) liegen nicht hier, sondern in
-`shared/src/<domäne>.ts`, damit das Frontend dieselben Typen benutzt. Gemeinsame Middleware über
-Domänen hinweg (z. B. der angemeldete Nutzer) liegt in der Domäne, der sie gehört (`auth`).
+Die Zod-Schemas des API-Vertrags (Ein- und Ausgaben) liegen in `shared/src/<domäne>.ts`, damit das
+Frontend dieselben Typen benutzt. `requireAuth` und `getAuth` liegen in `auth.router.ts`; andere
+Router importieren sie von dort.
 
-### 3.2 Aufgaben der Schichten
+### 3.2 Aufgaben der Dateien
 
-- **router → service → repository**, nie rückwärts und nie über eine Schicht hinweg.
-- Der **Router** prüft die Eingabe mit dem Zod-Schema aus `shared`, ruft den Service auf und
-  übersetzt das Ergebnis in eine Antwort. Fehler wirft er weiter; die zentrale Fehler-Middleware
-  macht daraus den HTTP-Code.
-- Der **Service** enthält die Regeln (z. B. „nur eine aktive Fassung“). Er bekommt Repository und
-  LLM-Client als Parameter, damit Tests sie durch Fakes ersetzen.
-- Das **Repository** ist ein TypeScript-`interface` plus eine Drizzle-Implementierung. Jede Abfrage
-  auf Nutzerdaten filtert nach `userId`.
-- `<domäne>.middleware.ts` enthält nur Verdrahtung und Zugriffsprüfungen, keine Fachregeln;
-  `<domäne>.errors.ts` die Fehler, die der Service wirft.
-- Andere Domänen werden nur über ihren **Service** benutzt, nie über Repository oder Tabellen.
+- **router → service**, nie rückwärts.
+- Der **Router** prüft die Eingabe mit dem Zod-Schema aus `shared`, ruft eine Service-Funktion auf
+  und schickt das Ergebnis. Fehler wirft er weiter; die zentrale Fehler-Middleware macht daraus den
+  HTTP-Code.
+- Der **Service** ist eine Sammlung normaler Funktionen. Jede bekommt `db` (und, wenn nötig, den
+  Anthropic-Client) als ersten Parameter und schreibt ihre Drizzle-Abfragen selbst – es gibt keine
+  Repository-Schicht. Jede Abfrage auf Nutzerdaten filtert nach `userId`.
+- Andere Domänen werden nur über ihre Service-Funktionen benutzt, nie über ihre Tabellen.
 
-Wer aus Laravel kommt: Router ≈ Controller, Service ≈ Service-Klasse, Repository ≈ Repository über
-Eloquent, Tabellen ≈ Migration + Model, Zod-Schema ≈ FormRequest + API-Resource.
+Wer aus Laravel kommt: Router ≈ Controller, Service ≈ Service-Klasse mit Query Builder, Tabellen ≈
+Migration + Model, Zod-Schema ≈ FormRequest + API-Resource.
 
-### 3.3 Warum eine eigene Repository-Schicht
+### 3.3 Verdrahtung
 
-Drizzle ist schon fast SQL, viele Projekte rufen es direkt im Service auf. Hier gibt es trotzdem
-eine eigene Schicht, weil:
+- Keine globalen Objekte und kein DI-Container. `index.ts` baut `db`, LLM-Client, Logger und Config
+  und gibt sie an `createApp`; die Router bekommen davon, was sie brauchen
+  (`createAuthRouter(db)`, `createChatRouter({ db, llm, logger, config })`).
+- Der Anthropic-Client ist immer ein Parameter (Typ `Anthropic` aus dem SDK), nie ein Import im
+  Service. Es gibt kein eigenes Interface und keinen Fake dafür.
 
-- **Service-Tests ohne Datenbank laufen:** Repository und LLM-Client sind Fakes. Das hält die vielen
-  Tests der KI-Abläufe schnell und eindeutig.
-- **Die Fachregeln an einer Stelle stehen:** Der Service enthält keine Abfragen, das Repository keine
-  Regeln.
+### 3.4 Neue Domäne anlegen (Checkliste)
 
-Der Preis ist mehr Code bei einfachem Anlegen, Lesen, Ändern und Löschen. Wird eine Domäne so
-einfach, dass das Repository nur durchreicht, bleibt es trotzdem – die Struktur soll in allen
-Domänen gleich sein.
-
-### 3.4 Verdrahtung
-
-- Keine globalen Objekte und kein DI-Container. Jede Schicht ist eine **Fabrik-Funktion**, die ihre
-  Abhängigkeiten als Parameter bekommt: `createAuthService({ repository })`,
-  `createAuthRouter({ service })`.
-- `index.ts` ist die **einzige** Stelle, die echte Objekte baut: Konfiguration, Logger, Datenbank,
-  LLM-Client, Repositories und Services.
-- `createApp(deps)` bekommt Logger und Services und hängt nur Router und Middleware ein. Tests
-  übergeben Services mit Fake-Repositories bzw. Fake-Client.
-- Der LLM-Client ist immer ein Parameter, nie ein Import im Service.
-
-### 3.5 Neue Domäne anlegen (Checkliste)
-
-1. Ordner `src/<domäne>/` mit den nötigen Schicht-Dateien.
-2. Tabellen in `<domäne>.tables.ts`, in `src/schema.ts` re-exportieren, Migration mit
-   `pnpm db:generate` erzeugen und prüfen.
-3. Zod-Schemas in `shared/src/<domäne>.ts`, Service mit Interface-Abhängigkeiten, in `index.ts`
-   bauen, Router in `app.ts` einhängen.
-4. Tests: Service mit Fakes, Router mit supertest gegen `createApp`, Repository gegen die Test-DB.
+1. Ordner `src/<domäne>/` mit `tables`, `service`, `router` (und `prompts`, falls nötig).
+2. Migration mit `pnpm db:generate` erzeugen und prüfen (`drizzle-kit` findet alle
+   `*.tables.ts` selbst).
+3. Zod-Schemas in `shared/src/<domäne>.ts`, Router in `app.ts` einhängen.
+4. Tests für alles ohne Modellaufruf (siehe §5); Abläufe mit Modell von Hand und per Beispiel-Suite.
 
 ---
 
@@ -151,7 +135,11 @@ Domänen gleich sein.
 
 ### TypeScript
 
-- `strict` an; kein `any`. Rückgabetypen an exportierten Funktionen ausschreiben.
+- `strict` an; kein `any`. Rückgabetypen nur ausschreiben, wenn TypeScript sie nicht klar aus dem
+  Code erkennt.
+- Ein `interface` nur, wenn es mehr als eine Implementierung gibt – nicht als Name für einen
+  einzelnen Rückgabewert. Keine Fabrik-Funktionen für Services; normale Funktionen mit `db` als
+  Parameter.
 - `async`/`await` für I/O (HTTP, DB, LLM); Express 5 leitet Fehler aus `async`-Handlern selbst an die
   Fehler-Middleware weiter – kein `try/catch` nur zum Weiterreichen.
 - Daten von außen (Request, `.env`, Modellantwort, DB-JSON) werden mit Zod geprüft, bevor der Code
@@ -163,8 +151,9 @@ Domänen gleich sein.
 ### Sprache und Kommentare
 
 - Bezeichner, Datei- und Ordnernamen auf **Englisch**.
-- Kommentare, UI-Texte und Fehlermeldungen an Nutzer auf **Deutsch**.
-- Kommentare erklären das **Warum**, nicht das Was.
+- UI-Texte und Fehlermeldungen an Nutzer auf **Deutsch**.
+- **Keine Kommentare im Code** (weder `/** … */` noch `//`). Klare Namen und kleine Funktionen
+  erklären den Code; das Warum steht in `docs/` oder im Commit-Body.
 
 ### Sicherheit (bleibt gültig bei jeder Änderung)
 
@@ -189,19 +178,26 @@ Domänen gleich sein.
 
 - Jeder Prompt folgt verbindlich [app-prompting-anchor.md](app-prompting-anchor.md) (Reihenfolge
   in §7, harte Regeln in §11).
-- Prompt-Units liegen in der `<domäne>.prompts.ts` ihrer Domäne und tragen einen Kopfkommentar:
-  Archetyp, Surface, Slots, Stopp und was der Code erzwingt.
+- Prompt-Units liegen in der `<domäne>.prompts.ts` ihrer Domäne. Ihr Steckbrief (Archetyp, Surface,
+  Slots, Stopp, was der Code erzwingt) steht in [STUFEN.md](STUFEN.md), nicht im Code.
 - Im Prompt-Text stehen keine Anchor-IDs (`AP-xx`) und keine Verweise auf Dateien.
 
 ---
 
 ## 5. Tests
 
-- **Kein Test ruft ein echtes LLM auf.** Der Client ist ein Fake, der die dokumentierten Antwort-
-  und Stream-Formen des SDK nachbildet.
-- Service-Tests mit Fakes (schnell, ohne DB); Router-Tests mit supertest gegen `createApp`;
-  Repository-Tests gegen die eigene Test-Datenbank `jobmatch_test` (`TEST_DATABASE_URL`). Tests
+- **Kein Test ruft ein echtes LLM auf, und es gibt keinen LLM-Fake.** Abläufe mit Modell
+  (Streaming, Stopp-Gründe, Structured Outputs, Tools, Agent-Schleife) prüft der Entwickler von Hand
+  im Chat und mit der Beispiel-Suite (`pnpm eval`, §7).
+- Automatische Tests decken ab, was ohne Modell läuft: Eingabe-Validierung, Zugriff (401/404),
+  Datenbank-Abfragen, reine Funktionen wie Prompt-Bau und Schemas.
+- Service- und Router-Tests laufen gegen die eigene Test-Datenbank `jobmatch_test`
+  (`TEST_DATABASE_URL`); `useTestDb()` aus `test/helpers.ts` liefert `db`, eine App und angemeldete
+  Test-Nutzer und räumt am Ende auf. Ohne `TEST_DATABASE_URL` werden diese Tests übersprungen. Tests
   sehen aus der `.env` nur Variablen mit `TEST_`-Präfix – nie API-Key oder Entwicklungsdatenbank.
+- Frontend-Specs nur für Sicherheit und Datenfluss: Markdown ohne HTML, API-Client und Token,
+  Chat-Stream, Router-Guard, Login-Weiterleitung, Chat-Store. Die Oberfläche prüft der Entwickler
+  von Hand.
 - Testnamen beschreiben das Verhalten (`'login with wrong password returns 401'`).
 - Vor jedem Commit grün: `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`.
 
@@ -213,7 +209,7 @@ Domänen gleich sein.
 pages/        Seiten (eine je Route)
 components/   wiederverwendbare Komponenten; components/ui/ = shadcn-vue (eigener Code)
 stores/       Pinia-Stores (Setup-Syntax)
-lib/          Hilfen ohne Vue-Bezug (API-Client, SSE-Parser, Markdown)
+lib/          Hilfen ohne Vue-Bezug (API-Client mit Token, Chat-Stream, Markdown)
 ```
 
 - API-Aufrufe nur über den Client aus `lib/`; Typen und Antwort-Prüfung über die Schemas aus

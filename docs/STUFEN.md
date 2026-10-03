@@ -20,7 +20,10 @@ Legende: `[x]` erledigt · `[ ]` offen
   was der Code erzwingt) und bekommt ab der ersten Version eine Beispiel-Suite (STACK.md §7).
 - **Claude ist das Ziel.** Während der Entwicklung darf ein kompatibler Anbieter laufen (z. B. z.ai
   über `ANTHROPIC_BASE_URL`); Funktionen, die nur Claude kann (PDF, Structured Outputs, Caching …),
-  werden trotzdem für Claude gebaut und mit einem Fake getestet.
+  werden trotzdem für Claude gebaut und gegen Claude von Hand und mit der Beispiel-Suite geprüft.
+- **Schwerpunkt KI im Produkt:** Structured Outputs, Tool Use mit eigener Agent-Schleife und
+  Abbruchbedingungen, Evals, Kosten und Tokens messen, Prompt Injection abwehren. Alles andere bleibt
+  so einfach wie möglich (STACK.md, Leitlinie).
 - **Kosten sichtbar machen:** Jede Modellanfrage protokolliert Modell, Effort, Tokens und Dauer.
 
 **Fertig heißt bei jeder Stufe:** Punkte abgehakt, `pnpm lint`/`format:check`/`typecheck`/`test`
@@ -32,7 +35,7 @@ grün, CI grün, README aktualisiert, Lernziele abgehakt.
 
 | Stufe   | Fachlich (siehe IDEE.md)                                | Claude-Thema                                         |
 | ------- | ------------------------------------------------------- | ---------------------------------------------------- |
-| 0       | Fundament: leeres Backend + Frontend, DB, CI            | Client, Konfiguration, Fake fürs Testen              |
+| 0       | Fundament: leeres Backend + Frontend, DB, CI            | Client, Konfiguration, Fehlerklassen                 |
 | 1       | Konto + Coach-Chat                                      | Messages API, Streaming, System-Prompt, Stopp-Gründe |
 | 2       | Lebenslauf-PDF, einmalige Analyse, Rolle, Fassungen     | PDF-Eingabe, Structured Outputs, Effort/Thinking     |
 | 3       | Stellen (Text/Screenshot) + Match-Analyse               | Vision, Structured Outputs, Evals mit Kriterien      |
@@ -62,7 +65,7 @@ Fachcode.
 
 **Shared**
 
-- [x] Paket `shared/` mit Zod; erstes Schema `HealthResponse`, von Backend und Frontend importiert
+- [x] Paket `shared/` mit Zod; Schemas von Backend und Frontend importiert
 
 **Backend**
 
@@ -70,18 +73,16 @@ Fachcode.
 - [x] `config.ts`: Konfiguration aus `.env` (DB-URL, API-Key, Base-URL, Log-Level, Timeouts) mit Zod
       beim Start geprüft; Platzhalter-Key wird abgelehnt
 - [x] `db.ts` + Drizzle eingerichtet; erste Migration aktiviert `pgvector`
-- [x] `createApp(deps)` mit `GET /api/health` (prüft auch die DB-Verbindung) und zentraler
+- [x] `createApp(deps)` mit `GET /api/health` (nur „Server läuft“) und zentraler
       Fehler-Middleware
 - [x] `llm/`: Client-Fabrik (Anthropic-SDK mit Base-URL, Timeout, Retries) und Modell-Zuordnung je
-      Anbieter; ein Fake-Client für Tests
-- [x] `pnpm llm:check`: ein kurzer echter Aufruf, zeigt Modell, Tokens, Dauer (von Hand, kostet)
+      Anbieter
 - [x] Logging mit `pino` ohne Inhalte; Vitest + supertest eingerichtet und grün
 
 **Frontend**
 
 - [x] `frontend/` mit Vite, Vue 3, TypeScript strict, Tailwind v4, shadcn-vue, Pinia, Vue Router
-- [x] Vite-Proxy `/api` → Backend; Seite `/status` zeigt den Health-Check, Antwort mit dem Schema aus
-      `shared` geprüft
+- [x] Vite-Proxy `/api` → Backend
 - [x] ESLint, Prettier, Vitest, `vue-tsc` grün
 
 **Lernziele**
@@ -91,32 +92,32 @@ Fachcode.
 - [ ] Zod: Schema einmal schreiben, für Konfiguration, Request und Frontend-Typen nutzen
 - [ ] Drizzle + drizzle-kit: Tabellen, Verbindung, Migration erzeugen und anwenden
 - [ ] Anthropic-SDK: Client, Base-URL, Timeout, Retries, Fehlerklassen
-- [ ] Warum Tests nie das echte Modell aufrufen – und wie ein Fake die Stream-Formen nachbildet
+- [ ] Warum Tests nie das echte Modell aufrufen – und wie man Modell-Abläufe stattdessen prüft
 
 ---
 
 ## Stufe 1 – Konto + Coach-Chat
 
 **Ziel:** Anmelden und mit dem Coach chatten; Antworten erscheinen live, Gespräche bleiben
-gespeichert. Registrierung bleibt bis zum Go-live per Einstellung gesperrt.
+gespeichert. Konten legt bis zum Go-live nur das Skript `pnpm user:create` an.
 
 **Konto**
 
-- [ ] Tabellen `users`, `auth_tokens`; Registrieren, Anmelden, Abmelden, `me`
-- [ ] Opake Tokens (256 Bit, nur SHA-256 in der DB, Ablaufdatum), `scrypt` für Passwörter
-- [ ] Gleiche Antwort bei unbekannter E-Mail und falschem Passwort; Rate-Limit für Login/Registrierung
-- [ ] `REGISTRATION_ENABLED` (Standard: aus)
+- [x] Tabellen `users`, `auth_tokens`; Anmelden, Abmelden, `me`
+- [x] Opake Tokens (256 Bit, nur SHA-256 in der DB, Ablaufdatum), `scrypt` für Passwörter
+- [x] Gleiche Antwort bei unbekannter E-Mail und falschem Passwort; Rate-Limit für den Login
+- [x] `pnpm user:create <email>`: Konto anlegen oder Passwort neu setzen (keine Registrierung in der App)
 
 **Coach-Chat**
 
-- [ ] Tabellen `conversations`, `messages` (Inhalt als JSON-Inhaltsblöcke, nicht nur Text – nötig
+- [x] Tabellen `conversations`, `messages` (Inhalt als JSON-Inhaltsblöcke, nicht nur Text – nötig
       für Tools und Compaction später)
-- [ ] `POST /api/chat` als Server-Sent Events: `conversation`, `delta`, `done`, `refusal`, `error`
-- [ ] Verlauf aus der DB; Nutzernachricht vor, Antwort nach dem Aufruf speichern (auch Teilantwort
+- [x] `POST /api/chat` als Server-Sent Events: `conversation`, `delta`, `done`, `refusal`, `error`
+- [x] Verlauf aus der DB; Nutzernachricht vor, Antwort nach dem Aufruf speichern (auch Teilantwort
       bei Abbruch, nie eine leere); Abbruch, wenn der Browser die Verbindung trennt
-- [ ] Gespräche auflisten, laden, umbenennen, löschen (nur eigene, sonst 404)
-- [ ] Stopp-Gründe auswerten: `max_tokens`, `refusal` (Teilantwort verwerfen), leere Antwort
-- [ ] Modell- und Effort-Wahl (Normal/Erweitert, Niedrig/Hoch), Effort immer explizit senden
+- [x] Gespräche auflisten, laden, umbenennen, löschen (nur eigene, sonst 404)
+- [x] Stopp-Gründe auswerten: `max_tokens`, `refusal` (Teilantwort verwerfen), leere Antwort
+- [x] Modell- und Effort-Wahl (Normal/Erweitert, Niedrig/Hoch), Effort immer explizit senden
 
 **Prompt-Unit `coach_chat`**
 
@@ -124,13 +125,15 @@ gespeichert. Registrierung bleibt bis zum Go-live per Einstellung gesperrt.
 | --------------- | ------------------- | ---------------- | --------------------------------------- | ------------ | ----------------------------------- |
 | multi-turn chat | advice conversation | Markdown im Chat | Verlauf (indirekt, begrenzt), Nachricht | eine Antwort | Markdown bereinigen, Verlaufsgrenze |
 
-- [ ] Prompt nach Anchor §7 (Frame, Regeln mit Begründung, Scope-Satz) mit Kopfkommentar
+- [x] Prompt nach Anchor §7 (Frame, Regeln mit Begründung, Scope-Satz)
+- [x] Effort wird immer ausdrücklich gesendet (die Standardstufe ist je Modell verschieden);
+      `thinking` bleibt ungesetzt, weil adaptives Thinking bei den Zielmodellen Standard ist
 - [ ] Beispiel-Suite `evals/coach_chat/` mit 5–10 typischen Fragen
 
 **Frontend**
 
-- [ ] Login, Chat-Seite mit Seitenleiste, Streaming, Stopp, „Erneut versuchen“, Kopieren
-- [ ] Markdown sicher rendern; Hinweis bei gekürzter Antwort
+- [x] Login, Chat-Seite mit Seitenleiste, Streaming, Stopp, „Erneut versuchen“, Kopieren
+- [x] Markdown sicher rendern; Hinweis bei gekürzter Antwort
 
 **Lernziele**
 

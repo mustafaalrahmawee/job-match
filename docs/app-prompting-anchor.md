@@ -379,8 +379,8 @@ Every prompt that ships in a user-interactive AI project is **authored under**
 this anchor as binding context. At run time the prompt is self-contained: it
 carries no anchor IDs and no references to this file, because the model cannot
 resolve them and every unresolved reference is noise (AP-18). Provenance lives
-here; the prompt module carries only a short header comment naming archetype,
-surface, slots and stop.
+here; the prompt unit's profile (archetype, surface, slots, stop) lives in
+docs/STUFEN.md, and the prompt module carries no comments.
 
 Berryman & Ziegler Chapters 4–10 are background knowledge, distilled in the
 maintainer's reading notes; the book is not the direct prompt source.
