@@ -3,6 +3,7 @@ import { LoginRequestSchema } from '@job-match/shared';
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
+import AppLogo from '@/components/AppLogo.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -46,44 +47,49 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <main class="mx-auto flex min-h-svh max-w-sm flex-col justify-center gap-6 p-4">
-    <Card>
-      <CardHeader>
-        <CardTitle>Anmelden</CardTitle>
-        <CardDescription>Melde dich an, um mit dem Karriere-Coach zu chatten.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form class="flex flex-col gap-4" novalidate @submit.prevent="submit">
-          <div class="flex flex-col gap-2">
-            <Label for="email">E-Mail</Label>
-            <Input
-              id="email"
-              v-model="email"
-              type="email"
-              autocomplete="username"
-              required
-              data-testid="email"
-            />
-          </div>
-          <div class="flex flex-col gap-2">
-            <Label for="password">Passwort</Label>
-            <Input
-              id="password"
-              v-model="password"
-              type="password"
-              autocomplete="current-password"
-              required
-              data-testid="password"
-            />
-          </div>
-          <p v-if="error" class="text-destructive text-sm" role="alert" data-testid="login-error">
-            {{ error }}
-          </p>
-          <Button type="submit" :disabled="submitting" data-testid="login-submit">
-            {{ submitting ? 'Anmelden …' : 'Anmelden' }}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+  <main
+    class="flex min-h-svh items-center justify-center bg-[radial-gradient(ellipse_at_top,var(--accent),transparent_60%)] p-4"
+  >
+    <div class="flex w-full max-w-sm flex-col items-center gap-8">
+      <AppLogo />
+      <Card class="w-full shadow-lg">
+        <CardHeader>
+          <CardTitle class="text-xl">Willkommen zurück</CardTitle>
+          <CardDescription>Melde dich an, um mit deinem Karriere-Coach zu chatten.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form class="flex flex-col gap-4" novalidate @submit.prevent="submit">
+            <div class="flex flex-col gap-2">
+              <Label for="email">E-Mail</Label>
+              <Input
+                id="email"
+                v-model="email"
+                type="email"
+                autocomplete="username"
+                required
+                data-testid="email"
+              />
+            </div>
+            <div class="flex flex-col gap-2">
+              <Label for="password">Passwort</Label>
+              <Input
+                id="password"
+                v-model="password"
+                type="password"
+                autocomplete="current-password"
+                required
+                data-testid="password"
+              />
+            </div>
+            <p v-if="error" class="text-destructive text-sm" role="alert" data-testid="login-error">
+              {{ error }}
+            </p>
+            <Button type="submit" class="mt-2" :disabled="submitting" data-testid="login-submit">
+              {{ submitting ? 'Anmelden …' : 'Anmelden' }}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   </main>
 </template>

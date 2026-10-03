@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { StoredStopReason } from '@job-match/shared';
-import { Check, Copy } from '@lucide/vue';
+import { Check, Copy, Sparkles } from '@lucide/vue';
 import { computed, ref } from 'vue';
 
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ const NOTICES: Partial<Record<StoredStopReason, string>> = {
 const notice = computed(() => (props.stopReason ? NOTICES[props.stopReason] : undefined));
 
 const copied = ref(false);
+
 async function copy(): Promise<void> {
   await navigator.clipboard.writeText(props.text);
   copied.value = true;
@@ -33,38 +34,50 @@ async function copy(): Promise<void> {
 </script>
 
 <template>
-  <div :class="['flex', role === 'user' ? 'justify-end' : 'justify-start']" :data-role="role">
-    <div
-      :class="[
-        'max-w-[85%] rounded-xl px-4 py-2.5 text-sm',
-        role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted',
-      ]"
+  <div v-if="role === 'user'" class="flex justify-end" data-role="user">
+    <p
+      class="bg-primary text-primary-foreground max-w-[80%] rounded-2xl rounded-br-md px-4 py-2.5 text-sm whitespace-pre-wrap shadow-xs"
+      data-testid="message-text"
     >
-      <p v-if="role === 'user'" class="whitespace-pre-wrap" data-testid="message-text">
-        {{ text }}
-      </p>
-      <p v-else-if="streaming && text === ''" class="text-muted-foreground" data-testid="thinking">
+      {{ text }}
+    </p>
+  </div>
+
+  <div v-else class="flex gap-3" data-role="assistant">
+    <div
+      class="bg-accent text-primary flex size-8 shrink-0 items-center justify-center rounded-full"
+    >
+      <Sparkles class="size-4" />
+    </div>
+    <div class="min-w-0 flex-1 pt-1 text-sm">
+      <p
+        v-if="streaming && text === ''"
+        class="text-muted-foreground animate-pulse"
+        data-testid="thinking"
+      >
         Der Coach denkt nach …
       </p>
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-else class="markdown" data-testid="message-text" v-html="html" />
 
-      <p v-if="notice" class="text-muted-foreground mt-2 text-xs" data-testid="message-notice">
+      <p
+        v-if="notice"
+        class="text-muted-foreground mt-3 border-l-2 pl-3 text-xs"
+        data-testid="message-notice"
+      >
         {{ notice }}
       </p>
-      <div v-if="role === 'assistant' && !streaming" class="mt-1 -mb-1 flex justify-end">
-        <Button
-          variant="ghost"
-          size="icon"
-          class="size-7"
-          aria-label="Antwort kopieren"
-          data-testid="copy"
-          @click="copy"
-        >
-          <Check v-if="copied" class="size-3.5" />
-          <Copy v-else class="size-3.5" />
-        </Button>
-      </div>
+      <Button
+        v-if="!streaming"
+        variant="ghost"
+        size="xs"
+        class="text-muted-foreground mt-2 -ml-2"
+        data-testid="copy"
+        @click="copy"
+      >
+        <Check v-if="copied" /> <Copy v-else />
+        {{ copied ? 'Kopiert' : 'Kopieren' }}
+      </Button>
     </div>
   </div>
 </template>

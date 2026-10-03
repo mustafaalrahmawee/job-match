@@ -55,15 +55,17 @@ function confirmDelete(): void {
 <template>
   <nav aria-label="Gespräche">
     <p v-if="conversations.length === 0" class="text-muted-foreground px-3 py-2 text-sm">
-      Noch keine Gespräche.
+      Noch keine Gespräche – stelle deine erste Frage.
     </p>
     <ul class="flex flex-col gap-0.5">
       <li
         v-for="conversation in conversations"
         :key="conversation.id"
         :class="[
-          'group flex items-center rounded-md',
-          conversation.id === activeId ? 'bg-accent' : 'hover:bg-accent/60',
+          'group flex items-center rounded-lg transition-colors',
+          conversation.id === activeId
+            ? 'bg-background font-medium shadow-xs'
+            : 'text-foreground/80 hover:bg-background/70',
         ]"
         data-testid="conversation-item"
       >
@@ -90,7 +92,7 @@ function confirmDelete(): void {
           <Button
             variant="ghost"
             size="icon"
-            class="size-7 shrink-0 opacity-60 group-hover:opacity-100 focus-visible:opacity-100"
+            class="size-7 shrink-0 md:hidden md:group-focus-within:inline-flex md:group-hover:inline-flex"
             aria-label="Gespräch umbenennen"
             data-testid="rename"
             @click="startRename(conversation)"
@@ -100,7 +102,7 @@ function confirmDelete(): void {
           <Button
             variant="ghost"
             size="icon"
-            class="mr-1 size-7 shrink-0 opacity-60 group-hover:opacity-100 focus-visible:opacity-100"
+            class="mr-1 size-7 shrink-0 md:hidden md:group-focus-within:inline-flex md:group-hover:inline-flex"
             aria-label="Gespräch löschen"
             data-testid="delete"
             @click="askDelete(conversation)"

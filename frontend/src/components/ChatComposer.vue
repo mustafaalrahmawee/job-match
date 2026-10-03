@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { EffortSchema, MAX_MESSAGE_LENGTH, ModelChoiceSchema } from '@job-match/shared';
-import { Send, Square } from '@lucide/vue';
+import { ArrowUp, Square } from '@lucide/vue';
 import { ref } from 'vue';
 
 import { Button } from '@/components/ui/button';
@@ -43,64 +43,79 @@ function selectEffort(value: unknown): void {
 </script>
 
 <template>
-  <form class="flex flex-col gap-2" @submit.prevent="submit">
-    <div class="flex items-end gap-2">
-      <Textarea
-        v-model="text"
-        class="max-h-48 min-h-11 resize-none"
-        placeholder="Schreibe dem Coach …"
-        aria-label="Nachricht an den Coach"
-        :maxlength="MAX_MESSAGE_LENGTH"
-        data-testid="composer-input"
-        @keydown.enter.exact="onEnter"
-      />
+  <form
+    class="bg-card focus-within:border-ring focus-within:ring-ring/30 flex flex-col rounded-2xl border shadow-sm transition-shadow focus-within:ring-3"
+    @submit.prevent="submit"
+  >
+    <Textarea
+      v-model="text"
+      class="max-h-48 min-h-14 resize-none border-0 bg-transparent px-4 pt-3 shadow-none focus-visible:ring-0 dark:bg-transparent"
+      placeholder="Schreibe dem Coach …"
+      aria-label="Nachricht an den Coach"
+      :maxlength="MAX_MESSAGE_LENGTH"
+      data-testid="composer-input"
+      @keydown.enter.exact="onEnter"
+    />
+    <div class="flex items-end gap-1 px-2 pb-2">
+      <div class="flex min-w-0 flex-1 flex-wrap items-center gap-1">
+        <Label for="model-select" class="sr-only">Qualität</Label>
+        <Select :model-value="chat.model" @update:model-value="selectModel">
+          <SelectTrigger
+            id="model-select"
+            size="sm"
+            class="text-muted-foreground hover:bg-muted border-0 bg-transparent text-xs shadow-none dark:bg-transparent"
+            data-testid="model-select"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="standard">Qualität: Normal</SelectItem>
+            <SelectItem value="advanced">Qualität: Erweitert</SelectItem>
+          </SelectContent>
+        </Select>
+        <Label for="effort-select" class="sr-only">Gründlichkeit</Label>
+        <Select :model-value="chat.effort" @update:model-value="selectEffort">
+          <SelectTrigger
+            id="effort-select"
+            size="sm"
+            class="text-muted-foreground hover:bg-muted border-0 bg-transparent text-xs shadow-none dark:bg-transparent"
+            data-testid="effort-select"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="low">Gründlichkeit: Niedrig</SelectItem>
+            <SelectItem value="high">Gründlichkeit: Hoch</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
       <Button
         v-if="chat.streaming"
         type="button"
         variant="outline"
         size="icon"
+        class="shrink-0 rounded-full"
         aria-label="Antwort stoppen"
         data-testid="stop"
         @click="chat.stop"
       >
-        <Square class="size-4" />
+        <Square class="size-3.5 fill-current" />
       </Button>
       <Button
         v-else
         type="submit"
         size="icon"
+        class="shrink-0 rounded-full"
         aria-label="Nachricht senden"
         :disabled="text.trim() === ''"
         data-testid="send"
       >
-        <Send class="size-4" />
+        <ArrowUp class="size-4" />
       </Button>
     </div>
-    <div class="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
-      <div class="flex items-center gap-2">
-        <Label for="model-select" class="text-xs font-normal">Qualität</Label>
-        <Select :model-value="chat.model" @update:model-value="selectModel">
-          <SelectTrigger id="model-select" size="sm" class="w-32" data-testid="model-select">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="standard">Normal</SelectItem>
-            <SelectItem value="advanced">Erweitert</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div class="flex items-center gap-2">
-        <Label for="effort-select" class="text-xs font-normal">Gründlichkeit</Label>
-        <Select :model-value="chat.effort" @update:model-value="selectEffort">
-          <SelectTrigger id="effort-select" size="sm" class="w-28" data-testid="effort-select">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="low">Niedrig</SelectItem>
-            <SelectItem value="high">Hoch</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
   </form>
+  <p class="text-muted-foreground text-center text-xs">
+    <span class="hidden sm:inline">Enter sendet, Umschalt + Enter macht eine neue Zeile. </span>Der
+    Coach kann sich irren.
+  </p>
 </template>

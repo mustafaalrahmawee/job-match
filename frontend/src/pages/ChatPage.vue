@@ -1,8 +1,20 @@
 <script setup lang="ts">
-import { LogOut, Menu, Plus, RotateCw, X } from '@lucide/vue';
+import {
+  CircleAlert,
+  Compass,
+  FileText,
+  LogOut,
+  Menu,
+  MessagesSquare,
+  Plus,
+  RotateCw,
+  Sparkles,
+  X,
+} from '@lucide/vue';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
+import AppLogo from '@/components/AppLogo.vue';
 import ChatComposer from '@/components/ChatComposer.vue';
 import ConversationList from '@/components/ConversationList.vue';
 import MessageBubble from '@/components/MessageBubble.vue';
@@ -19,10 +31,12 @@ const sidebarOpen = ref(false);
 const scroller = ref<HTMLElement | null>(null);
 
 const SUGGESTIONS = [
-  'Wie schreibe ich ein überzeugendes Anschreiben?',
-  'Wie gehe ich mit Lücken im Lebenslauf um?',
-  'Wie bereite ich mich auf ein Vorstellungsgespräch vor?',
+  { icon: FileText, text: 'Wie schreibe ich ein überzeugendes Anschreiben?' },
+  { icon: Compass, text: 'Wie gehe ich mit Lücken im Lebenslauf um?' },
+  { icon: MessagesSquare, text: 'Wie bereite ich mich auf ein Vorstellungsgespräch vor?' },
 ];
+
+const initial = computed(() => auth.user?.email.charAt(0).toUpperCase() ?? '?');
 
 const routeId = computed(() => (typeof route.params.id === 'string' ? route.params.id : null));
 const title = computed(
@@ -94,25 +108,18 @@ const banner = computed(() => {
   <div class="flex h-svh">
     <div
       v-if="sidebarOpen"
-      class="fixed inset-0 z-20 bg-black/40 md:hidden"
+      class="fixed inset-0 z-20 bg-black/30 backdrop-blur-[2px] md:hidden"
       aria-hidden="true"
       @click="sidebarOpen = false"
     />
     <aside
       :class="[
-        'bg-background fixed inset-y-0 left-0 z-30 flex w-72 flex-col border-r transition-transform md:static md:translate-x-0',
+        'bg-sidebar fixed inset-y-0 left-0 z-30 flex w-72 flex-col border-r transition-transform md:static md:translate-x-0',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full',
       ]"
     >
-      <div class="flex items-center gap-2 p-3">
-        <Button
-          class="flex-1 justify-start"
-          variant="outline"
-          data-testid="new-chat"
-          @click="createNew"
-        >
-          <Plus class="size-4" /> Neues Gespräch
-        </Button>
+      <div class="flex items-center justify-between px-4 pt-4 pb-3">
+        <AppLogo />
         <Button
           class="md:hidden"
           variant="ghost"
@@ -123,7 +130,15 @@ const banner = computed(() => {
           <X class="size-4" />
         </Button>
       </div>
-      <div class="flex-1 overflow-y-auto px-2">
+      <div class="px-3 pb-3">
+        <Button class="w-full justify-start shadow-sm" data-testid="new-chat" @click="createNew">
+          <Plus class="size-4" /> Neues Gespräch
+        </Button>
+      </div>
+      <p class="text-muted-foreground px-5 pt-2 pb-1 text-xs font-medium tracking-wide uppercase">
+        Gespräche
+      </p>
+      <div class="flex-1 overflow-y-auto px-2 pb-2">
         <ConversationList
           :conversations="chat.conversations"
           :active-id="chat.activeId"
@@ -132,14 +147,18 @@ const banner = computed(() => {
           @remove="(id) => chat.remove(id)"
         />
       </div>
-      <div class="flex items-center justify-between gap-2 border-t p-3 text-sm">
-        <span class="text-muted-foreground min-w-0 truncate" data-testid="user-email">
-          {{ auth.user?.email }}
-        </span>
+      <div class="flex items-center gap-3 border-t px-4 py-3 text-sm">
+        <div
+          class="bg-accent text-accent-foreground flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
+        >
+          {{ initial }}
+        </div>
+        <span class="min-w-0 flex-1 truncate" data-testid="user-email">{{ auth.user?.email }}</span>
         <Button
           variant="ghost"
           size="icon"
           aria-label="Abmelden"
+          title="Abmelden"
           data-testid="logout"
           @click="logout"
         >
@@ -149,7 +168,7 @@ const banner = computed(() => {
     </aside>
 
     <main class="flex min-w-0 flex-1 flex-col">
-      <header class="flex items-center gap-2 border-b px-4 py-2">
+      <header class="flex h-14 shrink-0 items-center gap-2 border-b px-4">
         <Button
           class="md:hidden"
           variant="ghost"
@@ -159,30 +178,39 @@ const banner = computed(() => {
         >
           <Menu class="size-4" />
         </Button>
-        <h1 class="truncate text-sm font-medium" data-testid="chat-title">{{ title }}</h1>
+        <h1 class="truncate font-medium" data-testid="chat-title">{{ title }}</h1>
       </header>
 
       <div ref="scroller" class="flex-1 overflow-y-auto" data-testid="messages">
-        <div class="mx-auto flex max-w-3xl flex-col gap-4 p-4">
+        <div class="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8">
           <div
             v-if="chat.messages.length === 0 && !chat.streaming"
-            class="flex flex-col items-center gap-4 py-16 text-center"
+            class="flex flex-col items-center gap-6 pt-10 text-center sm:pt-20"
             data-testid="empty-state"
           >
-            <h2 class="text-xl font-semibold">Womit kann ich dir helfen?</h2>
-            <p class="text-muted-foreground text-sm">
-              Ich unterstütze dich bei Bewerbungsunterlagen, Stellensuche und Gesprächsvorbereitung.
-            </p>
+            <div
+              class="bg-accent text-primary flex size-14 items-center justify-center rounded-2xl"
+            >
+              <Sparkles class="size-7" />
+            </div>
             <div class="flex flex-col gap-2">
-              <Button
+              <h2 class="text-2xl font-semibold tracking-tight">Womit kann ich dir helfen?</h2>
+              <p class="text-muted-foreground max-w-md text-sm">
+                Ich unterstütze dich bei Bewerbungsunterlagen, Stellensuche und
+                Gesprächsvorbereitung.
+              </p>
+            </div>
+            <div class="grid w-full gap-3 sm:grid-cols-3">
+              <button
                 v-for="suggestion in SUGGESTIONS"
-                :key="suggestion"
-                variant="outline"
-                size="sm"
-                @click="chat.send(suggestion)"
+                :key="suggestion.text"
+                type="button"
+                class="bg-card hover:border-primary/40 hover:bg-accent/50 flex flex-col items-start gap-3 rounded-xl border p-4 text-left text-sm shadow-xs transition-colors"
+                @click="chat.send(suggestion.text)"
               >
-                {{ suggestion }}
-              </Button>
+                <component :is="suggestion.icon" class="text-primary size-5" />
+                {{ suggestion.text }}
+              </button>
             </div>
           </div>
 
@@ -202,14 +230,15 @@ const banner = computed(() => {
         </div>
       </div>
 
-      <div class="mx-auto flex w-full max-w-3xl flex-col gap-3 p-4 pt-2">
+      <div class="mx-auto flex w-full max-w-3xl flex-col gap-3 px-4 pt-2 pb-4">
         <div
           v-if="banner && !chat.streaming"
-          class="bg-muted flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm"
+          class="bg-accent/60 text-accent-foreground flex items-center gap-3 rounded-xl border border-transparent px-4 py-3 text-sm"
           role="alert"
           data-testid="banner"
         >
-          <span>{{ banner }}</span>
+          <CircleAlert class="size-4 shrink-0" />
+          <span class="flex-1">{{ banner }}</span>
           <Button
             v-if="chat.canRetry"
             variant="outline"
