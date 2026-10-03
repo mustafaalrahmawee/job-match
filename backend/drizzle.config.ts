@@ -4,7 +4,6 @@ import { defineConfig } from 'drizzle-kit';
 
 import { ROOT_ENV_FILE } from './src/config';
 
-// drizzle-kit braucht nur die DB-URL, nicht die ganze App-Konfiguration (kein API-Key nötig).
 if (existsSync(ROOT_ENV_FILE)) {
   process.loadEnvFile(ROOT_ENV_FILE);
 }
@@ -15,10 +14,8 @@ if (!url) {
 
 export default defineConfig({
   dialect: 'postgresql',
-  // Sammelt die `<domäne>.tables.ts` aller Domänen (docs/STACK.md §3.1).
-  schema: './src/schema.ts',
+  schema: './src/**/*.tables.ts',
   out: './drizzle',
-  // camelCase im Code, snake_case in der Datenbank.
   casing: 'snake_case',
   dbCredentials: { url },
   strict: true,

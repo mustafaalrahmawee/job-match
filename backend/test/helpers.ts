@@ -1,20 +1,55 @@
+import Anthropic from '@anthropic-ai/sdk';
+import { inArray } from 'drizzle-orm';
 import { pino } from 'pino';
 import type { Logger } from 'pino';
+import { afterAll } from 'vitest';
 
-import type { HealthService } from '../src/health/health.service';
+import { createApp } from '../src/app';
+import { login, setPassword } from '../src/auth/auth.service';
+import { users } from '../src/auth/auth.tables';
+import { parseConfig } from '../src/config';
+import { createDatabase } from '../src/db';
 
-/** Logger, der nichts schreibt – Tests prüfen Verhalten, nicht Log-Ausgaben. */
-export function silentLogger(): Logger {
-  return pino({ level: 'silent' });
-}
+export const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
 
-/** Health-Service mit festem Ergebnis, für Router-Tests ohne Datenbank. */
-export function fakeHealthService(databaseOk: boolean): HealthService {
-  return { check: () => Promise.resolve({ databaseOk }) };
-}
-
-/** Minimale gültige Umgebung; einzelne Tests überschreiben gezielt einen Wert. */
 export const VALID_ENV = {
   ANTHROPIC_API_KEY: 'test-key',
   DATABASE_URL: 'postgresql://user:pass@localhost:5433/db',
 } as const;
+
+export const PASSWORD = 'a-long-password';
+
+export function silentLogger(): Logger {
+  return pino({ level: 'silent' });
+}
+
+export function useTestDb() {
+  const db = createDatabase(TEST_DATABASE_URL ?? VALID_ENV.DATABASE_URL);
+  const emails: string[] = [];
+  afterAll(async () => {
+    if (emails.length > 0) await db.delete(users).where(inArray(users.email, emails));
+    await db.$client.end();
+  });
+
+  const app = createApp({
+    db,
+    llm: new Anthropic({ apiKey: 'test-key' }),
+    logger: silentLogger(),
+    config: parseConfig(VALID_ENV),
+  });
+
+  function newEmail(): string {
+    const email = `test-${crypto.randomUUID()}@example.com`;
+    emails.push(email);
+    return email;
+  }
+
+  async function signIn() {
+    const email = newEmail();
+    await setPassword(db, email, PASSWORD);
+    const auth = await login(db, { email, password: PASSWORD });
+    return { id: auth.user.id, email, headers: { Authorization: `Bearer ${auth.token}` } };
+  }
+
+  return { db, app, newEmail, signIn };
+}

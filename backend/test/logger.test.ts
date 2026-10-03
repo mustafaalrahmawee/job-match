@@ -17,12 +17,15 @@ it('redacts passwords, contents and the authorization header', () => {
   logger.info({ password: 'geheim', content: 'Mein Lebenslauf', length: 15 }, 'eingang');
   logger.info({ body: { password: 'geheim', content: 'Text' } }, 'verschachtelt');
   logger.info({ req: { headers: { authorization: 'Bearer abc' } } }, 'anfrage');
+  logger.info({ token: 'opak-1', auth: { token: 'opak-2', passwordHash: 'hash-1' } }, 'konto');
 
   const output = lines.join('');
+  expect(output).not.toContain('opak-1');
+  expect(output).not.toContain('opak-2');
+  expect(output).not.toContain('hash-1');
   expect(output).not.toContain('geheim');
   expect(output).not.toContain('Mein Lebenslauf');
   expect(output).not.toContain('Text');
   expect(output).not.toContain('Bearer abc');
-  // Zahlen wie Längen bleiben – sie sind das, was geloggt werden soll.
   expect(output).toContain('"length":15');
 });
