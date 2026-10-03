@@ -1,3 +1,8 @@
-// Öffentlicher API-Vertrag: Zod-Schemas, die Backend (Prüfung) und Frontend (Typen) teilen.
-// Je Domäne eine Datei; hier nur re-exportiert.
-export * from './health';
+import { z } from 'zod';
+
+export * from './auth';
+export * from './chat';
+
+export const ErrorResponseSchema = z.object({
+  error: z.object({ code: z.string(), message: z.string() }),
+});
