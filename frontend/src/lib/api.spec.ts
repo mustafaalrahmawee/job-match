@@ -1,30 +1,55 @@
-import { HealthResponseSchema } from '@job-match/shared';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
-import { ApiError, getJson } from './api';
+import { apiJson, getToken, setToken, setUnauthorizedHandler } from './api';
+
+const OkSchema = z.object({ status: z.literal('ok') });
 
 function mockFetch(status: number, body: unknown) {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(() => Promise.resolve(new Response(JSON.stringify(body), { status }))),
-  );
+  const fetchMock = vi.fn(() => Promise.resolve(new Response(JSON.stringify(body), { status })));
+  vi.stubGlobal('fetch', fetchMock);
+  return fetchMock;
 }
 
-describe('getJson', () => {
-  afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  localStorage.clear();
+  setUnauthorizedHandler(undefined);
+});
 
-  it('liefert den geprüften Körper, auch bei 503', async () => {
-    mockFetch(503, { status: 'degraded', database: 'error' });
+it('sends the token as bearer header', async () => {
+  setToken('abc');
+  const fetchMock = mockFetch(200, { status: 'ok' });
 
-    await expect(getJson('/api/health', HealthResponseSchema)).resolves.toEqual({
-      status: 'degraded',
-      database: 'error',
-    });
+  await apiJson('GET', '/api/x', OkSchema);
+
+  const init = (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1];
+  expect((init.headers as Record<string, string>).Authorization).toBe('Bearer abc');
+});
+
+it('uses the backend message and falls back to a general one', async () => {
+  mockFetch(404, { error: { code: 'x', message: 'Nicht da.' } });
+  await expect(apiJson('GET', '/api/x', OkSchema)).rejects.toMatchObject({
+    status: 404,
+    message: 'Nicht da.',
   });
 
-  it('wirft ApiError, wenn der Körper nicht zum Schema passt', async () => {
-    mockFetch(200, { status: 'vielleicht' });
+  mockFetch(502, '<html>Bad Gateway</html>');
+  await expect(apiJson('GET', '/api/x', OkSchema)).rejects.toThrow(
+    'Es ist ein Fehler aufgetreten.',
+  );
+});
 
-    await expect(getJson('/api/health', HealthResponseSchema)).rejects.toBeInstanceOf(ApiError);
-  });
+it('drops the token and calls the handler only on 401 with a sent token', async () => {
+  const handler = vi.fn();
+  setUnauthorizedHandler(handler);
+  mockFetch(401, { error: { code: 'invalid_credentials', message: 'Falsch.' } });
+
+  await expect(apiJson('POST', '/api/auth/login', OkSchema, {})).rejects.toThrow('Falsch.');
+  expect(handler).not.toHaveBeenCalled();
+
+  setToken('abgelaufen');
+  await expect(apiJson('GET', '/api/auth/me', OkSchema)).rejects.toThrow();
+  expect(getToken()).toBeNull();
+  expect(handler).toHaveBeenCalledOnce();
 });

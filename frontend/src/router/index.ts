@@ -1,12 +1,35 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
-import StatusPage from '@/pages/StatusPage.vue';
+import ChatPage from '@/pages/ChatPage.vue';
+import LoginPage from '@/pages/LoginPage.vue';
+import { useAuthStore } from '@/stores/auth';
+
+declare module 'vue-router' {
+  interface RouteMeta {
+    requiresAuth?: boolean;
+    guestOnly?: boolean;
+  }
+}
 
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
-    // Stufe 0 hat nur diese Seite; ab Stufe 1 kommen Login und Chat dazu.
-    { path: '/', redirect: '/status' },
-    { path: '/status', name: 'status', component: StatusPage },
+    { path: '/', redirect: '/chat' },
+    { path: '/login', name: 'login', component: LoginPage, meta: { guestOnly: true } },
+    { path: '/chat/:id?', name: 'chat', component: ChatPage, meta: { requiresAuth: true } },
   ],
+});
+
+router.beforeEach(async (to) => {
+  const auth = useAuthStore();
+  await auth.restore();
+
+  if (to.meta.requiresAuth && !auth.isAuthenticated) {
+    return {
+      name: 'login',
+      query: to.fullPath === '/chat' ? {} : { redirect: to.fullPath },
+    };
+  }
+  if (to.meta.guestOnly && auth.isAuthenticated) return { name: 'chat' };
+  return true;
 });
