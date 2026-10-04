@@ -1,10 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
+import type { ChatEvent } from '@job-match/shared';
 import { inArray } from 'drizzle-orm';
 import { pino } from 'pino';
 import type { Logger } from 'pino';
 import { afterAll } from 'vitest';
 
 import { createApp } from '../src/app';
+import type { AppDeps } from '../src/app';
 import { login, setPassword } from '../src/auth/auth.service';
 import { users } from '../src/auth/auth.tables';
 import { parseConfig } from '../src/config';
@@ -19,11 +21,18 @@ export const VALID_ENV = {
 
 export const PASSWORD = 'a-long-password';
 
+export function parseEvents(body: string): ChatEvent[] {
+  return body
+    .split('\n\n')
+    .filter((chunk) => chunk.includes('data: '))
+    .map((chunk) => JSON.parse(chunk.slice(chunk.indexOf('data: ') + 6)) as ChatEvent);
+}
+
 export function silentLogger(): Logger {
   return pino({ level: 'silent' });
 }
 
-export function useTestDb() {
+export function useTestDb(deps: Partial<Pick<AppDeps, 'llm' | 'config'>> = {}) {
   const db = createDatabase(TEST_DATABASE_URL ?? VALID_ENV.DATABASE_URL);
   const emails: string[] = [];
   afterAll(async () => {
@@ -33,9 +42,9 @@ export function useTestDb() {
 
   const app = createApp({
     db,
-    llm: new Anthropic({ apiKey: 'test-key' }),
+    llm: deps.llm ?? new Anthropic({ apiKey: 'test-key' }),
     logger: silentLogger(),
-    config: parseConfig(VALID_ENV),
+    config: deps.config ?? parseConfig(VALID_ENV),
   });
 
   function newEmail(): string {

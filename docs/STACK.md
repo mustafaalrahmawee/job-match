@@ -119,7 +119,7 @@ Migration + Model, Zod-Schema ≈ FormRequest + API-Resource.
   und gibt sie an `createApp`; die Router bekommen davon, was sie brauchen
   (`createAuthRouter(db)`, `createChatRouter({ db, llm, logger, config })`).
 - Der Anthropic-Client ist immer ein Parameter (Typ `Anthropic` aus dem SDK), nie ein Import im
-  Service. Es gibt kein eigenes Interface und keinen Fake dafür.
+  Service. Es gibt kein eigenes Interface dafür; Tests übergeben einen Mock (siehe §5).
 
 ### 3.4 Neue Domäne anlegen (Checkliste)
 
@@ -127,7 +127,7 @@ Migration + Model, Zod-Schema ≈ FormRequest + API-Resource.
 2. Migration mit `pnpm db:generate` erzeugen und prüfen (`drizzle-kit` findet alle
    `*.tables.ts` selbst).
 3. Zod-Schemas in `shared/src/<domäne>.ts`, Router in `app.ts` einhängen.
-4. Tests für alles ohne Modellaufruf (siehe §5); Abläufe mit Modell von Hand und per Beispiel-Suite.
+4. Tests mit Mock-Client, für Modellabläufe zusätzlich Integrationstests (siehe §5) und Beispiel-Suite.
 
 ---
 
@@ -188,11 +188,15 @@ Migration + Model, Zod-Schema ≈ FormRequest + API-Resource.
 
 ## 5. Tests
 
-- **Kein Test ruft ein echtes LLM auf, und es gibt keinen LLM-Fake.** Abläufe mit Modell
-  (Streaming, Stopp-Gründe, Structured Outputs, Tools, Agent-Schleife) prüft der Entwickler von Hand
-  im Chat und mit der Beispiel-Suite (`pnpm eval`, §7).
-- Automatische Tests decken ab, was ohne Modell läuft: Eingabe-Validierung, Zugriff (401/404),
-  Datenbank-Abfragen, reine Funktionen wie Prompt-Bau und Schemas.
+- **Unit-Tests** (`pnpm test`, laufen in CI) rufen nie ein echtes Modell auf. Wo ein Service den
+  Client braucht, bekommt er einen Mock, dessen `messages.stream` eine feste Antwort liefert. So wird
+  der eigene Code geprüft: gesendeter Prompt, SSE-Events, Stopp-Gründe, Fehler, was gespeichert wird.
+  Dazu Eingabe-Validierung, Zugriff (401/404), Datenbank-Abfragen, Prompt-Bau und Schemas.
+- **Integrationstests** (`pnpm test:integration`, `test/integration/`) rufen das **echte** Modell
+  auf, ohne Mock. Sie prüfen Eigenschaften statt Wortlaut: Stopp-Grund, nicht leere Antwort, Tokens,
+  Event-Folge, Fehlercodes. Für Testläufe dient z.ai (`TEST_ANTHROPIC_API_KEY`,
+  `TEST_ANTHROPIC_BASE_URL`, Default z.ai), weil Claude dafür zu teuer ist. Ohne Key werden sie
+  übersprungen; sie laufen nur von Hand, nie in CI.
 - Service- und Router-Tests laufen gegen die eigene Test-Datenbank `jobmatch_test`
   (`TEST_DATABASE_URL`); `useTestDb()` aus `test/helpers.ts` liefert `db`, eine App und angemeldete
   Test-Nutzer und räumt am Ende auf. Ohne `TEST_DATABASE_URL` werden diese Tests übersprungen. Tests

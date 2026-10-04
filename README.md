@@ -77,7 +77,8 @@ Alle im Wurzelordner; sie laufen über alle Pakete (`backend`, `frontend`, `shar
 | `pnpm lint`                         | ESLint                                                       |
 | `pnpm format` / `pnpm format:check` | Prettier                                                     |
 | `pnpm typecheck`                    | `tsc` bzw. `vue-tsc`                                         |
-| `pnpm test`                         | Vitest (ohne echtes Modell; Backend-Tests gegen Test-DB)     |
+| `pnpm test`                         | Vitest mit Mock-Client (Backend-Tests gegen Test-DB)         |
+| `pnpm test:integration`             | Backend gegen echtes Modell (z.ai, kostet wenig, nie in CI)  |
 | `pnpm db:generate`                  | neue Migration aus den `*.tables.ts` erzeugen (drizzle-kit)  |
 | `pnpm db:migrate`                   | Migrationen anwenden                                         |
 | `pnpm user:create <email>`          | Konto anlegen oder Passwort neu setzen                       |

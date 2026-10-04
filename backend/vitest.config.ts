@@ -20,9 +20,10 @@ function testEnvFromFile(): Record<string, string> {
   );
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   test: {
-    include: ['test/**/*.test.ts'],
+    include: mode === 'integration' ? ['test/integration/*.test.ts'] : ['test/*.test.ts'],
+    testTimeout: mode === 'integration' ? 120_000 : 5_000,
     env: testEnvFromFile(),
   },
-});
+}));
