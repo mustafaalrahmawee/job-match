@@ -13,11 +13,14 @@ import type { Config } from '../../src/config';
 import { answerText, createLlmClient } from '../../src/llm/client';
 import { PRICES_USD_PER_MILLION, ZAI_BASE_URL, resolveModels } from '../../src/llm/models';
 
+const TurnSchema = z.object({ role: MessageRoleSchema, text: z.string().min(1) });
+
 const CaseSchema = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
-  note: z.string().optional(),
+  art: z.enum(['typisch', 'rand', 'schwierig']),
+  note: z.string(),
   conversation: z
-    .array(z.object({ role: MessageRoleSchema, text: z.string().min(1) }))
+    .array(TurnSchema)
     .min(1)
     .refine((turns) => turns.at(-1)?.role === 'user', 'Der Verlauf muss mit einer Frage enden'),
 });
@@ -75,7 +78,7 @@ export function summaryTable(rows: readonly ResultRow[]): string {
     ].join(' | ');
   });
   return [
-    '| Variante | Fragen | Input-Tokens | Output-Tokens | Ø Output/Frage | Kosten | Zeit gesamt | Ø Zeit/Frage | längste Frage |',
+    '| Variante | Aufrufe | Input-Tokens | Output-Tokens | Ø Output/Aufruf | Kosten | Zeit gesamt | Ø Zeit/Aufruf | längster Aufruf |',
     '| --- | --- | --- | --- | --- | --- | --- | --- | --- |',
     ...lines.map((line) => `| ${line} |`),
   ].join('\n');
@@ -97,10 +100,10 @@ async function ask(
   config: Config,
   model: string,
   effort: Effort,
-  evalCase: EvalCase,
+  turns: readonly z.infer<typeof TurnSchema>[],
 ) {
   const params = buildChatRequest({
-    history: evalCase.conversation.map((turn) => ({
+    history: turns.map((turn) => ({
       role: turn.role,
       content: [{ type: 'text' as const, text: turn.text }],
     })),
@@ -130,10 +133,41 @@ async function ask(
   }
 }
 
-function transcript(evalCase: EvalCase): string {
-  return evalCase.conversation
-    .map((turn) => `**${turn.role === 'user' ? 'Person' : 'Coach'}:** ${turn.text}`)
-    .join('\n\n');
+export async function runCase(
+  client: Anthropic,
+  config: Config,
+  modelId: string,
+  effort: Effort,
+  evalCase: EvalCase,
+) {
+  const parts = [`## ${evalCase.id} (${evalCase.art})`, `_${evalCase.note}_`];
+  const rows: ResultRow[] = [];
+  const checkpoints = evalCase.conversation.filter((turn) => turn.role === 'user').length;
+  for (const [index, turn] of evalCase.conversation.entries()) {
+    if (turn.role === 'assistant') {
+      parts.push(`**Coach (Skript):** ${turn.text}`);
+      continue;
+    }
+    parts.push(`**Person:** ${turn.text}`);
+    const result = await ask(
+      client,
+      config,
+      modelId,
+      effort,
+      evalCase.conversation.slice(0, index + 1),
+    );
+    parts.push(`**Coach (Modell):**\n\n${result.answer}`);
+    rows.push({
+      modelId,
+      effort,
+      caseId: checkpoints > 1 ? `${evalCase.id}/${rows.length + 1}` : evalCase.id,
+      stop: result.stop,
+      inputTokens: result.inputTokens,
+      outputTokens: result.outputTokens,
+      durationMs: result.durationMs,
+    });
+  }
+  return { section: `${parts.join('\n\n')}\n`, rows };
 }
 
 export async function runCoachChatEval(args: {
@@ -166,22 +200,14 @@ export async function runCoachChatEval(args: {
       const sections: string[] = [];
       const rows: ResultRow[] = [];
       for (const evalCase of cases) {
-        const result = await ask(client, config, modelId, effort, evalCase);
-        sections.push(
-          `## ${evalCase.id}\n\n_${evalCase.note ?? ''}_\n\n${transcript(evalCase)}\n\n**Coach (Antwort):**\n\n${result.answer}\n`,
-        );
-        rows.push({
-          modelId,
-          effort,
-          caseId: evalCase.id,
-          stop: result.stop,
-          inputTokens: result.inputTokens,
-          outputTokens: result.outputTokens,
-          durationMs: result.durationMs,
-        });
-        log(
-          `${modelId}/${effort} ${evalCase.id}: ${result.outputTokens} Tokens, ${result.durationMs} ms, ${result.stop}`,
-        );
+        const result = await runCase(client, config, modelId, effort, evalCase);
+        sections.push(result.section);
+        rows.push(...result.rows);
+        for (const row of result.rows) {
+          log(
+            `${modelId}/${effort} ${row.caseId}: ${row.outputTokens} Tokens, ${row.durationMs} ms, ${row.stop}`,
+          );
+        }
       }
       await writeFile(
         `${dir}/${modelId}-${effort}.md`,

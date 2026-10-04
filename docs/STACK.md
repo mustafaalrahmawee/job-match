@@ -230,7 +230,7 @@ Jede Prompt-Unit bekommt ab ihrer ersten Version eine Beispiel-Suite (Prompt-Reg
 
 ```
 backend/evals/<prompt-unit>/
-  cases.json              Array mit 5–20 repräsentativen Fällen (je Objekt: id, note, conversation)
+  cases.json              Array mit 5–20 Fällen (je Objekt: id, art, note, conversation)
   prompts.json            Array der Prompt-Fassungen ({ version, prompt }), jeder Lauf hängt an
   run.ts                  baut den Prompt wie die App, holt die Antworten, schreibt eine Fassung
   fassungen/<fassung>/    committet, wird nie überschrieben
@@ -239,7 +239,12 @@ backend/evals/<prompt-unit>/
     metrics.tsv           Stopp-Grund, Tokens und Dauer je Fall und Variante
 ```
 
-- Ablauf: Fassung `v1` erzeugen, Prompt verbessern, `v2` erzeugen, beide Ordner vergleichen.
+- Fälle decken die Bandbreite ab: `art` ist `typisch`, `rand` oder `schwierig`. Typische Fälle
+  überwiegen wie in der echten Nutzung (bei `coach_chat` 8/5/5).
+- Mehrstufige Fälle sind Canned Conversations: Das Modell antwortet an jeder `user`-Stelle, danach
+  geht es mit der festen `assistant`-Antwort aus dem Skript weiter. So bleiben Fassungen vergleichbar.
+- Ablauf: Fassung `v1` erzeugen, Prompt verbessern, `v2` erzeugen, beide Ordner vergleichen. Pro
+  Fassung nur eine Prompt-Änderung, damit klar ist, welche Regel welche Wirkung hat.
 - Jede Fassung läuft in vier Varianten: beide Modelle (Normal, Erweitert) je mit Effort `low` und
   `high`.
 - Evals rufen das **echte** Modell auf: nur bewusst und von Hand starten
