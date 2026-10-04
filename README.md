@@ -71,18 +71,18 @@ Vite-Dev-Server leitet `/api` an das Backend weiter.
 
 Alle im Wurzelordner; sie laufen über alle Pakete (`backend`, `frontend`, `shared`).
 
-| Befehl                              | Zweck                                                        |
-| ----------------------------------- | ------------------------------------------------------------ |
-| `pnpm dev`                          | Backend (`tsx watch`) und Frontend (Vite) mit Neustart       |
-| `pnpm lint`                         | ESLint                                                       |
-| `pnpm format` / `pnpm format:check` | Prettier                                                     |
-| `pnpm typecheck`                    | `tsc` bzw. `vue-tsc`                                         |
-| `pnpm test`                         | Vitest mit Mock-Client (Backend-Tests gegen Test-DB)         |
-| `pnpm test:integration`             | Backend gegen echtes Modell (z.ai, kostet wenig, nie in CI)  |
-| `pnpm db:generate`                  | neue Migration aus den `*.tables.ts` erzeugen (drizzle-kit)  |
-| `pnpm db:migrate`                   | Migrationen anwenden                                         |
-| `pnpm user:create <email>`          | Konto anlegen oder Passwort neu setzen                       |
-| `pnpm eval coach_chat`              | Beispiel-Suite des Coach-Prompts, **echtes** Modell (kostet) |
+| Befehl                              | Zweck                                                       |
+| ----------------------------------- | ----------------------------------------------------------- |
+| `pnpm dev`                          | Backend (`tsx watch`) und Frontend (Vite) mit Neustart      |
+| `pnpm lint`                         | ESLint                                                      |
+| `pnpm format` / `pnpm format:check` | Prettier                                                    |
+| `pnpm typecheck`                    | `tsc` bzw. `vue-tsc`                                        |
+| `pnpm test`                         | Vitest mit Mock-Client (Backend-Tests gegen Test-DB)        |
+| `pnpm test:integration`             | Backend gegen echtes Modell (z.ai, kostet wenig, nie in CI) |
+| `pnpm db:generate`                  | neue Migration aus den `*.tables.ts` erzeugen (drizzle-kit) |
+| `pnpm db:migrate`                   | Migrationen anwenden                                        |
+| `pnpm user:create <email>`          | Konto anlegen oder Passwort neu setzen                      |
+| `pnpm eval coach_chat v1`           | Fassung `v1` der Beispiel-Suite, **echtes** Modell (z.ai)   |
 
 Einzelnes Paket: `pnpm --filter @job-match/backend run test` (bzw. `frontend`, `shared`).
 
@@ -129,5 +129,5 @@ bisherige Teilantwort.
   häufig bereits ein Postgres auf 5432 läuft.
 - **Test-Datenbank bei bestehendem Volume:** `docker/initdb` läuft nur beim allerersten Start. Gab
   es das Volume schon: `docker compose exec db createdb -U jobmatch jobmatch_test`.
-- **Kein Test ruft ein echtes Modell auf.** Nur `pnpm eval …` tut das – von Hand, und es kostet
-  Geld.
+- **`pnpm test` ruft kein echtes Modell auf** (Mock-Client). `pnpm test:integration` und
+  `pnpm eval …` tun das – nur von Hand, mit `TEST_ANTHROPIC_API_KEY` über z.ai.

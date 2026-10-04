@@ -6,7 +6,7 @@ import { parseConfig } from '../../src/config';
 import { listMessages } from '../../src/conversations/conversations.service';
 import { answerText, createLlmClient } from '../../src/llm/client';
 import { describeLlmError } from '../../src/llm/errors';
-import { resolveModels } from '../../src/llm/models';
+import { ZAI_BASE_URL, resolveModels } from '../../src/llm/models';
 import { TEST_DATABASE_URL, VALID_ENV, parseEvents, useTestDb } from '../helpers';
 
 const API_KEY = process.env.TEST_ANTHROPIC_API_KEY;
@@ -14,7 +14,7 @@ const API_KEY = process.env.TEST_ANTHROPIC_API_KEY;
 const config = parseConfig({
   ...VALID_ENV,
   ANTHROPIC_API_KEY: API_KEY ?? 'missing',
-  ANTHROPIC_BASE_URL: process.env.TEST_ANTHROPIC_BASE_URL ?? 'https://api.z.ai/api/anthropic',
+  ANTHROPIC_BASE_URL: process.env.TEST_ANTHROPIC_BASE_URL ?? ZAI_BASE_URL,
 });
 const llm = createLlmClient(config);
 const model = resolveModels(config.anthropicBaseUrl).standard;

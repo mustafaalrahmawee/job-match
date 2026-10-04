@@ -230,13 +230,21 @@ Jede Prompt-Unit bekommt ab ihrer ersten Version eine Beispiel-Suite (Prompt-Reg
 
 ```
 backend/evals/<prompt-unit>/
-  cases/        5–20 repräsentative Eingaben (JSON)
-  run.ts        baut den Prompt wie die App, holt die Antwort, schreibt outputs/
-  outputs/      committete Antworten – ihr Diff zeigt, was eine Prompt-Änderung bewirkt
+  cases.json              Array mit 5–20 repräsentativen Fällen (je Objekt: id, note, conversation)
+  prompts.json            Array der Prompt-Fassungen ({ version, prompt }), jeder Lauf hängt an
+  run.ts                  baut den Prompt wie die App, holt die Antworten, schreibt eine Fassung
+  fassungen/<fassung>/    committet, wird nie überschrieben
+    summary.md            je Variante: Tokens, Zeit gesamt und im Schnitt, längste Frage
+    <modell>-<effort>.md  alle Fälle als Gespräch, je Variante eine Datei
+    metrics.tsv           Stopp-Grund, Tokens und Dauer je Fall und Variante
 ```
 
-- Evals rufen das **echte** Modell auf und kosten Geld: nur bewusst und von Hand starten
-  (`pnpm eval <prompt-unit>`), nie in CI.
+- Ablauf: Fassung `v1` erzeugen, Prompt verbessern, `v2` erzeugen, beide Ordner vergleichen.
+- Jede Fassung läuft in vier Varianten: beide Modelle (Normal, Erweitert) je mit Effort `low` und
+  `high`.
+- Evals rufen das **echte** Modell auf: nur bewusst und von Hand starten
+  (`pnpm eval <prompt-unit> <fassung>`), nie in CI. Sie nutzen wie die Integrationstests
+  `TEST_ANTHROPIC_API_KEY` und z.ai (`TEST_ANTHROPIC_BASE_URL`), weil Claude dafür zu teuer ist.
 - Jeder Lauf protokolliert Modell, Effort, Tokens und Dauer (AP-58).
 - Sobald eine Unit ein festes Ergebnis hat (z. B. Score), kommen prüfbare Kriterien dazu.
 

@@ -4,6 +4,8 @@ export type ModelMap = Readonly<Record<ModelChoice, string>>;
 
 const ANTHROPIC_HOST = 'api.anthropic.com';
 
+export const ZAI_BASE_URL = 'https://api.z.ai/api/anthropic';
+
 export const CLAUDE_MODELS: ModelMap = {
   standard: 'claude-sonnet-5-5',
   advanced: 'claude-opus-5-5',
@@ -12,6 +14,13 @@ export const CLAUDE_MODELS: ModelMap = {
 export const GLM_MODELS: ModelMap = {
   standard: 'glm-5.3-flash',
   advanced: 'glm-5.3',
+};
+
+export const PRICES_USD_PER_MILLION: Readonly<
+  Record<string, { readonly input: number; readonly output: number }>
+> = {
+  'glm-5.3-flash': { input: 0.15, output: 0.5 },
+  'glm-5.3': { input: 1.4, output: 4.4 },
 };
 
 export function resolveModels(baseUrl: string): ModelMap {
