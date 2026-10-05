@@ -45,6 +45,7 @@ export interface ResultRow {
   stop: string;
   inputTokens: number;
   outputTokens: number;
+  thinkingChars: number;
   durationMs: number;
 }
 
@@ -63,6 +64,7 @@ export function summaryTable(rows: readonly ResultRow[]): string {
   const lines = [...variants].map(([variant, group]) => {
     const output = group.reduce((sum, row) => sum + row.outputTokens, 0);
     const input = group.reduce((sum, row) => sum + row.inputTokens, 0);
+    const thinking = group.reduce((sum, row) => sum + row.thinkingChars, 0);
     const time = group.reduce((sum, row) => sum + row.durationMs, 0);
     const slowest = group.reduce((max, row) => (row.durationMs > max.durationMs ? row : max));
     return [
@@ -71,6 +73,7 @@ export function summaryTable(rows: readonly ResultRow[]): string {
       input,
       output,
       Math.round(output / group.length),
+      Math.round(thinking / group.length),
       cost(group[0]?.modelId ?? '', input, output),
       seconds(time),
       seconds(time / group.length),
@@ -78,8 +81,8 @@ export function summaryTable(rows: readonly ResultRow[]): string {
     ].join(' | ');
   });
   return [
-    '| Variante | Aufrufe | Input-Tokens | Output-Tokens | Ø Output/Aufruf | Kosten | Zeit gesamt | Ø Zeit/Aufruf | längster Aufruf |',
-    '| --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+    '| Variante | Aufrufe | Input-Tokens | Output-Tokens | Ø Output/Aufruf | Ø Thinking (Zeichen) | Kosten | Zeit gesamt | Ø Zeit/Aufruf | längster Aufruf |',
+    '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
     ...lines.map((line) => `| ${line} |`),
   ].join('\n');
 }
@@ -117,6 +120,10 @@ async function ask(
     const message = await client.messages.stream(params).finalMessage();
     return {
       answer: answerText(message),
+      thinking: message.content
+        .map((block) => (block.type === 'thinking' ? block.thinking : ''))
+        .join('')
+        .trim(),
       stop: message.stop_reason ?? '–',
       inputTokens: message.usage.input_tokens,
       outputTokens: message.usage.output_tokens,
@@ -125,6 +132,7 @@ async function ask(
   } catch (error) {
     return {
       answer: `**Fehler:** ${error instanceof Error ? error.message : String(error)}`,
+      thinking: '',
       stop: 'error',
       inputTokens: 0,
       outputTokens: 0,
@@ -142,6 +150,7 @@ export async function runCase(
 ) {
   const parts = [`## ${evalCase.id} (${evalCase.art})`, `_${evalCase.note}_`];
   const rows: ResultRow[] = [];
+  const thinking: string[] = [];
   const checkpoints = evalCase.conversation.filter((turn) => turn.role === 'user').length;
   for (const [index, turn] of evalCase.conversation.entries()) {
     if (turn.role === 'assistant') {
@@ -157,17 +166,20 @@ export async function runCase(
       evalCase.conversation.slice(0, index + 1),
     );
     parts.push(`**Coach (Modell):**\n\n${result.answer}`);
+    const caseId = checkpoints > 1 ? `${evalCase.id}/${rows.length + 1}` : evalCase.id;
+    if (result.thinking) thinking.push(`## ${caseId}\n\n${result.thinking}\n`);
     rows.push({
       modelId,
       effort,
-      caseId: checkpoints > 1 ? `${evalCase.id}/${rows.length + 1}` : evalCase.id,
+      caseId,
       stop: result.stop,
       inputTokens: result.inputTokens,
       outputTokens: result.outputTokens,
+      thinkingChars: result.thinking.length,
       durationMs: result.durationMs,
     });
   }
-  return { section: `${parts.join('\n\n')}\n`, rows };
+  return { section: `${parts.join('\n\n')}\n`, thinking, rows };
 }
 
 export async function runCoachChatEval(args: {
@@ -198,10 +210,12 @@ export async function runCoachChatEval(args: {
     VARIANTS.map(async ({ model, effort }) => {
       const modelId = models[model];
       const sections: string[] = [];
+      const thinking: string[] = [];
       const rows: ResultRow[] = [];
       for (const evalCase of cases) {
         const result = await runCase(client, config, modelId, effort, evalCase);
         sections.push(result.section);
+        thinking.push(...result.thinking);
         rows.push(...result.rows);
         for (const row of result.rows) {
           log(
@@ -213,12 +227,19 @@ export async function runCoachChatEval(args: {
         `${dir}/${modelId}-${effort}.md`,
         `# Fassung ${version} · ${modelId} · Effort ${effort}\n\n${sections.join('\n---\n\n')}`,
       );
+      if (thinking.length > 0) {
+        await writeFile(
+          `${dir}/${modelId}-${effort}.thinking.md`,
+          `# Thinking · Fassung ${version} · ${modelId} · Effort ${effort}\n\n${thinking.join('\n---\n\n')}`,
+        );
+      }
       return rows;
     }),
   );
 
   const rows = results.flat();
-  const header = 'model\teffort\tcase\tstop\tinput_tokens\toutput_tokens\tduration_ms';
+  const header =
+    'model\teffort\tcase\tstop\tinput_tokens\toutput_tokens\tthinking_chars\tduration_ms';
   const tsv = rows.map((row) => Object.values(row).join('\t'));
   await writeFile(`${dir}/metrics.tsv`, `${[header, ...tsv].join('\n')}\n`);
   const summary = `# Fassung ${version}\n\nLaufzeit (Varianten parallel): ${seconds(performance.now() - startedAt)}\n\n${summaryTable(rows)}\n`;

@@ -22,14 +22,17 @@ describe('coach_chat example suite', () => {
     const stream = vi.fn(() => ({
       finalMessage: () =>
         Promise.resolve({
-          content: [{ type: 'text', text: 'Modellantwort' }],
+          content: [
+            { type: 'thinking', thinking: 'Überlegung', signature: '' },
+            { type: 'text', text: 'Modellantwort' },
+          ],
           stop_reason: 'end_turn',
           usage: { input_tokens: 10, output_tokens: 5 },
         }),
     }));
     const client = { messages: { stream } } as unknown as Anthropic;
 
-    const { section, rows } = await runCase(client, parseConfig(VALID_ENV), 'm', 'low', {
+    const { section, thinking, rows } = await runCase(client, parseConfig(VALID_ENV), 'm', 'low', {
       id: 'dialog',
       art: 'schwierig',
       note: 'Notiz',
@@ -46,6 +49,9 @@ describe('coach_chat example suite', () => {
     expect(sent).toEqual([1, 3]);
     expect(rows.map((row) => row.caseId)).toEqual(['dialog/1', 'dialog/2']);
     expect(section).toContain('**Coach (Skript):** Skript 1');
+    expect(section).not.toContain('Überlegung');
+    expect(thinking).toEqual(['## dialog/1\n\nÜberlegung\n', '## dialog/2\n\nÜberlegung\n']);
+    expect(rows.map((row) => row.thinkingChars)).toEqual([10, 10]);
     expect(section.match(/\*\*Coach \(Modell\):\*\*/g)).toHaveLength(2);
   });
 
@@ -57,7 +63,7 @@ describe('coach_chat example suite', () => {
   });
 
   it('sums tokens, cost and time per variant', () => {
-    const row = { stop: 'end_turn', inputTokens: 100 };
+    const row = { stop: 'end_turn', inputTokens: 100, thinkingChars: 1000 };
     const table = summaryTable([
       {
         ...row,
@@ -86,10 +92,10 @@ describe('coach_chat example suite', () => {
     ]);
 
     expect(table).toContain(
-      '| glm-5.3-flash · low | 2 | 200 | 400 | 200 | $0.0002 | 8.0 s | 4.0 s | b (6.0 s) |',
+      '| glm-5.3-flash · low | 2 | 200 | 400 | 200 | 1000 | $0.0002 | 8.0 s | 4.0 s | b (6.0 s) |',
     );
     expect(table).toContain(
-      '| unknown · high | 1 | 100 | 50 | 50 | – | 1.0 s | 1.0 s | a (1.0 s) |',
+      '| unknown · high | 1 | 100 | 50 | 50 | 1000 | – | 1.0 s | 1.0 s | a (1.0 s) |',
     );
   });
 });

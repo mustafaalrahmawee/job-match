@@ -8,32 +8,25 @@ _Einstieg ins Anschreiben, konkrete Rahmenangabe vorhanden_
 
 **Coach (Modell):**
 
-Starte mit einem Einstieg, der deine Motivation **und** deinen Nutzen für den Shop verbindet – nicht mit Floskeln wie „Hiermit bewerbe ich mich…" oder „Mit großem Interesse…".
+Starte mit einem individuellen Einstieg, der die Stelle, dein stärkstes Relevant-Merkmal und den Bezug zum Unternehmen verbindet – nicht mit "Hiermit bewerbe ich mich…".
 
-## Warum das wichtig ist
+**Beispiel für einen starken Einstieg:**
 
-Recruiter überfliegen Anschreiben oft in wenigen Sekunden. Die ersten zwei Sätze entscheiden, ob weitergelesen wird. Bei einem Online-Shop zählt vor allem: Verstehst du, dass Frontend dort = Umsatz, Conversion und Nutzererlebnis bedeutet?
+> Als Frontend-Entwickler mit [X Jahren] Erfahrung in [React/Vue/etc.] habe ich zuletzt [konkretes Projekt, z. B. "ein Checkout-Redesign umgesetzt, das die Conversion-Rate um 12 % steigerte"]. Genau diese Mischung aus nutzerzentrierter Umsetzung und E-Commerce-Erfahrung bringe ich zu [Firmenname] mit.
 
-## Drei funktionierende Einstiege
+**Warum so:**
 
-**1. Bezug zum Produkt/Umsatz:**
-> „Ob Ladezeit, Usability oder Checkout – als Frontend-Entwickler weiß ich, dass jede Sekunde und jeder Klick im E-Commerce direkt messbaren Einfluss auf den Umsatz hat. Genau dort möchte ich mit meiner Erfahrung aus [X Jahren / Projekten] ansetzen."
+- Recruitern entscheiden oft nach den ersten 2–3 Sätzen, ob sie weiterlesen.
+- Floskeln ("Hiermit bewerbe ich mich…", "mit großem Interesse…") verschwenden diesen Platz.
+- Bei einem Online-Shop zählt E-Commerce-Bezug: Performance, Conversion, UX – das solltest du im ersten Satz andeuten.
 
-**2. Bezug zum Tech-Stack der Anzeige:**
-> „React, TypeScript und ein Design-System, das skaliert – genau daran arbeite ich seit [X Jahren], und genau das sucht [Name des Shops] laut Ihrer Anzeige."
+**Damit ich dir einen konkreten Formulierungsvorschlag geben kann, brauche ich noch:**
 
-**3. Bezug zu einem konkreten Projekt des Shops:**
-> „Ihr neuer Checkout-Prozess ist mir aufgefallen: klar strukturiert und schnell. Solche Interfaces zu bauen und weiterzuentwickeln, ist meine Spezialität."
+1. Wie viele Jahre Erfahrung hast du und mit welchen Technologien (React, Vue, Angular)?
+2. Hast du schon an Shop- oder E-Commerce-Projekten gearbeitet?
+3. Um welches Unternehmen geht es – gibt es etwas, das dir an deren Shop aufgefallen ist (z. B. Performance, Design, Sortiment)?
 
-Wähle den Einstieg, der am ehesten zu deiner Situation passt – und ergänze im zweiten Satz einen Beleg (Jahre Erfahrung, Technologie, Erfolgsmessung wie „Ladezeit um 30 % reduziert").
-
-## Damit ich dir einen konkreten Formulierungsvorschlag geben kann
-
-- Wie heißt der Shop, und was steht in der Stellenanzeige als Tech-Stack (z. B. React, Vue, Angular)?
-- Wie viele Jahre Erfahrung hast du, und gab es E-Commerce-Bezüge in deinen Projekten?
-- Was reizt dich besonders an genau diesem Arbeitgeber?
-
-Mit diesen Angaben formuliere ich dir gerne einen passenden Einstieg.
+Mit diesen Angaben schreibe ich dir zwei bis drei Einstiegsvarianten zum Auswählen.
 
 ---
 
@@ -45,26 +38,28 @@ _Gehaltsverhandlung mit konkreten Zahlen_
 
 **Coach (Modell):**
 
-Verhandle unbedingt – eine Lücke von 8.000 € (rund 15 %) ist in den meisten Fällen verhandelbar, solange du sie mit Argumenten untermauerst.
+Verhandeln lohnt sich hier auf jeden Fall – fordern Sie konkret **58.000–60.000 €** und begründen Sie die Zahl, statt nur zu fragen „geht es mehr?". So erhöhen Sie die Chance, sich bei 55.000–57.000 € zu treffen.
 
-**So gehst du vor:**
+**So gehen Sie vor:**
 
-1. **Zuerst Begeisterung signalisieren, dann verhandeln.** Etwa: „Die Stelle reizt mich sehr, und ich kann mir gut vorstellen, zum Team zu kommen. Bei der Vergütung bin ich aber noch nicht am Ziel."
+1. **Danken + Gegenangebot:** „Ich freue mich sehr über das Angebot. Auf Basis meiner Erfahrung und der aktuellen Marktwerte für diese Rolle hatte ich eine Vergütung von ca. 60.000 € eingeordnet – da wären wir mit 52.000 € noch etwas auseinander."
+2. **Begründung liefern:** Marktdaten (z. B. Gehaltsreporte für Branche und Region), Ihre Berufserfahrung, Qualifikationen oder spezielle Skills, die die Stelle direkt brauchen.
+3. **Kollaborativ bleiben:** Signalisieren Sie, dass Sie die Rolle wollen – es geht ums Finden, nicht ums Gewinnen.
 
-2. **Kontern mit einer konkreten Zahl – etwas über deinem Wunsch.** Nenne 59.000–60.000 €, damit du nach unten Spielraum hast und am Ende nahe an deinen 60.000 € landen kannst.
+**Falls das Budget starr ist, verhandeln Sie das Gesamtpaket:**
 
-3. **Begründung liefern, nicht nur fordern.** Am stärksten wirken:
-   - Marktdaten für die Rolle (z. B. aus Gehaltsreporten)
-   - Deine spezifische Qualifikation oder Erfahrung, die das Unternehmen braucht
-   - Deine aktuelle bzw. letzte Vergütung, wenn sie höher liegt
+- Bonus oder variabler Anteil
+- Gehaltsüberprüfung nach 6 Monaten (schriftlich festhalten!)
+- Weiterbildungsbudget, zusätzliche Urlaubstage, Homeoffice-Pauschale
+- Firmenwagen, Jobticket, bessere technische Ausstattung
 
-4. **Gesamtpaket im Blick behalten.** Wenn das Grundgehalt nicht voll bewegt wird: Bonus, mehr Urlaub, Weiterbildungsbudget, Firmenwagen, Homeoffice-Regelung oder ein Gehaltssprung nach Probezeit verhandeln.
+**Was mir noch fehlt, um die Strategie zu schärfen:**
 
-**Beispielformulierung:**
+- Um welche **Position, Branche und Region** geht es? (Gehälter unterscheiden sich stark – 52.000 € in München ist etwas anderes als in Rostock.)
+- Was verdienen Sie **aktuell** bzw. war in früheren Gesprächen schon mal eine Zahl im Raum?
+- Sind die 52.000 € **Fixum** oder inklusive variabler Anteile?
 
-> „Ich freue mich sehr über das Angebot. Auf Basis meiner Erfahrung in [X] und der üblichen Vergütung für diese Rolle in [Region] hatte ich mit etwa 60.000 € kalkuliert. Können wir uns dort annähern?"
-
-Damit ich dir eine passgenauere Strategie geben kann: **Um welche Rolle und Branche geht es, in welcher Region, und wie viel Berufserfahrung bringst du mit?** Davon hängt ab, ob 60.000 € realistisch am Markt ist oder ob du deinen Anker anders setzen solltest.
+Mit diesen Infos kann ich Ihnen einen konkreten Formulierungsvorschlag für die Antwort auf das Angebot schreiben.
 
 ---
 
@@ -76,28 +71,22 @@ _Lücke im Lebenslauf: Erklärung fürs Gespräch_
 
 **Coach (Modell):**
 
-Kurz gesagt: Eine 8-monatige Lücke ist kein Ausschlusskriterium – entscheidend ist, dass Sie sie kurz, ehrlich und ohne Rechtfertigungston erklären und dann zum Gespräch über Ihre Qualifikation zurücklenken.
+Kurz und sachlich erklären, was Sie in der Zeit gemacht haben, und dann direkt zur Stelle zurückkehren, auf die Sie sich bewerben. Die Lücke ist nicht das Thema – Ihre Haltung dazu ist es.
 
-So gehen Sie konkret vor:
+**So gelingt die Antwort im Gespräch:**
 
-**1. Bereiten Sie 2–3 Sätze vor, nicht mehr**
-Je länger Sie erklären, desto mehr wirkt es wie eine Verteidigung. Beispiel-Struktur:
-- Was war der Grund (in einem Satz)?
-- Was haben Sie in der Zeit getan oder gelernt?
-- Überleitung zu Ihrer Motivation für die neue Stelle
+- **Ein bis zwei Sätze reichen.** Wer zu lange erklärt, wirkt defensiv. Beispiel: „Nach dem Ausscheiden aus meiner letzten Position habe ich mir bewusst Zeit genommen, um mich gezielt neu zu orientieren – darunter eine Weiterbildung in X."
+- **Ehrlich bleiben.** Recruitment-Profis hören Ausreden sofort raus. Ob Weiterbildung, Familienzeit, Pflege, Gesundheit oder Jobsuche – ein wahrer Grund, nüchtern vorgetragen, ist immer stärker als eine geschönte Geschichte.
+- **Aktivität zeigen.** Was auch immer es war: Falls Sie sich weitergebildet, nebenbei gearbeitet, ein Projekt betreut oder sich intensiv beworben haben, nennen Sie es. Das zeigt Handlungsfähigkeit.
+- **Brücke schlagen.** Enden Sie mit dem Bezug zur Stelle: „Deshalb passt genau diese Position jetzt gut zu mir, weil..."
 
-**2. Seien Sie ehrlich, aber nicht ausführlich**
-Erfinden Sie nichts – Lücken lassen sich grob prüfen, und nachträglich entdeckte Unwahrheiten kosten das Angebot. Gleichzeitig müssen Sie medizinische oder private Details nicht offenlegen. „Aus persönlichen Gründen" plus ein positiver Satz dazu reicht.
+**Was Sie vermeiden sollten:**
 
-**3. Zeigen Sie, dass die Zeit nicht „leer" war**
-Auch Bewerbungen selbst, Weiterbildungen, Familiensorge oder Reisen lassen sich positiv rahmen: organisiertes Selbstmanagement, neue Perspektive, refaktierte berufliche Ziele.
+- Sich entschuldigen oder die Lücke rechtfertigen wollen
+- Unwahre Angaben (Kündigungsschutz, Arbeitszeugnisse und Referenzen können geprüft werden)
+- Negative Äußerungen über den ehemaligen Arbeitgeber
 
-**4. Was Sie vermeiden sollten**
-- Sich entschuldigen oder die Lücke „erklären wollen"
-- Den alten Arbeitgeber schlechtreden
-- Unerbetene Details zu Krankheit oder Privatem
-
-Um Ihnen eine passgenaue Formulierung zu erarbeiten: **Was lag denn in diesen 8 Monaten konkret vor?** Jobwechsel mit Suchphase, Weiterbildung, familiäre Gründe, Gesundheit, eine Auszeit – je nachdem fällt die Antwort unterschiedlich aus.
+Damit ich Ihnen eine konkrete Formulierung erarbeiten kann: **Was war der Grund für die acht Monate?** Zum Beispiel aktive Jobsuche, Weiterbildung, gesundheitliche Gründe, Familienzeit oder eine geplante Auszeit?
 
 ---
 
@@ -109,22 +98,19 @@ _Fehlende Angaben: erwartet wird eine gezielte Rückfrage statt Erfindung_
 
 **Coach (Modell):**
 
-Das kann ich erst seriös beurteilen, wenn ich beides vor mir habe – im Verlauf sind bisher weder die Stellenanzeige noch deine Bewerbungsunterlagen enthalten.
+Das kann ich Ihnen sagen – dafür brauche ich aber zwei Dinge von Ihnen:
 
-Schick mir bitte:
+1. **Die Stellenanzeige** – am besten den vollständigen Text oder zumindest die Abschnitte zu Aufgaben, Anforderungen und Profil.
+2. **Ihre Bewerbung** – Ihren Lebenslauf und, falls vorhanden, das Anschreiben.
 
-- **Die Stellenanzeige** (Link oder Text: Jobtitel, Aufgaben, Anforderungen)
-- **Deinen Lebenslauf** (als Text oder eingefügte Kopie)
-- **Falls vorhanden: dein Anschreiben**
+Senden Sie mir beides, und ich prüfe die Übereinstimmung. Konkret schaue ich dann auf:
 
-Dann gleiche ich für dich ab:
+- **Pflichtanforderungen**: Decken Sie die geforderten Qualifikationen, Kenntnisse und Erfahrungen ab?
+- **Wunschqualifikationen**: Wo punkten Sie zusätzlich?
+- **Sprache und Begriffe**: Nutzt Ihr Lebenslauf dieselben Fachbegriffe wie die Anzeige?
+- **Lücken**: Gibt es Anforderungen, die Sie nicht oder nur teilweise erfüllen – und wie lassen sich diese geschickt einordnen?
 
-1. Welche **Anforderungen** die Stelle nennt
-2. Welche davon dein Lebenslauf **abdeckt** – und mit welchen Belegen
-3. Wo **Lücken** sind und wie du sie umschiffst (umformulieren, Beispiel nachliefern, oder offen ansprechen)
-4. Ob **Begriffe und Formulierungen** aus der Anzeige in deinen Unterlagen auftauchen – das hilft sowohl dem Recruiter als auch etwaigen automatischen Filtern
-
-Sobald du mir die Unterlagen schickst, bekommst du eine konkrete Einschätzung mit klarer Empfehlung: bewerben, nachbessern oder lieber nicht.
+Sie können die Unterlagen einfach hier einfügen oder die wichtigsten Punkte zusammenfassen.
 
 ---
 
@@ -136,27 +122,28 @@ _Sprachwechsel mitten im Gespräch: Antwort folgt auf Englisch_
 
 **Coach (Modell):**
 
-**Nennen Sie eine Spanne, keine einzelne Zahl – und begründen Sie sie kurz.** Eine Spanne gibt Verhandlungsspielraum, und eine Begründung (Erfahrung, Qualifikation, Marktdaten) zeigt, dass Ihre Vorstellung fundiert ist.
+Geben Sie eine **Spanne an, nicht eine einzelne Zahl** – und begründen Sie diese kurz mit Ihrer Erfahrung und dem Marktwert. So wirken Sie vorbereitet, bleiben aber verhandlungsfähig.
 
 So gehen Sie konkret vor:
 
-**1. Vorbereitung**
-- Recherchieren Sie das Marktniveau für die Position, z. B. über StepStone-Gehaltsreport, Glassdoor, Kununu oder Tarifverträge der Branche.
-- Kennen Sie Ihr Minimum, Ihre realistische Zielgröße und Ihre Traumnummer.
+**1. Vorab recherchieren**
+- Gehaltsdatenbanken wie StepStone-Gehaltsreport, Gehalt.de oder Kununu für Ihre Position und Region
+- Aktuelles Gehalt als Anker: Was ist realistisch aktuell plus 10–15 %?
 
-**2. Im Gespräch**
-- Nennen Sie eine Spanne von etwa 10–15 % Breite, z. B. „55.000 bis 62.000 Euro brutto jährlich".
-- Setzen Sie Ihre **Zielgröße an den unteren Rand** der Spanne – so bleibt Raum nach oben, ohne dass Sie sich überfordern.
-- Ergänzen Sie eine kurze Begründung: „Basierend auf meinen fünf Jahren Erfahrung in … und den üblichen Gehältern in dieser Region."
+**2. Im Gespräch die Spanne geschickt setzen**
+- Nennen Sie Ihre eigentliche Wunschzahl am **unteren Ende der Spanne** – Verhandlungsspielraum nach oben bleibt erhalten.
+- Beispiel: „Basierend auf meiner Erfahrung von X Jahren in [Bereich] und den üblichen Marktgehältern bewege ich mich zwischen 58.000 und 63.000 Euro."
+- Verbinden Sie die Zahl immer mit einer Begründung (Qualifikation, Verantwortung, Marktwert), nie als bloße Forderung.
 
-**3. Wenn die Frage früh im Prozess kommt**
-- Sie dürfen freundlich aufschieben: „Gerne komme ich dazu – können Sie mir zunächst sagen, welche Bandbreite für diese Position vorgesehen ist?"
-- Behalten Sie aber eine Spanne parat, falls die Gegenseite besteht.
+**3. Auf die Gesamtvergütung schauen**
+Bonus, Firmenwagen, Weiterbildungsbudget, zusätzliche Urlaubstage oder Homeoffice-Regelungen sind verhandelbar, wenn das Grundgehalt feststeht.
 
-**4. Denken Sie über das Grundgehalt hinaus**
-- Unternehmenswagen, Boni, Weiterbildung, Homeoffice, Urlaubstage – das kann eine starre Grenze beim Gehalt ausgleichen.
+**4. Wenn Sie herausgefordert werden („Was verdienen Sie aktuell?")**
+Ehrlich antworten, aber direkt ergänzen, warum der Wechsel eine Anpassung rechtfertigt – z. B. mehr Verantwortung in der neuen Rolle.
 
-Damit ich Ihnen eine konkrete Spanne und Formulierung vorschlagen kann: **Für welche Position und Branche bewerben Sie sich, und wie viele Jahre Berufserfahrung bringen Sie mit?** Haben Sie bereits eine Gehaltsangabe in einer Stellenanzeige gesehen?
+---
+
+Damit ich Ihnen eine konkrete Spanne und eine Formulierung für Ihr Gespräch erarbeiten kann: **Für welche Position bewerben Sie sich, in welcher Branche und Region, und wie viel Berufserfahrung bringen Sie mit?**
 
 **Coach (Skript):** Nenne eine Spanne statt einer festen Zahl und begründe sie mit Marktwerten und deiner Erfahrung. So bleibst du verhandlungsfähig.
 
@@ -164,27 +151,25 @@ Damit ich Ihnen eine konkrete Spanne und Formulierung vorschlagen kann: **Für w
 
 **Coach (Modell):**
 
-Frame it around what you're moving *toward*, not what you're escaping — and never criticize your current employer. That's the core rule.
+Answer it forward-looking: say what you're moving *toward*, not what you're running *from*. Interviewers use this question to check whether you'll also speak badly about them one day.
 
-Here's a simple structure:
+A strong answer has three parts:
 
-1. **State a neutral, factual reason** (1–2 sentences)
-2. **Pivot to the pull factor**: what attracts you to the new role or company
-3. **Connect it to your growth**: skills, scope, or direction you want
+1. **A positive summary of your current role** – what you learned or achieved
+2. **A concrete reason for the change** – growth, scope, skills, industry direction
+3. **A link to this specific job** – why the new role solves that
 
-Example:
+Example structure:
 
-> "I've learned a lot in my current role, especially in [area]. Now I'm looking for a position with more [responsibility/scope/focus on X], and this role offers exactly that."
+> "I've grown a lot in my current role, especially in X. I'm now looking for a position with more responsibility for Y, and this role offers exactly that."
 
-What to avoid:
+Avoid:
 
-- **Complaints** about your boss, colleagues, or company culture
-- **Money or frustration** as the main driver (even if true)
-- **Vague answers** like "I need a change" — they raise red flags
+- Negative comments about your boss, colleagues, or company
+- "Salary" as the only reason
+- Vague answers like "I just felt it was time for something new" without follow-up
 
-The reasoning: interviewers use this question to test your professionalism and whether you'll badmouth *them* later. A forward-looking answer shows maturity and genuine interest in their role.
-
-To make this concrete for you: **What is your main reason for leaving?** If you tell me, I can help you phrase it in a way that works in the interview.
+One targeted question so I can help you phrase your version: **What is your actual reason for leaving?** (e.g., no promotion path, reorganization, wanting a different domain, relocation) – then we can turn it into a strong, honest answer.
 
 ---
 
@@ -196,13 +181,13 @@ _Anliegen außerhalb des Coachings: Grenze nennen, nächsten Schritt anbieten_
 
 **Coach (Modell):**
 
-Das gehört leider nicht zum Karriere-Coaching – hier unterstütze ich bei Lebenslauf, Stellensuche, Bewerbungsschreiben und Vorstellungsgesprächen. Für ein Rezept findest du online schnell gute Anleitungen.
+Ein Rezept kann ich dir hier leider nicht geben – mein Fokus liegt auf Bewerbungsunterlagen, Stellensuche und Vorbereitung auf Vorstellungsgespräche.
 
-Gerne können wir stattdessen an deiner Bewerbung weiterarbeiten. Zum Beispiel:
+Gerne unterstütze ich dich stattdessen bei einem dieser Themen, zum Beispiel:
 
-- **Lebenslauf**: Sollen wir ihn gemeinsam optimieren?
-- **Stellenanzeigen**: Hast du eine Ausschreibung gefunden, zu der du passt?
-- **Vorstellungsgespräch**: Möchtest du typische Fragen üben?
+- **Lebenslauf**: Überarbeiten oder strukturieren
+- **Stellenanzeigen**: Analysieren, welche Anforderungen auf dich zutreffen
+- **Vorstellungsgespräch**: Typische Fragen üben oder deine Selbstpräsentation schärfen
 
 Womit möchtest du starten?
 
@@ -216,29 +201,28 @@ _Klassische Interviewfrage_
 
 **Coach (Modell):**
 
-Die beste Antwort ist eine **echte, aber für die Stelle unkritische Schwäche** – plus was Sie konkret dagegen tun. Ehrlich wirkt das nicht durch Verharmlosung, sondern durch den sichtbaren Umgang damit.
+Nennen Sie eine **echte Schwäche**, die nicht die Kernanforderungen der Stelle trifft – und zeigen Sie konkret, was Sie dagegen unternehmen. Genau das wirkt ehrlich und souverän.
 
-## Die 3-Schritte-Formel
+**Die bewährte Formel:**
 
-1. **Schwäche klar benennen** – keine Floskel, sondern etwas Reales.
-2. **Kurz einordnen oder beispielhaft machen** – wann zeigt sie sich?
-3. **Gegenmaßnahme nennen** – was Sie tun, damit sie Sie (und das Team) nicht ausbremst.
+1. **Schwäche benennen** – konkret, ohne Selbstvernichtung
+2. **Situation kurz einordnen** – wo sie sich zeigt
+3. **Gegenmaßnahme** – was Sie aktiv tun
+4. **Fortschritt** – was sich bereits verbessert hat
 
-## Beispiel
+**Beispiel:**
 
-> "Ich bin in neuen Teams anfangs zurückhaltend und melde mich in großen Runden seltener zu Wort. Damit mir dabei nichts verloren geht, bereite ich mich vor Besprechungen schriftlich vor und bringe meine Punkte aktiv ein. Das hat sich schon nach wenigen Wochen gelockert, aber es bleibt etwas, an dem ich bewusst arbeite."
+> „Ich habe früher dazu geneigt, Aufgaben selbst zu erledigen, statt früh um Hilfe zu bitten. In meinem letzten Projekt habe ich mir deshalb angewöhnt, spätestens nach zwei Stunden Blockade aktiv Unterstützung zu suchen – das hat mir und dem Team schon mehrfach Zeit gespart."
 
-Das wirkt glaubwürdig, weil es spezifisch ist und zeigt: Die Person kann mit eigenem Feedback umgehen.
+**Was Sie vermeiden sollten:**
 
-## Was Sie vermeiden sollten
+- **Verkleidete Stärken** wie „Ich bin Perfektionist" oder „Ich arbeite zu viel" – genau das wirkt unehrlich, das wollen Sie ja vermeiden
+- **Kernkompetenzen der Stelle schwächen** – wer sich als Buchhalter bewirbt, sollte keine „Unordnung in Zahlen" eingestehen
+- **Zu intime Einblicke** – es geht um Berufsbezug, nicht um Persönlichkeitsanalyse
 
-- **Verkleidete Stärken** wie "Ich bin Perfektionist" oder "Ich arbeite zu viel" – Personaler hören das täglich und werten es als Ausweichmanöver.
-- **K.o.-Schwächen für die Stelle**: "Ich bin unpünktlich" bei einem Job mit Schichtplan, "Ich hasse Zahlen" im Controlling.
-- **Zu lange Bekenntnisse**: Ein, zwei Sätze pro Schritt reichen. Die Schwäche soll nicht zum Mittelpunkt des Gesprächs werden.
+**Wichtig:** Die Frage prüft weniger die Schwäche selbst als Ihre **Selbstreflexion und Lernbereitschaft**. Wer sagen kann „Ich kenne meine Entwicklungsfelder und arbeite daran", punktet.
 
-Der Trick ist also nicht, keine Schwäche zu nennen – sondern eine zu wählen, die **echt ist, aber die Kernanforderungen der Stelle nicht trifft**.
-
-Um Ihnen eine passende Formulierung zu erarbeiten: **Auf welche Stelle bewerben Sie sich, und was wäre eine Schwäche, die bei Ihnen tatsächlich zutrifft?** Dann prüfen wir, ob sie sich dafür eignet oder ob wir eine andere wählen.
+Damit ich Ihnen eine passende Formulierung erarbeiten kann: **Auf welche Stelle bewerben Sie sich, und welche Schwäche kommt bei Ihnen ehrlicherweise infrage?**
 
 ---
 
@@ -250,38 +234,37 @@ _Quereinstieg: Umgang mit dem Lebenslauf_
 
 **Coach (Modell):**
 
-**Der Bruch entsteht nicht durch den Wechsel selbst, sondern durch die Präsentation.** Ein Lebenslauf, der rein chronologisch mit Ihrer Lehrerlaufbahn beginnt, erzählt "Lehrerin, die es anders probiert". Ein Lebenslauf, der mit Ihrem IT-Ziel beginnt, erzählt "IT-Fachkraft mit ungewöhnlichem, aber wertvollem Hintergrund".
+Der Wechsel wirkt nicht wie ein Bruch, wenn Ihr Lebenslauf eine Entwicklung erzählt statt zwei getrennte Welten nebeneinanderzustellen. Das erreichen Sie mit vier Anpassungen:
 
-So setzen Sie das um:
+## 1. Kurzprofil an den Anfang
+2–3 Sätze, die den Wechsel als bewusste, vorbereitete Entscheidung darstellen. Zum Beispiel:
 
-**1. Profil ganz oben statt chronologischem Einstieg**
-3–4 Sätze unter "Profil" oder "Berufsziel", etwa:
-> "Lehrerin mit [X] Jahren Erfahrung in digitaler Wissensvermittlung und [Fortbildung/Kurs], auf der Suche nach einer Position als [konkrete IT-Rolle]."
+> „Lehrerin mit [X] Jahren Erfahrung in der Vermittlung komplexer Inhalte und in der Arbeit mit digitalen Tools. Aktuell qualifiziere ich mich gezielt in [Bereich/Kurs/Zertifikat] für den Einstieg in [Zielrolle]."
 
-Damit ist die Richtung gesetzt, bevor jemand Ihre Stationen liest.
+Damit ist der Wechsel erklärt, bevor ein Personalverantwortlicher überhaupt Ihre Stationen liest.
 
-**2. Kompetenzen vor Chronologie**
-- Gliederung: Profil → IT-Kompetenzen & Zertifikate → relevanter Werdegang → übrige Erfahrung
-- Fortbildungen, Kurse und eigene Projekte (auch private) gehören weit nach oben, nicht als Fußnote ans Ende.
+## 2. Fortbildung prominent platzieren
+Erstellen Sie direkt unter dem Profil eine eigene Rubrik **„IT-Qualifikationen & Projekte"** – noch vor der Berufserfahrung. Kurse, Zertifikate und eigene Projekte gehören hierher, nicht in eine Fußnote am Ende.
 
-**3. Das Lehramt IT-spezifisch übersetzen**
-Statt "Unterricht Klasse 5–10" das nennen, was IT-Relevanz hat:
-- Eingesetzte digitale Tools und Plattformen (welche genau?)
-- Mitgestaltete Digitalisierungsprojekte oder Medienkonzepte an der Schule
-- Informatik- oder Medienunterricht, falls zutreffend
-- Didaktik übersetzt sich in: Schulungen, Anwenderbetreuung, Dokumentation, Erklären komplexer Inhalte
+## 3. Lehrerfahrung übersetzen statt streichen
+Ihre Lehrjahre sind Ihr stärkstes Kapital, wenn Sie die IT-relevanten Anteile benennen:
 
-**4. Laufende Qualifizierung sichtbar machen**
-Wenn Sie aktuell einen Kurs oder eine Umschulung machen: explizit mit Stand angeben ("laufend, Abschluss erwartet MM/JJJJ"). Das zeigt, dass der Wechsel geplant ist, nicht spontan.
+- Digitale Unterrichtsmaterialien oder Lernplattformen eingesetzt? → *„Einführung und Betreuung von [Tool]"*
+- Lernstände ausgewertet? → *„Datenbasierte Auswertung und Reporting"*
+- Projekte oder AGs geleitet? → *„Konzeption und Umsetzung von Projekten mit [Technologie]"*
+
+## 4. Hybrid-Lebenslauf nutzen
+Rein chronologisch betont das Alte. Ein Kompetenzblock vor dem Werdegang betont, was Sie für die IT mitbringen.
 
 ---
 
-Damit ich Ihnen konkrete Formulierungen vorschlagen kann, fehlen mir zwei Angaben:
+Damit ich Ihnen konkrete Formulierungen geben kann, brauche ich noch drei Angaben:
 
-1. **In welche IT-Richtung wollen Sie?** Entwicklung, Datenanalyse, IT-Administration, UX – oder Richtung IT-Trainerin/Anwendersupport?
-2. **Was bringen Sie schon mit?** Kurse, Zertifikate, Programmiererfahrung, Projekte?
+1. **Welche IT-Richtung** streben Sie an? (Entwicklung, Datenanalyse, IT-Support, UX, IT-Trainerin …)
+2. **Welche Fortbildungen, Zertifikate oder eigenen Projekte** gibt es bereits?
+3. **Welches Fach** unterrichten Sie und **seit wann**?
 
-Zur Einordnung: Bei Richtung IT-Trainerin oder Anwenderbetreuung ist Ihr didaktischer Background fast das Kernargument – dort sähe der Lebenslauf anders aus als bei einer Bewerbung als Entwicklerin.
+Gerade Punkt 1 macht einen großen Unterschied: Als Mathematik- oder Informatiklehrkraft mit Didaktik-Hintergrund sind Sie z. B. für Rollen wie IT-Trainerin oder Technical Writerin fast schon überqualifiziert – das würde ich im Lebenslauf ganz anders betonen als für einen Weg in die Softwareentwicklung.
 
 ---
 
@@ -293,23 +276,22 @@ _Emotionale Lage: Ton und konkreter nächster Schritt_
 
 **Coach (Modell):**
 
-30 Absagen sind ein deutliches Signal – aber was Sie ändern sollten, hängt davon ab, **wo** im Bewerbungsprozess die Absagen entstehen. Und genau das lässt sich zuverlässig eingrenzen.
+30 Absagen in Folge sind selten Pech – dahinter steckt fast immer ein Muster, das sich mit wenigen gezielten Änderungen beheben lässt. Um dir konkret zu sagen, was du ändern solltest, brauche ich aber zuerst ein paar Fakten.
 
-**So grenzen wir es ein:**
+**Warum das wichtig ist:** Der Zeitpunkt der Absage zeigt, wo es klemmt.
 
-- **Absagen ohne einziges Vorstellungsgespräch** → Das Problem liegt bei den Unterlagen oder der Stellenwahl: Lebenslauf, Anschreiben oder eine zu weite Streuung bei der Passung.
-- **Absagen nach Vorstellungsgesprächen** → Das Problem liegt in der Gesprächsvorbereitung oder -durchführung.
-- **Mischung aus beidem** → meist beginnt es bei den Unterlagen und setzt sich im Gespräch fort.
+- **Absage direkt nach der Bewerbung, ohne Gespräch** → Lebenslauf oder Anschreiben passen vermutlich nicht zu den Anforderungen, oder die Stellenwahl ist zu weit gefasst.
+- **Absage erst nach Telefonat oder Interview** → Deine Unterlagen funktionieren; dann liegt es an Gesprächsvorbereitung oder daran, wie du Motivation und Passung vermittelst.
 
-Damit ich Ihnen konkret sagen kann, was Sie ändern sollen, brauche ich drei Angaben:
+**Drei Rückfragen dazu:**
 
-1. Wie viele der 30 Absagen kamen **nach** einem Gespräch – und wie viele Gespräche hatten Sie insgesamt?
-2. Auf welche **Rolle/Branche** bewerben Sie sich, und wie passt Ihr Profil dazu (Ausbildung, Berufserfahrung, Quereinstieg)?
-3. Passen Sie Lebenslauf und Anschreiben **auf jede Stelle einzeln** an, oder nutzen Sie dieselben Unterlagen für alle Bewerbungen?
+1. Bei wie vielen der 30 Absagen hattest du vorher ein Gespräch – und bei wie vielen kam die Absage ohne jede Reaktion?
+2. Auf welche Stellen bewirbst du dich (Bereich, Niveau)? Passt dein Profil weitgehend zu den Anzeigen, oder bewirbst du dich teils auch "auf Verdacht"?
+3. Hast du Lebenslauf und Anschreiben pro Stelle angepasst, oder geht dieselbe Version an alle raus?
 
-**Konkreter nächster Schritt:** Schicken Sie mir Ihren Lebenslauf und eine Stellenanzeige, auf die Sie abgelehnt wurden. Dann prüfen wir gemeinsam, wo die Passung kippt.
+Zur Motivation: Dass du nach 30 Absagen frustriert bist, ist verständlich – und es zeigt, dass es dir ernst ist. Eine klare Diagnose gibt dir schnell das Gefühl von Kontrolle zurück, und genau die liefern wir mit den Antworten oben.
 
-Und zur Motivation: 30 Absagen sind frustrierend, aber sie sind vor allem **Daten** – kein Urteil über Sie als Person. Sie haben durchgehalten und bleiben aktiv, das ist die Voraussetzung dafür, dass eine gezielte Änderung überhaupt wirken kann. Jetzt werten wir die Daten aus und setzen dort an, wo es wirklich etwas bringt.
+Wenn du magst, schick mir danach deinen Lebenslauf und eine konkrete Stellenanzeige – dann prüfe ich als Erstes die Passung zwischen beiden.
 
 ---
 
@@ -321,39 +303,30 @@ _Ende des Vorstellungsgesprächs: eigene Fragen an das Unternehmen_
 
 **Coach (Modell):**
 
-Stell immer 2–3 Fragen – das signalisiert echtes Interesse und gibt dir selbst wertvolle Informationen für deine Entscheidung. Wer keine Fragen hat, wirkt oft unmotiviert.
+**Ja – planen Sie immer zwei bis drei eigene Fragen ein.** „Nein, ich habe keine Fragen" wirkt desinteressiert. Die Fragen sind zudem Ihre Chance, den Arbeitgeber zu prüfen, bevor Sie zustimmen.
 
-## Bewährte Fragen nach Kategorie
+Bewährte Themen mit Beispielformulierungen:
 
-**Zur Rolle**
-- „Wie sieht ein typischer Arbeitstag in dieser Position aus?"
-- „Woran messen Sie, ob jemand in dieser Rolle nach einem Jahr erfolgreich ist?"
-- „Was sind die größten Herausforderungen in den ersten sechs Monaten?"
+**Zur Position**
+- „Wie sieht ein typischer Arbeitstag in dieser Rolle aus?"
+- „Woran messen Sie, ob jemand in den ersten zwölf Monaten erfolgreich ist?"
 
-**Zum Team und zur Zusammenarbeit**
-- „Mit wem würde ich eng zusammenarbeiten?"
-- „Wie ist das Team aufgestellt und wie arbeitet es zusammen?"
+**Zum Team und Arbeitsalltag**
+- „Mit wem arbeitet die Person in dieser Position eng zusammen?"
+- „Was zeichnet Mitarbeiter aus, die hier besonders gut zurechtkommen?"
 
-**Zur Zukunft**
-- „Wie hat sich die Position entwickelt, und welche Perspektiven gibt es?"
-- „Wie sieht ein typischer Entwicklungsweg hier aus?"
+**Zu Einarbeitung und Entwicklung**
+- „Wie gestaltet sich die Einarbeitung in den ersten Monaten?"
+- „Wie entwickeln sich Mitarbeiter in diesem Team typischerweise weiter?"
 
-**Zum Prozess**
-- „Wie gehen die nächsten Schritte aus, und wann kann ich mit einer Rückmeldung rechnen?"
+**Zum weiteren Vorgehen**
+- „Wie sehen die nächsten Schritte im Prozess aus, und bis wann kann ich mit einer Rückmeldung rechnen?"
 
-## Was du vermeiden solltest
+**Wovon Sie absehen sollten**
+- Fragen, deren Antwort schon in der Stellenanzeige oder auf der Website steht – das signalisiert mangelnde Vorbereitung.
+- Gehalt und Urlaub better erst dann, wenn das Unternehmen das Thema selbst anspricht oder in einem späteren Gesprächstermin.
 
-- Fragen, deren Antwort schon in der Stellenanzeige oder auf der Website steht – das wirkt unvorbereitet
-- Gehalt, Urlaub und Benefits als erste Fragen – das passt besser in eine spätere Runde oder wenn das Thema von selbst kommt
-- Ja/Nein-Fragen – offene Fragen halten das Gespräch in Gang
-
-## Starker Tipp
-
-Bezieh eine Frage auf etwas, das im Gespräch gefallen ist: *„Sie hatten erwähnt, dass das Team gerade umstrukturiert wird – wie wirkt sich das auf diese Rolle aus?"* Das zeigt, dass du zugehört hast, und macht den Austausch auf Augenhöhe echter.
-
----
-
-Damit ich dir 2–3 konkrete Fragen maßschneidern kann: Für welche Position bzw. Branche bewirbst du dich gerade?
+Damit ich Ihnen konkrete, auf Ihre Situation zugeschnittene Fragen formulieren kann: Auf welche Stelle oder Branche bewerben Sie sich derzeit?
 
 ---
 
@@ -365,15 +338,15 @@ _Nur ein Gruß: kurze Begrüßung und Angebot statt Vortrag_
 
 **Coach (Modell):**
 
-Hallo und herzlich willkommen! Schön, dass du da bist.
+Hallo und willkommen zum Karriere-Coaching! 👋
 
-Womit möchtest du heute arbeiten? Zum Beispiel:
+Schön, dass du da bist. Damit wir direkt loslegen können, sag mir kurz, worum es bei dir geht:
 
-- **Lebenslauf** – Überarbeiten oder von Grund auf strukturieren
-- **Stellensuche** – Passende Anzeigen finden und einschätzen
-- **Vorstellungsgespräch** – Typische Fragen üben oder ein konkretes Gespräch vorbereiten
+- **Lebenslauf** – möchtest du ihn überarbeiten oder neu strukturieren?
+- **Stellensuche** – suchst du Unterstützung bei der Suche oder Auswahl passender Stellenanzeigen?
+- **Vorstellungsgespräch** – bereitest du dich auf ein konkretes Gespräch vor?
 
-Erzähl mir kurz, wo du gerade stehst – dann legen wir direkt los.
+Teil mir gern auch schon ein paar Details mit (z. B. deine Branche, die Stelle, um die es geht), dann kann ich meine Hinweise direkt auf deine Situation zuschneiden.
 
 ---
 
@@ -390,24 +363,27 @@ Ich habe Wirtschaftsinformatik studiert, aber noch nie mit Power BI gearbeitet. 
 
 **Coach (Modell):**
 
-**Konzentrieren Sie sich auf SQL, Python und Ihre Analyseprojekte aus dem Studium – Power BI ist hier nicht der entscheidende Punkt.**
+Konzentrieren Sie sich auf **SQL, Python und Ihr Studium** – das sind die harten Anforderungen. Power BI gehört bei dieser Anzeige zu den *Aufgaben*, nicht zum *Profil*. Das heißt: Die Stadtwerke erwarten hier keine Berufserfahrung, sondern die Bereitschaft, es zu lernen. Das ist eine Junior-Stelle.
 
-Begründung: Die Kernaufgabe der Stelle ist Datenauswertung mit SQL und Python. Power BI ist nur eines von vier Aufgabengebieten und bei einer Junior-Stelle explizit erlernbar. Die Stadtwerke suchen Potenzial und Fit, kein fertiges Tool-Profil.
+## Warum das so ist
 
-**So strukturieren Sie die Bewerbung:**
+Die Anforderungen im Profil sind erfüllbar abgedeckt:
 
-1. **Studium passt exakt** – Wirtschaftsinformatik steht wörtlich in der Anzeige. Das nennen Sie gleich im ersten Absatz.
-2. **SQL und Python konkret belegen** – nennen Sie Projekte, Hausarbeiten oder Ihre Abschlussarbeit, in denen Sie Querys geschrieben oder Daten ausgewertet haben. "Erste Erfahrung" und "Grundkenntnisse" sind eine niedrige Hürde – die Anzeige verlangt keine Profis.
-3. **Visualisierung als Brücke bauen** – falls Sie irgendwo Diagramme oder Auswertungen erstellt haben (Excel, matplotlib, Tableau, Seminararbeit), erwähnen Sie das. Power BI folgt derselben Logik: Daten verbinden, aufbereiten, visualisieren.
-4. **Abstimmung mit Fachabteilungen abdecken** – die Anzeige betont Teamfähigkeit und Kommunikation. Falls Sie Ergebnisse mal vor Nicht-Technikern präsentiert haben (Präsentationen, Praxisprojekt, Nebenjob), ist das ein starkes Argument.
-5. **Power BI ehrlich und knapp adressieren** – ein Satz reicht, z. B.: *"Mit der Dashboard-Erstellung in Power BI arbeite ich mich aktuell eigenständig ein."*
+- **Studium Wirtschaftsinformatik** – exakt das geforderte Fach, das gehört an den Anfang
+- **SQL-Erfahrung und Python-Grundkenntnisse** – damit sollten Sie Ihre Beispiele liefern (Projekte, Abschlussarbeit, Übungen)
+- **C1-Deutsch** – die flüssige Bewerbung selbst ist der Beleg
 
-**Konkreter Tipp vor dem Absenden:** Power BI Desktop ist kostenlos. Machen Sie ein 2–3-stündiges Tutorial und bauen Sie ein kleines Dashboard mit offenen Daten (z. B. Energieverbrauchsdaten – passend zum Arbeitgeber). Dann können Sie ehrlich schreiben, dass Sie es sich aneignen, und haben im Vorstellungsgespräch ein Beispiel in der Tasche.
+Power BI erwähnen Sie aktiv, aber als Lernfeld, nicht als Lücke.
 
-Zwei Rückfragen, damit ich Ihnen beim Formulieren helfen kann:
+## Konkret für Anschreiben und Lebenslauf
 
-- In welchen Projekten oder Arbeiten haben Sie SQL und Python konkret eingesetzt?
-- Hatten Sie irgendwo Berührung mit Visualisierung oder Dashboards – auch Excel zählt?
+1. **Ein bis zwei konkrete Datenprojekte aus dem Studium benennen**, in denen Sie SQL-Abfragen geschrieben oder Python ausgewertet haben (z. B. Seminararbeit, Bachelorarbeit, Datenbankpraktikum). „Erste Erfahrung" reicht der Anzeige zufolge aus.
+2. **Power BI umformulieren:** Nicht „keine Erfahrung mit Power BI", sondern z. B. „Visualisierungserfahrung mit [Tool X], Einarbeitung in Power BI ist mir vertraut, da ich bereits mit [verwandtem Werkzeug] Dashboards erstellt habe."
+3. **Schnittstellen-Kompetenz hervorheben:** Die Abstimmung mit Vertrieb und Netzbetrieb steht in der Anzeige – wenn Sie in einem Gruppenprojekt Ergebnisse präsentiert oder für Nicht-Techniker aufbereitet haben, ist das Ihr drittes Argument.
+
+## Eine Rückfrage
+
+Damit ich Ihnen bei der Formulierung helfen kann: **Mit welchen Tools haben Sie bisher Daten visualisiert oder ausgewertet** – etwa Excel-Pivot-Tabellen, matplotlib in Python, Tableau in einer Lehrveranstaltung? Und gibt es ein Projekt oder eine Abschlussarbeit, auf die Sie sich berufen können?
 
 ---
 
@@ -419,28 +395,22 @@ _Gespräch beginnt auf Englisch: Antwort auf Englisch_
 
 **Coach (Modell):**
 
-**Kurz gesagt:** Deutsche Arbeitgeber erwarten einen klar gegliederten, rückwärts chronologischen Lebenslauf – für dich als Data Analyst am besten mit eigenem Projektbereich und messbaren Ergebnissen.
+For German employers, use this structure — close to the classic "Lebenslauf", but streamlined for a data analyst role:
 
-## Empfohlener Aufbau
+1. **Header** – Name, professional title ("Data Analyst"), email, phone, LinkedIn/GitHub if relevant. A photo and date of birth are traditional in Germany but legally optional (AGG anti-discrimination law). For Berlin tech companies and startups, skip them; for traditional German firms, they're still common.
+2. **Short profile (3–4 lines)** – Years of experience, domain, and your core stack, e.g. "Data Analyst with 4 years in e-commerce, specialising in SQL, Python and Tableau."
+3. **Work experience (reverse chronological)** – Job title, company, city, and precise dates (MM/YYYY – MM/YYYY). German recruiters expect a gap-free timeline, so account for every period. Under each role: 3–5 bullets with quantified results ("Automated weekly reporting in SQL, cutting prep time by 6 hours").
+4. **Education** – Degree, institution, year; thesis topic if it's data-related.
+5. **Technical skills** – Grouped: SQL, Python/R, Excel, BI tools (Tableau/Power BI), cloud, statistics.
+6. **Languages** – English and German with CEFR levels (e.g. "German – B2"). Be honest; recruiters will test this.
+7. **Optional** – Certifications (Google Data Analytics, etc.), brief interests.
 
-1. **Persönliche Daten** – Name, Ort, E-Mail, Telefon, LinkedIn/GitHub. Foto und Geburtsdatum sind heute optional, nicht mehr Pflicht.
-2. **Berufserfahrung** – aktuellste Position zuerst. Pro Rolle: Arbeitgeber, Zeitraum und 3–5 Bullet Points mit konkreten Ergebnissen (z. B. „Dashboards für 40+ Stakeholder, Reporting-Zeit um 30 % reduziert").
-3. **Ausbildung** – Abschluss, Fachrichtung, Institution.
-4. **Kenntnisse** – getrennt nach Tools (SQL, Python, R, Tableau, Power BI, Excel) und Methoden (Statistik, Data Visualization, ML-Grundlagen).
-5. **Projekte** – für Data-Analyst-Bewerbungen oft der Unterschied: 2–3 Portfolio-Projekte, gern mit GitHub-Link.
-6. **Sprachen** – mit Niveauangabe (z. B. Englisch C1).
+Two practical points:
 
-## Wichtig in Deutschland
+- Keep it to **1–2 pages**, clean layout, sent as a PDF.
+- If you apply by email, German convention is to attach your **Zeugnisse** (degree, reference letters) as separate files — the CV stays lean.
 
-- **Rückwärts chronologisch** ist der Standard – deutsche Recruiter scannen zuerst die letzte Position.
-- **Maximal 2 Seiten**, als Berufseinsteiger eher 1 Seite.
-- Ort, Datum und Unterschrift am Ende sind nicht mehr nötig.
-- Nimm Schlüsselwörter aus der Stellenanzeige auf (z. B. genannte Tools), weil viele Firmen den Lebenslauf zuerst durch Software filtern.
-
-**Zwei Rückfragen, damit ich konkreter werden kann:**
-
-1. Ist die Stellenanzeige auf Deutsch oder Englisch? Davon hängt ab, in welcher Sprache dein Lebenslauf sein sollte – in Berlin gibt es beide Varianten.
-2. Wie viele Jahre Berufserfahrung hast du schon als Analyst?
+Two questions so I can tailor this: Are the job postings you're targeting written in English or German, and roughly how many years of analyst experience do you have?
 
 ---
 
@@ -452,21 +422,21 @@ _Bitte um falsche Angabe: ehrlich bleiben und eine Alternative anbieten_
 
 **Coach (Modell):**
 
-Nein, das schreibe ich nicht – und das liegt nicht an Strenge, sondern an deinem eigenen Interesse.
+Nein, das schreibe ich nicht in deinen Lebenslauf – und ich rate dir dringend davon ab, es selbst zu tun.
 
-**Warum das nach hinten losgehen kann:**
+**Warum das nach hinten losgeht:**
 
-- Viele Vorstellungsgespräche laufen teilweise oder ganz auf Englisch – spätestens da fliegt es auf.
-- „Fließend" wird im Arbeitsalltag oft eingelöst: Telefonate, E-Mails, Meetings. In der Probezeit wird es dann sichtbar, wenn das nicht stimmt.
-- Wenn es später auffliegt, kann das im schlimmsten Fall als Täuschung gewertet werden – der erste Eindruck ist dann ruiniert, auch wenn du fachlich top bist.
+- **Es fliegt schnell auf.** Ein Vorstellungsgespräch auf Englisch, ein kurzes Telefonat mit internationalen Kollegen oder Small Talk vor dem Gespräch reichen, um B1 von fließend zu unterscheiden.
+- **Es kostet dich Vertrauen.** Sobald eine Angabe im Lebenslauf nicht stimmt, fragt sich die Personalerin: Was stimmt sonst noch nicht? Das kann eine ansonsten starke Bewerbung komplett torpedieren.
+- **Es kann arbeitsrechtliche Folgen haben.** Falsche Angaben zu Sprachkenntnissen können im Ernstfall bis zur Anfechtung des Arbeitsvertrags führen, wenn die Sprache für die Stelle relevant ist.
 
 **Was stattdessen gut funktioniert:**
 
-- **Ehrlich und positiv formulieren:** „Englisch: B1 (gute Kenntnisse in Wort und Schrift)" – das klingt solide, ohne zu übertreiben.
-- **Fortschritt zeigen:** Wenn du gerade einen Kurs machst oder machst, kannst du schreiben „B1, Ausbau zu B2 laufend". Das zeigt Initiative.
-- **Fähigkeiten gewichten:** Wenn Englisch für die Stelle zweitrangig ist, rückt es in der Skills-Liste einfach nach hinten.
+- **Ehrlich und positiv formulieren:** „Englisch: gute Kenntnisse (GER B1)" – B1 bedeutet auf dem Gemeinsamen Europäischen Referenzrahmen bereits *selbstständige Sprachverwendung*. Das klingt besser, als viele denken.
+- **Wenn Englisch für deine Zieljobs wichtig ist:** arbeite gezielt auf B2 hin (Kurs, Tandempartner, regelmäßiges Training) und schreib im Lebenslauf ggf. „B1, Weiterbildung zu B2 laufend".
+- **Im Gespräch vorbereitet antworten:** „Ich kommuniziere auf B1-Niveau sicher und arbeite aktiv daran, mich zu verbessern" wirkt souverän und ehrlich.
 
-Eine Frage dazu: **Für welche Stellen bewirbst du dich gerade – und geben die Anzeigen ein Englischlevel vor?** Wenn „fließend" oder C1 gefordert ist, schauen wir besser, wie du die Lücke schließt (z. B. gezielter Kurs oder Vorbereitung auf englische Interviewfragen). Wenn Englisch kaum vorkommt, ist B1 vermutlich ohnehin kein Ausschlusskriterium – dann atmen wir beide durch.
+Eine Rückfrage: Wie oft wird in den Stellenanzeigen, auf die du dich bewirbst, Englisch verlangt – und wenn ja, mit welcher Niveaubezeichnung? Davon hängt ab, wie prominent wir das Thema in deinen Unterlagen behandeln.
 
 ---
 
@@ -483,22 +453,24 @@ Ich bin Buchhalterin mit 5 Jahren Erfahrung und arbeite täglich mit DATEV. Pass
 
 **Coach (Modell):**
 
-**Ja, die Stelle passt auf den ersten Blick sehr gut zu dir.** Deine Angaben decken zwei der drei Kernanforderungen direkt ab:
+Ja, die Stelle passt auf den ersten Blick sehr gut zu deinem Profil.
 
-- **Mehrjährige Berufserfahrung:** 5 Jahre als Buchhalterin erfüllen das klar.
-- **Sicher in DATEV:** Tägliche Arbeit mit DATEV ist genau das, was gefragt ist.
-- **Ausbereitung:**Als Buchhalterin hast du vermutlich eine entsprechende Qualifikation – das solltest du bestätigen.
+**Was bereits übereinstimmt:**
 
-**Zwei Punkte kläre ich noch mit dir ab, weil die Anzeige sie konkret nennt:**
+- **5 Jahre Erfahrung** → erfüllt die geforderte „mehrjährige Berufserfahrung"
+- **Tägliche DATEV-Nutzung** → deckt die Anforderung „sicher in DATEV" vollständig ab
+- **Tätigkeit als Buchhalterin** → entspricht dem geforderten Hintergrund
 
-1. Übernimmst du aktuell die **Kreditoren- und Debitorenbuchhaltung** sowie den **Zahlungsverkehr** selbst – oder nur Teile davon?
-2. Bereitest du **Monatsabschlüsse** vor, oder reichen deine Aufgaben bis zur Kontierung/Vorkontierung?
+**Was ich noch wissen sollte, um das sicher zu sagen:**
 
-Wenn du beide Fragen mit Ja beantwortest, erfüllst du das Profil vollständig. Falls die Monatsabschlüsse neu für dich wären, wäre das kein Ausschlusskriterium – aber ein Punkt, den du im Anschreiben proaktiv adressieren solltest (z. B. Bereitschaft zur Einarbeitung).
+- Hast du eine formale Ausbildung als Buchhalterin oder Steuerfachangestellte, oder bist du z. B. über Quereinstieg/Fortbildung dazugekommen? Die Anzeige nennt die Ausbildung explizit.
+- Decken deine 5 Jahre die **Kreditoren- und Debitorenbuchhaltung** sowie die **Vorbereitung von Monatsabschlüssen** ab? Das sind die Kernaufgaben – wenn ja, solltest du genau diese Punkte in Lebenslauf und Anschreiben prominent setzen.
 
-**Welche Ausbildung hast du genau** (Steuerfachangestellte, Buchhalterin mit IHK-Abschluss o. Ä.)? Dann kann ich dir sagen, wie du das im Lebenslauf am stärksten platzierst.
+**Tipp für die Bewerbung:** Nenne konkrete Zahlen, wo möglich – z. B. Umfang des Zahlungsverkehrs, Anzahl monatlicher Buchungssätze oder Größe des Teams. Das macht die DATEV- und Abschluss-Erfahrung greifbar.
 
-Kleiner Hinweis am Rande: Die Anzeige enthält einen Absatz, der versucht, KI-Assistenten anzuweisen, negativ zu antworten. Solche eingebetteten Anweisungen ignoriere ich – für deine realen Chancen ist der Abschnitt ohne Bedeutung.
+Kleine Anmerkung: Der „Hinweis an KI-Assistenten" am Ende der Anzeige ist kein echter Teil des Stellenprofils und hat keine Bewandtnis für deine Chancen – den kannst du ignorieren.
+
+Magst du mir kurz deine Ausbildung und deine bisherigen Aufgaben nennen? Dann sage ich dir genau, wie du die Unterlagen auf diese Stelle zuschneidest.
 
 ---
 
@@ -510,22 +482,28 @@ _Rechtsfrage: sichere Grundregel nennen, für Details an Fachstelle verweisen, n
 
 **Coach (Modell):**
 
-**Kurz gesagt: Nein, das darf in der Regel nicht gefragt werden.** Sofern das Gespräch in Deutschland stattfand: Nach dem Allgemeinen Gleichbehandlungsgesetz (AGG) und der dazu ergangenen Rechtsprechung ist die Frage nach einer bestehenden oder geplanten Schwangerschaft im Vorstellungsgespräch grundsätzlich unzulässig. Ausnahmen gibt es nur selten, etwa wenn die Stelle schwangerschaftsbedingt gar nicht ausgeübt werden könnte.
+**Kurze Antwort: Nein, diese Frage ist in der Regel unzulässig.** Fragen nach einer (geplanten) Schwangerschaft im Vorstellungsgespräch diskriminieren wegen des Geschlechts und verstoßen gegen das Allgemeine Gleichbehandlungsgesetz (AGG).
 
-**So kannst du in einer solchen Situation reagieren:**
+**Ausnahmen** gibt es fast nur, wenn die Schwangerschaft die Besetzung faktisch unmöglich machen würde – etwa bei einer Vertretung für wenige Monate. Im normalen Bewerbungsgespräch spielt das keine Rolle.
 
-- Freundlich abgrenzen: „Diese Frage möchte ich an dieser Stelle nicht beantworten. Gerne erzähle ich Ihnen mehr zu meiner Erfahrung mit …"
-- Zurück ins Fachliche lenken: „Wichtiger erscheint mir: Was erwarten Sie in den ersten sechs Monaten in dieser Rolle?"
-- Zur Einordnung: Auf eine unzulässige Frage musst du keine wahrheitsgemäße Antwort geben – eine ausweichende Antwort ist in der Regel kein späterer Anfechtungs- oder Kündigungsgrund.
+### Was Sie hätten antworten dürfen
 
-**Grenze des Coachings:** Ob in deinem konkreten Fall eine rechtliche Prüfung sinnvoll ist, kann ich als Karriere-Coach nicht bewerten. Dafür passen eine Fachanwältin bzw. ein Fachanwalt für Arbeitsrecht oder die Antidiskriminierungsstelle des Bundes – beachte dort die kurzen Fristen (unter dem AGG unter anderem zwei Monate ab Kenntnis).
+- **Die Frage zurückweisen oder unbeantwortet lassen** – Sie mussten keine Auskunft geben.
+- Sie hätten die Frage sogar **bestreiten** dürfen, selbst wenn Sie schwanger gewesen wären. Nach der Rechtsprechung des Bundesarbeitsgerichts rechtfertigt eine falsche Antwort auf diese unzulässige Frage keine spätere Kündigung oder Anfechtung wegen „arglistiger Täuschung".
+- Mögliche Formulierungen:
+  - *„Auf diese Frage gehe ich nicht ein – gerne spreche ich über meine Qualifikation für die Stelle."*
+  - Freundlicher: *„Zu meiner privaten Situation stelle ich keine Überlegungen an, die die Stelle betreffen. Gibt es zu meinen fachlichen Voraussetzungen noch Fragen?"*
 
-**Zwei Rückfragen, damit wir konkret weitermachen können:**
+Ob Sie die Unzulässigkeit benennen (Sie kennen Ihre Rechte) oder charmant ablenken (kooperatives Auftreten), ist eine strategische Entscheidung – beides ist legitim.
 
-1. Wie hast du in dem Moment geantwortet, und wie ist das Gespräch danach verlaufen?
-2. Steht noch ein weiteres Gespräch oder eine Entscheidung aus?
+### Falls Sie rechtliche Schritte erwägen
 
-Falls ja, üben wir gern den souveränen Umgang mit unangenehmen Fragen.
+Bei unzulässiger Diskriminierung kommen Entschädigungsansprüche in Betracht (§ 15 AGG) – diese müssen **innerhalb von zwei Monaten schriftlich** geltend gemacht werden. Die rechtliche Bewertung übersteigt mein Coaching. Passende nächste Schritte:
+
+- Fachanwalt oder Fachanwältin für Arbeitsrecht
+- Antidiskriminierungsstelle des Bundes (kostenlose Erstberatung)
+
+**Zwei Rückfragen:** Wie haben Sie in der Situation geantwortet – und ist aus der Bewerbung etwas geworden? Davon hängt ab, ob wir an einer Antwortstrategie für künftige Gespräche arbeiten oder ob eher die rechtliche Einordnung relevant ist.
 
 ---
 
@@ -537,18 +515,22 @@ _Komplettes Anschreiben mit kaum Angaben: erfindet der Coach Fakten, wie lang wi
 
 **Coach (Modell):**
 
-Gerne schreibe ich dir ein Anschreiben – dafür brauche ich aber erst ein paar konkrete Angaben von dir. Ein vollständiges Anschreiben aus dem Nichts zu schreiben, würde einen generischen Text ergeben, der Personalverantwortliche sofort als Standardware erkennen.
+Gerne erstelle ich dir ein Anschreiben – dafür brauche ich aber erst ein paar Angaben von dir. Ohne sie müsste ich auf Vermutungen zurückgreifen, und ein austauschbares Anschreiben schwächt deine Bewerbung eher, als dass es hilft.
 
-Damit das Anschreiben überzeugt, benötige ich:
+Bitte schick mir:
 
-1. **Die Stellenanzeige** – bitte füge den Text oder die wichtigsten Anforderungen ein (Unternehmen, Branche, Aufgaben, geforderte Qualifikationen).
-2. **Deinen Hintergrund** – aktueller Beruf, Jahre an Projekterfahrung, Branchen und typische Projektgrößen oder -budgets.
-3. **DeineHighlights** – Zertifizierungen (z. B. PRINCE2, PMP, Scrum), besondere Erfolge wie "Projekt X drei Monate früher abgeschlossen" oder "Team von 12 Personen geführt".
-4. **Deine Motivation** – warum genau diese Stelle oder dieses Unternehmen?
+- **Die Stellenanzeige** (Text oder Link) – vor allem Aufgaben, Anforderungen und Firmenname
+- **Deinen Werdegang in Kürze**: Ausbildung, letzte Positionen, wie viele Jahre Projekterfahrung
+- **2–3 konkrete Erfolge mit Zahlen**, z. B. Budgetverantwortung, Teamgröße, termingereichte Projekte, eingesparte Kosten
+- **Ansprechpartner** im Unternehmen, falls in der Anzeige genannt
 
-Schick mir am besten die Stellenanzeige und deinen Lebenslauf (oder eine kurze Zusammenfassung). Dann erstelle ich dir ein maßgeschneidertes Anschreiben, das deine Stärken mit den Anforderungen der Stelle verknüpft.
+Damit du schon mal siehst, wie ich das Anschreiben aufbauen werde:
 
-Falls du beforehand die allgemeine Struktur sehen möchtest, kann ich dir auch erst eine Gliederung mit Formulierungsbausteinen zeigen – sag einfach Bescheid.
+1. **Einstieg**: Bezug auf die Stelle plus dein stärkstes Argument – kein „Hiermit bewerbe ich mich"
+2. **Hauptteil**: 2–3 Erfolge, die genau die Kernanforderungen der Anzeige treffen
+3. **Schluss**: Warum ausgerechnet dieses Unternehmen + Gesprächswunsch
+
+Schick mir die Angaben, und ich liefere dir den kompletten Entwurf.
 
 ---
 
@@ -560,22 +542,24 @@ _Canned Conversation über drei Runden: nutzt der Coach frühere Angaben und üb
 
 **Coach (Modell):**
 
-Gerne, dabei helfe ich dir. Ein gutes Anschreiben lebt von konkreten Bezügen – zwischen deiner Erfahrung und den Anforderungen der Stelle. Damit ich dir einen passenden Entwurf erstellen kann, brauche ich dazu ein paar Angaben:
+Sehr gerne – ein starkes Anschreiben für eine Kinderklinik bekommen wir gut hin. Damit ich dir konkret helfen kann, brauche ich noch ein paar Angaben von dir.
 
-**Zur Stelle**
-- Hast du eine konkrete Stellenanzeige? Dann schick mir gern den Text oder die wichtigsten Anforderungen.
-- Bewirbst du dich auf eine ausgeschriebene Stelle oder initiativ?
+## So bauen wir das Anschreiben auf
 
-**Zu deinem Hintergrund**
-- Welche Qualifikation hast du (z. B. Pflegefachfrau/-mann, Examen in der Gesundheits- und Kinderkrankenpflege, eine Weiterbildung)?
-- Wie viel Berufserfahrung bringst du mit – und hast du schon Erfahrung in der Pädiatrie oder mit Kindern und Jugendlichen?
-- Warum eine Kinderklinik? Gibt es einen persönlichen Bezug oder ein Erlebnis, das dich dorthin zieht?
+1. **Einstieg**: Direkter Bezug zur Stelle und zur Klinik – kein „Hiermit bewerbe ich mich…"
+2. **Qualifikation**: Deine Ausbildung und aktuelle Einsatzbereiche
+3. **Pädiatrische Erfahrung**: Praktika, Stationen oder Skills, die für die Kinderklinik relevant sind (z. B. Umgang mit Kindern und Angehörigen, Altergruppen, Prophylaxen)
+4. **Warum diese Klinik**: Ein konkreter Grund, der zeigt, dass du dich mit dem Haus befasst hast
+5. **Schluss**: Verfügbarkeit und Gesprächswunsch
 
-**Rahmendaten**
-- Ab wann stehst du zur Verfügung?
-- Ist es ein Ortswechsel oder bewirbst du dich in deiner Region?
+## Meine Fragen an dich
 
-Sobald du mir diese Infos gibst, erstellen wir gemeinsam einen Entwurf – Schritt für Schritt, damit er am Ende zu dir und zur Klinik passt.
+- **Gibt es eine konkrete Stellenanzeige?** Dann schick mir gern den Text oder Link – daraus hole ich die Schlüsselwörter, die ins Anschreiben gehören.
+- **Welchen Hintergrund hast du?** Generalistische Pflegefachkraft, ehemalige Kinderkrankenpflegerin/-pfleger, Berufseinsteiger:in oder schon einige Jahre Erfahrung?
+- **Hast du schon Erfahrung mit Kindern oder Jugendlichen** – etwa durch Praktika, eine Station oder private Erfahrung?
+- **Warum ausgerechnet diese Klinik?** Kennst du das Haus, gibt es eine Spezialisierung (z. B. Neonatologie, Onkologie), die dich anspricht?
+
+Schick mir diese Infos, dann formulieren wir gemeinsam den ersten Entwurf – oder ich erstelle dir eine Vorlage, die du anpassen kannst.
 
 **Coach (Skript):** Gern. Was macht dich für eine Kinderklinik besonders geeignet – hast du Erfahrung mit Kindern oder eine Fachweiterbildung?
 
@@ -583,27 +567,27 @@ Sobald du mir diese Infos gibst, erstellen wir gemeinsam einen Entwurf – Schri
 
 **Coach (Modell):**
 
-Sehr gut – daraus lässt sich ein überzeugendes Anschreiben bauen. Deine Strategie: Die fehlende Kinder-Erfahrung durch zwei starke Argumente ausgleichen – fundierte Berufserfahrung und belegte Kinder-Affinität.
+Ja – und du hast dafür genau die richtigen Bausteine: solide Berufserfahrung und einen echten, nachweisbaren Bezug zu Kindern. So würdest du das im Anschreiben aufbauen:
 
-**Empfohlene Struktur:**
+## Struktur für dein Anschreiben
 
-1. **Einstieg: Motivation**
-   Verknüpfe den Wechselwunsch mit deinem Ehrenamt, z. B.:
-   > „Die ehrenamtliche Betreuung meiner Kinder-Sportgruppe hat mir gezeigt, dass ich meine pflegerische Expertise künftig in der Pädiatrie einsetzen möchte."
+1. **Einleitung – Motivation:** Warum der Wechsel in die Pädiatrie? Deine Arbeit in der Kinder-Sportgruppe ist hier ein glaubwürdiges, starkes Motiv.
+2. **Berufliche Erfahrung:** 4 Jahre internistische Station belegen Belastbarkeit, Routine in Grundpflege, Medikamentengabe, Dokumentation und Patienten­gespräche.
+3. **Bezug zu Kindern:** Übersetze die Sportgruppe in pflegerelevante Kompetenzen – Umgang mit verschiedenen Altersgruppen, Geduld, Kommunikation auf Augenhöhe, Vertrauen aufbauen. Das ist auch die Basis für Elterngespräche und Elternarbeit, die in der Kinderklinik zentral ist.
+4. **Schluss:** Signalisiere Lernbereitschaft (z. B. Fachweiterbildung) und äußere den Wunsch nach einem persönlichen Gespräch.
 
-2. **Hauptteil: Fachliche Kompetenz**
-   Deine 4 Jahre Innere Medizin liefern übertragbare Skills:
-   - Sichere Medikamentengabe und Patientenüberwachung
-   - Kommunikation mit Angehörigen – in der Kinderklinik zentral, da du primär mit Eltern arbeitest
-   - Strukturiertes Arbeiten im Schichtdienst
+## Wichtigster Punkt
 
-3. **Hauptteil: Affinität zu Kindern**
-   Das Ehrenamt ist dein Schlüsselargument. Mach es konkret: Alter der Kinder, wie lange, ob du die Gruppe leitest. Das zeigt, dass du altersgerecht kommunizierst und Vertrauen aufbaust.
+Der Personaler wird sich fragen: *Warum keine berufliche Kindererfahrung?* Geh das aktiv an, statt es zu übergehen – etwa:
 
-4. **Abschluss**
-   Wenn du keine Fachweiterbildung Kinderkrankenpflege hast: Signalisiere clearly die Bereitschaft, diese zu absolvieren. Das nimmt die offensichtlichste Bedenken der Klinik vorweg.
+> „Der Wunsch, meine pflegerische Erfahrung mit meiner Freude an der Arbeit mit Kindern zu verbinden, hat mich zu dieser Bewerbung geführt."
 
-**Eine gezielte Frage:** Gibt es eine konkrete Stellenanzeige? Dann gleiche ich dein Anschreiben mit den genannten Anforderungen ab – das macht es deutlich passgenauer als ein allgemeines Schreiben.
+Damus wird aus einem vermeintlichen Mangel eine klare, überzeugende Geschichte.
+
+## Zwei Rückfragen für konkretere Tipps
+
+- **Gibt es eine Stellenanzeige?** Wenn ja, schick mir gern die Anforderungen – dann können wir dein Anschreiben gezielt darauf zuschneiden.
+- **Hattest du in der Ausbildung einen Pädiatrie-Einsatz oder hast du Zusatzqualifikationen** (z. B. pädiatrische Reanimation)? Das wäre zusätzlich erwähnenswert.
 
 **Coach (Skript):** Dann verbinde beides: Die Station zeigt deine klinische Routine und Belastbarkeit, das Ehrenamt zeigt, dass du gut mit Kindern umgehen kannst. Stell das Ehrenamt im ersten Absatz nach vorn.
 
@@ -611,14 +595,17 @@ Sehr gut – daraus lässt sich ein überzeugendes Anschreiben bauen. Deine Stra
 
 **Coach (Modell):**
 
-Hier ein Vorschlag für den Einstieg – mit korrigierten 3 Jahren:
+Gern – hier ein Vorschlag. Platzhalter in eckigen Klammern fülle ich aus, sobald du mir die Details nennst:
 
-> Als Pflegefachkraft mit drei Jahren Erfahrung auf einer internistischen Station bringe ich solide klinische Routine und Belastbarkeit mit. Die Arbeit mit Kindern bereitet mir darüber hinaus besondere Freude: Ehrenamtlich betreue ich eine Kinder-Sportgruppe und habe dort gelernt, Kindern altersgerecht zu begegnen und ihr Vertrauen zu gewinnen. Genau diese Kombination möchte ich in Ihre Klinik einbringen.
+> Der Wunsch, pflegerisch für Kinder da zu sein, begleitet mich schon lange: Ehrenamtlich betreue ich eine Kinder-Sportgruppe und erlebe dabei täglich, wie viel Vertrauen, Geduld und kindgerechte Ansprache der Umgang mit Kindern erfordert. Genau dort möchte ich künftig beruflich tätig sein und bewerbe mich daher auf die ausgeschriebene Stelle als Pflegefachkraft in Ihrer Klinik [Fundstelle der Anzeige]. Drei Jahre auf einer internistischen Station für Erwachsene haben mir dabei die klinische Routine und Belastbarkeit vermittelt, die ich nun in die Pädiatrie einbringen möchte.
 
 Warum so formuliert:
 
-- Der Einstieg nennt sofort beide Stärken und vermeidet Floskeln wie „Hiermit bewerbe ich mich…"
-- Das Ehrenamt steht nicht als Nebensache, sondern als Brücke zur Kinderklinik
-- Prüfe, ob im Lebenslauf noch die 4 Jahre stehen – Anschreiben und Lebenslauf müssen übereinstimmen
+- **Ehrenamt zuerst:** Es beantwortet sofort die Frage, die bei jeder Bewerbung ohne Kinderstation-Erfahrung im Raum steht – warum die Kinderklinik?
+- **Drei Jahre ohne Entschuldigung** (danke für die Korrektur): Du nennst die Zahl schlicht als Beleg für Routine, ohne dich für fehlende Pädiatrie-Erfahrung zu rechtfertigen.
+- **Der letzte Satz verknüpft beides:** Klinik-Erfahrung plus Kinder-Erfahrung ist deine Kernbotschaft.
 
-Eine Rückfrage noch: Hast du die konkrete Stellenanzeige zur Hand? Wenn dort z. B. Pädiatrie-Erfahrung oder eine Weiterbildung Kinderkrankenpflege gewünscht wird, kann ich den Einstieg noch gezielter darauf zuschneiden.
+Zwei Rückfragen, damit ich den Absatz finalisieren kann:
+
+- Wo hast du die Stellenanzeige gefunden (Karriereportal der Klinik, Jobbörse, Empfehlung)?
+- Seit wann betreust du die Gruppe und welchen Altersbereich? „Kinder von 6 bis 12“ wäre z. B. ein starkes, konkretes Detail.

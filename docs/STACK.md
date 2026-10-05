@@ -236,7 +236,8 @@ backend/evals/<prompt-unit>/
   fassungen/<fassung>/    committet, wird nie überschrieben
     summary.md            je Variante: Tokens, Zeit gesamt und im Schnitt, längste Frage
     <modell>-<effort>.md  alle Fälle als Gespräch, je Variante eine Datei
-    metrics.tsv           Stopp-Grund, Tokens und Dauer je Fall und Variante
+    <modell>-<effort>.thinking.md  Thinking des Modells je Aufruf (nur wenn es welches gab)
+    metrics.tsv           Stopp-Grund, Tokens, Thinking-Zeichen und Dauer je Fall und Variante
 ```
 
 - Fälle decken die Bandbreite ab: `art` ist `typisch`, `rand` oder `schwierig`. Typische Fälle
