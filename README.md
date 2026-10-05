@@ -71,18 +71,20 @@ Vite-Dev-Server leitet `/api` an das Backend weiter.
 
 Alle im Wurzelordner; sie laufen über alle Pakete (`backend`, `frontend`, `shared`).
 
-| Befehl                              | Zweck                                                       |
-| ----------------------------------- | ----------------------------------------------------------- |
-| `pnpm dev`                          | Backend (`tsx watch`) und Frontend (Vite) mit Neustart      |
-| `pnpm lint`                         | ESLint                                                      |
-| `pnpm format` / `pnpm format:check` | Prettier                                                    |
-| `pnpm typecheck`                    | `tsc` bzw. `vue-tsc`                                        |
-| `pnpm test`                         | Vitest mit Mock-Client (Backend-Tests gegen Test-DB)        |
-| `pnpm test:integration`             | Backend gegen echtes Modell (z.ai, kostet wenig, nie in CI) |
-| `pnpm db:generate`                  | neue Migration aus den `*.tables.ts` erzeugen (drizzle-kit) |
-| `pnpm db:migrate`                   | Migrationen anwenden                                        |
-| `pnpm user:create <email>`          | Konto anlegen oder Passwort neu setzen                      |
-| `pnpm eval coach_chat v1`           | Fassung `v1` der Beispiel-Suite, **echtes** Modell (z.ai)   |
+| Befehl                                   | Zweck                                                                        |
+| ---------------------------------------- | ---------------------------------------------------------------------------- |
+| `pnpm dev`                               | Backend (`tsx watch`) und Frontend (Vite) mit Neustart                       |
+| `pnpm lint`                              | ESLint                                                                       |
+| `pnpm format` / `pnpm format:check`      | Prettier                                                                     |
+| `pnpm typecheck`                         | `tsc` bzw. `vue-tsc`                                                         |
+| `pnpm test`                              | Vitest mit Mock-Client (Backend-Tests gegen Test-DB)                         |
+| `pnpm test:integration`                  | Backend gegen echtes Modell (z.ai, kostet wenig, nie in CI)                  |
+| `pnpm db:generate`                       | neue Migration aus den `*.tables.ts` erzeugen (drizzle-kit)                  |
+| `pnpm db:migrate`                        | Migrationen anwenden                                                         |
+| `pnpm user:create <email>`               | Konto anlegen oder Passwort neu setzen                                       |
+| `pnpm eval coach_chat v1`                | Fassung `v1` der Beispiel-Suite, **echtes** Modell (z.ai)                    |
+| `pnpm soma coach_chat vorbereiten v1 v2` | Paare aus zwei Fassungen bilden, dann `/soma-bewertung v1-v2` in Claude Code |
+| `pnpm soma coach_chat auswerten v1-v2`   | Zählen, wo welche Fassung besser war                                         |
 
 Einzelnes Paket: `pnpm --filter @job-match/backend run test` (bzw. `frontend`, `shared`).
 

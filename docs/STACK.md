@@ -62,6 +62,7 @@ shared/               Zod-Schemas und Typen des API-Vertrags (Backend + Frontend
 docs/                 IDEE, STUFEN, STACK, Prompt-Regeln
 docker-compose.yml    Postgres 17 + pgvector (Host-Port 5433)
 docker/initdb/        SQL beim ersten Start des DB-Containers (legt jobmatch_test an)
+.claude/skills/       Claude-Code-Skills des Projekts (z. B. SOMA-Bewertung der Evals, §7)
 pnpm-workspace.yaml   Workspace-Pakete
 .github/workflows/    CI: Lint, Typen und Tests für Backend und Frontend
 ```
@@ -253,6 +254,26 @@ backend/evals/<prompt-unit>/
   `TEST_ANTHROPIC_API_KEY` und z.ai (`TEST_ANTHROPIC_BASE_URL`), weil Claude dafür zu teuer ist.
 - Jeder Lauf protokolliert Modell, Effort, Tokens und Dauer (AP-58).
 - Sobald eine Unit ein festes Ergebnis hat (z. B. Score), kommen prüfbare Kriterien dazu.
+
+**Paarvergleich (LLM Assessment, Prompt-Regeln AP-59/AP-60).** Zwei Fassungen werden zusätzlich zum
+Lesen blind verglichen, damit eine Prompt-Änderung messbar wird:
+
+```
+backend/evals/<prompt-unit>/bewertungen/<ältere>-<neuere>/
+  paare.md          je Frage und Variante zwei Antworten (A, B), welche die neuere ist, ist ausgelost
+  schluessel.json   welche Antwort aus welcher Fassung stammt (der Bewerter öffnet sie nicht)
+  bewertung.json    pro Paar eine Begründung und fünfmal "A", "B" oder "gleich"
+  ergebnis.md       Zählung je Aspekt und je Variante, dazu die Paare, in denen die ältere besser war
+```
+
+1. `pnpm soma <prompt-unit> vorbereiten v1 v2`
+2. In einem eigenen Claude-Code-Fenster `/soma-bewertung v1-v2`: Claude vergleicht jedes Paar auf
+   fünf Fragen (relevanz, richtigkeit, belegtheit, genug, nicht_zu_viel). Claude ist eine andere
+   Modellfamilie als die verglichenen GLM-Modelle, und das Abo ersetzt teure API-Aufrufe.
+3. Der Skill führt am Ende `pnpm soma <prompt-unit> auswerten v1-v2` aus.
+
+Das Ergebnis zeigt nur, welche Fassung öfter besser ist, nicht wie gut sie absolut ist. Bevor es
+Entscheidungen trägt, wird es an einigen Paaren mit eigenem Urteil abgeglichen.
 
 ---
 
