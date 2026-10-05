@@ -141,6 +141,48 @@ async function ask(
   }
 }
 
+export function checkpointIds(evalCase: EvalCase): string[] {
+  const users = evalCase.conversation.filter((turn) => turn.role === 'user').length;
+  return Array.from({ length: users }, (_, index) =>
+    users > 1 ? `${evalCase.id}/${index + 1}` : evalCase.id,
+  );
+}
+
+export function caseSection(evalCase: EvalCase, answers: readonly string[]): string {
+  const parts = [`## ${evalCase.id} (${evalCase.art})`, `_${evalCase.note}_`];
+  let answered = 0;
+  for (const turn of evalCase.conversation) {
+    if (turn.role === 'assistant') {
+      parts.push(`**Coach (Skript):** ${turn.text}`);
+      continue;
+    }
+    parts.push(`**Person:** ${turn.text}`, `**Coach (Modell):**\n\n${answers[answered] ?? ''}`);
+    answered += 1;
+  }
+  return `${parts.join('\n\n')}\n`;
+}
+
+export function variantMarkdown(
+  version: string,
+  modelId: string,
+  effort: Effort,
+  sections: readonly string[],
+): string {
+  return `# Fassung ${version} · ${modelId} · Effort ${effort}\n\n${sections.join('\n---\n\n')}`;
+}
+
+export async function registerVersion(version: string, baseDir = HERE): Promise<string> {
+  const dir = `${baseDir}fassungen/${version}`;
+  const prompts = await loadPrompts(`${baseDir}prompts.json`);
+  if (existsSync(dir) || prompts.some((entry) => entry.version === version)) {
+    throw new Error(`Fassung ${version} gibt es schon.`);
+  }
+  await mkdir(dir, { recursive: true });
+  const saved = [...prompts, { version, prompt: COACH_CHAT_SYSTEM_PROMPT }];
+  await writeFile(`${baseDir}prompts.json`, `${JSON.stringify(saved, null, 2)}\n`);
+  return dir;
+}
+
 export async function runCase(
   client: Anthropic,
   config: Config,
@@ -148,16 +190,12 @@ export async function runCase(
   effort: Effort,
   evalCase: EvalCase,
 ) {
-  const parts = [`## ${evalCase.id} (${evalCase.art})`, `_${evalCase.note}_`];
+  const answers: string[] = [];
   const rows: ResultRow[] = [];
   const thinking: string[] = [];
-  const checkpoints = evalCase.conversation.filter((turn) => turn.role === 'user').length;
+  const ids = checkpointIds(evalCase);
   for (const [index, turn] of evalCase.conversation.entries()) {
-    if (turn.role === 'assistant') {
-      parts.push(`**Coach (Skript):** ${turn.text}`);
-      continue;
-    }
-    parts.push(`**Person:** ${turn.text}`);
+    if (turn.role === 'assistant') continue;
     const result = await ask(
       client,
       config,
@@ -165,8 +203,8 @@ export async function runCase(
       effort,
       evalCase.conversation.slice(0, index + 1),
     );
-    parts.push(`**Coach (Modell):**\n\n${result.answer}`);
-    const caseId = checkpoints > 1 ? `${evalCase.id}/${rows.length + 1}` : evalCase.id;
+    answers.push(result.answer);
+    const caseId = ids[rows.length] ?? evalCase.id;
     if (result.thinking) thinking.push(`## ${caseId}\n\n${result.thinking}\n`);
     rows.push({
       modelId,
@@ -179,7 +217,7 @@ export async function runCase(
       durationMs: result.durationMs,
     });
   }
-  return { section: `${parts.join('\n\n')}\n`, thinking, rows };
+  return { section: caseSection(evalCase, answers), thinking, rows };
 }
 
 export async function runCoachChatEval(args: {
@@ -187,22 +225,12 @@ export async function runCoachChatEval(args: {
   client: Anthropic;
   version: string;
   log: (line: string) => void;
-  casesFile?: string;
-  promptsFile?: string;
-  versionsDir?: string;
+  baseDir?: string;
 }): Promise<void> {
   const { config, client, version, log } = args;
-  const promptsFile = args.promptsFile ?? `${HERE}prompts.json`;
-  const dir = `${args.versionsDir ?? `${HERE}fassungen`}/${version}`;
-  const prompts = await loadPrompts(promptsFile);
-  if (existsSync(dir) || prompts.some((entry) => entry.version === version)) {
-    throw new Error(`Fassung ${version} gibt es schon.`);
-  }
-  await mkdir(dir, { recursive: true });
-  const saved = [...prompts, { version, prompt: COACH_CHAT_SYSTEM_PROMPT }];
-  await writeFile(promptsFile, `${JSON.stringify(saved, null, 2)}\n`);
-
-  const cases = await loadCases(args.casesFile);
+  const baseDir = args.baseDir ?? HERE;
+  const dir = await registerVersion(version, baseDir);
+  const cases = await loadCases(`${baseDir}cases.json`);
   const models = resolveModels(config.anthropicBaseUrl);
   const startedAt = performance.now();
 
@@ -225,7 +253,7 @@ export async function runCoachChatEval(args: {
       }
       await writeFile(
         `${dir}/${modelId}-${effort}.md`,
-        `# Fassung ${version} · ${modelId} · Effort ${effort}\n\n${sections.join('\n---\n\n')}`,
+        variantMarkdown(version, modelId, effort, sections),
       );
       if (thinking.length > 0) {
         await writeFile(

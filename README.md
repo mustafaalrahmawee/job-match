@@ -83,6 +83,7 @@ Alle im Wurzelordner; sie laufen über alle Pakete (`backend`, `frontend`, `shar
 | `pnpm db:migrate`                        | Migrationen anwenden                                                         |
 | `pnpm user:create <email>`               | Konto anlegen oder Passwort neu setzen                                       |
 | `pnpm eval coach_chat v1`                | Fassung `v1` der Beispiel-Suite, **echtes** Modell (z.ai)                    |
+| `/claude-fassung v3` (in Claude Code)    | Fassung mit Sonnet und Opus über vier Subagents, ohne API-Kosten             |
 | `pnpm soma coach_chat vorbereiten v1 v2` | Paare aus zwei Fassungen bilden, dann `/soma-bewertung v1-v2` in Claude Code |
 | `pnpm soma coach_chat auswerten v1-v2`   | Zählen, wo welche Fassung besser war                                         |
 

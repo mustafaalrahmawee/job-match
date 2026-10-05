@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { z } from 'zod';
 
-import { GLM_MODELS } from '../../src/llm/models';
+import { CLAUDE_MODELS, GLM_MODELS } from '../../src/llm/models';
 import { VARIANTS, loadCases } from './run';
 import type { EvalCase } from './run';
 
@@ -72,15 +72,23 @@ export async function prepare(older: string, newer: string, baseDir = HERE): Pro
   if (existsSync(dir)) throw new Error(`Bewertung ${name} gibt es schon.`);
   const cases = await loadCases(`${baseDir}cases.json`);
 
+  const file = (fassung: string, model: 'standard' | 'advanced', effort: string) => {
+    const claude = `${CLAUDE_MODELS[model]}-${effort}`;
+    return existsSync(`${baseDir}fassungen/${fassung}/${claude}.md`)
+      ? claude
+      : `${GLM_MODELS[model]}-${effort}`;
+  };
   const answers = async (fassung: string, variante: string) =>
     extractAnswers(await readFile(`${baseDir}fassungen/${fassung}/${variante}.md`, 'utf8'), cases);
 
   const pairs: Pair[] = [];
   const blocks: string[] = [];
   for (const { model, effort } of VARIANTS) {
-    const variante = `${GLM_MODELS[model]}-${effort}`;
-    const first = await answers(older, variante);
-    const second = await answers(newer, variante);
+    const olderFile = file(older, model, effort);
+    const newerFile = file(newer, model, effort);
+    const variante = olderFile === newerFile ? olderFile : `${olderFile} ↔ ${newerFile}`;
+    const first = await answers(older, olderFile);
+    const second = await answers(newer, newerFile);
     for (const [aufgabe, olderText] of first) {
       const swap = randomInt(2) === 1;
       const pair = {
