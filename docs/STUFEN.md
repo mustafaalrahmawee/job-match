@@ -150,6 +150,7 @@ gespeichert. Konten legt bis zum Go-live nur das Skript `pnpm user:create` an.
 
 Vorgezogener Teil von Stufe 7, ohne Embeddings und ohne KI: echte Stellen liegen lokal in der DB,
 bevor Lebenslauf und Match gebaut werden.
+Ablauf, API-Eigenheiten, Probleme und Lösungen: [STELLEN-IMPORT.md](STELLEN-IMPORT.md).
 
 - [x] Quelle: Jobsuche der Bundesagentur (kostenlos, inoffiziell dokumentiert auf bund.dev; fester
       Schlüssel `jobboerse-jobsuche`); Suche `/pc/v6/jobs`, Volltext `/pc/v4/jobdetails/{base64}`

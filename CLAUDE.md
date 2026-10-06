@@ -8,3 +8,5 @@ Kurz: einfach halten, dünne Dateien, keine Kommentare im Code; Tests nach STACK
 Gebaut wird Stufe für Stufe nach [docs/STUFEN.md](docs/STUFEN.md); nur die aktuelle Stufe umsetzen.
 Jeder Prompt folgt [docs/app-prompting-anchor.md](docs/app-prompting-anchor.md). Fachliche Idee:
 [docs/IDEE.md](docs/IDEE.md). Überblick: [README.md](README.md).
+
+Stellen importieren oder den Import ändern: erst [docs/STELLEN-IMPORT.md](docs/STELLEN-IMPORT.md) lesen.
