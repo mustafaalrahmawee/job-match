@@ -116,4 +116,18 @@ describe.skipIf(!TEST_DATABASE_URL)('importJobs', () => {
     expect(String(fetch.mock.calls[0]?.[0])).toContain('veroeffentlichtseit=30');
     expect(fetch).toHaveBeenCalledTimes(2 + 20 + old);
   });
+
+  it('searches all fields without a keyword and retries a failed request', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: fetchedOn });
+    const fetch = vi
+      .fn((url: string) => Promise.resolve(fakeBa(url)))
+      .mockRejectedValueOnce(new TypeError('fetch failed'));
+    vi.stubGlobal('fetch', fetch);
+
+    const result = await importJobs(db, { limit: 20 });
+
+    const searchUrl = new URL(String(fetch.mock.calls[1]?.[0]));
+    expect(searchUrl.searchParams.has('was')).toBe(false);
+    expect(result).toMatchObject({ found: 20, known: recent.length, saved: 0 });
+  });
 });

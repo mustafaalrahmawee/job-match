@@ -7,6 +7,7 @@ import { jobs } from './jobs.tables';
 const BA_URL = 'https://rest.arbeitsagentur.de/jobboerse/jobsuche-service';
 const BA_HEADERS = { 'X-API-Key': 'jobboerse-jobsuche' };
 const BA_TIMEOUT_MS = 20_000;
+const BA_ATTEMPTS = 3;
 const PAGE_SIZE = 100;
 const MAX_AGE_DAYS = 30;
 const WORK_HOURS_PER_YEAR = 2080;
@@ -56,12 +57,14 @@ type BaJob = z.infer<typeof DetailSchema>;
 export type NewJob = typeof jobs.$inferInsert;
 
 export interface JobSearch {
-  readonly what: string;
+  readonly what?: string;
   readonly where?: string;
   readonly limit: number;
 }
 
-async function fetchBa(path: string): Promise<unknown> {
+export type ImportProgress = (done: number, total: number) => void;
+
+async function fetchBaOnce(path: string): Promise<unknown> {
   const response = await fetch(`${BA_URL}${path}`, {
     headers: BA_HEADERS,
     signal: AbortSignal.timeout(BA_TIMEOUT_MS),
@@ -69,6 +72,17 @@ async function fetchBa(path: string): Promise<unknown> {
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Bundesagentur antwortet mit Status ${response.status}.`);
   return response.json();
+}
+
+async function fetchBa(path: string): Promise<unknown> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await fetchBaOnce(path);
+    } catch (error) {
+      if (attempt === BA_ATTEMPTS) throw error;
+      await new Promise((resolve) => setTimeout(resolve, attempt * 2000));
+    }
+  }
 }
 
 function anyTrue(values: readonly (boolean | undefined)[]) {
@@ -132,11 +146,11 @@ async function searchJobIds(search: JobSearch) {
   const ids = new Set<string>();
   for (let page = 1; ids.size < search.limit; page++) {
     const params = new URLSearchParams({
-      was: search.what,
       page: String(page),
       size: String(PAGE_SIZE),
       veroeffentlichtseit: String(MAX_AGE_DAYS),
     });
+    if (search.what) params.set('was', search.what);
     if (search.where) params.set('wo', search.where);
     const { ergebnisliste } = SearchSchema.parse(await fetchBa(`/pc/v6/jobs?${params.toString()}`));
     ergebnisliste.forEach((job) => ids.add(job.referenznummer));
@@ -159,15 +173,17 @@ async function knownJobIds(db: Db, ids: readonly string[]) {
   return new Set(rows.map((row) => row.externalId));
 }
 
-export async function importJobs(db: Db, search: JobSearch) {
+export async function importJobs(db: Db, search: JobSearch, onProgress?: ImportProgress) {
   const ids = await searchJobIds(search);
   const known = await knownJobIds(db, ids);
+  const missing = ids.filter((id) => !known.has(id));
   const oldest = oldestPublishedAt();
   let saved = 0;
   let invalid = 0;
   let tooOld = 0;
 
-  for (const id of ids.filter((id) => !known.has(id))) {
+  for (const [index, id] of missing.entries()) {
+    onProgress?.(index, missing.length);
     const job = toJob(await fetchBa(`/pc/v4/jobdetails/${Buffer.from(id).toString('base64')}`));
     if (!job) {
       invalid++;
