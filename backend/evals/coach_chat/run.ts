@@ -141,14 +141,14 @@ async function ask(
   }
 }
 
-export function checkpointIds(evalCase: EvalCase): string[] {
+function checkpointIds(evalCase: EvalCase): string[] {
   const users = evalCase.conversation.filter((turn) => turn.role === 'user').length;
   return Array.from({ length: users }, (_, index) =>
     users > 1 ? `${evalCase.id}/${index + 1}` : evalCase.id,
   );
 }
 
-export function caseSection(evalCase: EvalCase, answers: readonly string[]): string {
+function caseSection(evalCase: EvalCase, answers: readonly string[]): string {
   const parts = [`## ${evalCase.id} (${evalCase.art})`, `_${evalCase.note}_`];
   let answered = 0;
   for (const turn of evalCase.conversation) {
@@ -162,7 +162,7 @@ export function caseSection(evalCase: EvalCase, answers: readonly string[]): str
   return `${parts.join('\n\n')}\n`;
 }
 
-export function variantMarkdown(
+function variantMarkdown(
   version: string,
   modelId: string,
   effort: Effort,
@@ -171,7 +171,7 @@ export function variantMarkdown(
   return `# Fassung ${version} · ${modelId} · Effort ${effort}\n\n${sections.join('\n---\n\n')}`;
 }
 
-export async function registerVersion(version: string, baseDir = HERE): Promise<string> {
+async function registerVersion(version: string, baseDir = HERE): Promise<string> {
   const dir = `${baseDir}fassungen/${version}`;
   const prompts = await loadPrompts(`${baseDir}prompts.json`);
   if (existsSync(dir) || prompts.some((entry) => entry.version === version)) {
@@ -275,7 +275,7 @@ export async function runCoachChatEval(args: {
   log(summary);
 }
 
-export function zaiConfig(): Config {
+function zaiConfig(): Config {
   if (existsSync(ROOT_ENV_FILE)) process.loadEnvFile(ROOT_ENV_FILE);
   if (!process.env.TEST_ANTHROPIC_API_KEY) {
     throw new Error('TEST_ANTHROPIC_API_KEY fehlt in der .env (z.ai-Key, siehe .env.example).');

@@ -1,6 +1,7 @@
 ---
 name: soma-bewertung
 description: Vergleicht blind je zwei Antworten der Beispiel-Suite coach_chat (Paarvergleich auf fünf Aspekten) und schreibt bewertung.json. Aufruf mit dem Namen des Vergleichs, z. B. /soma-bewertung v1-v2.
+disable-model-invocation: true
 ---
 
 # Paarvergleich · coach_chat
@@ -25,8 +26,7 @@ Arbeitsordner: `backend/evals/coach_chat/bewertungen/$ARGUMENTS/`
 ## Die fünf Fragen
 
 Lies zuerst `backend/evals/coach_chat/soma-fragen.md`, bevor du `paare.md` öffnest, damit du jedes
-Paar schon mit den Fragen im Kopf liest. Dieselbe Datei nutzt auch der GLM-Bewerter, so gelten für
-beide Bewerter dieselben Fragen.
+Paar schon mit den Fragen im Kopf liest.
 
 ## Ablauf
 
@@ -59,7 +59,7 @@ Wenn alle Paare bewertet sind, führe im Repo-Wurzelordner aus:
 pnpm soma coach_chat auswerten $ARGUMENTS "<dein Modellname>"
 ```
 
-Setze deinen tatsächlichen Modellnamen ein (z. B. `claude-opus-5-5` oder `glm-5.3`), damit
+Setze deinen tatsächlichen Modellnamen ein (z. B. `claude-opus-5-5`), damit
 `ergebnis.md` den richtigen Bewerter nennt.
 
 Meldet der Befehl fehlende Paare, ergänze sie und führe ihn erneut aus. Zeige danach die beiden

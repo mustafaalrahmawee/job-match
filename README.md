@@ -71,22 +71,21 @@ Vite-Dev-Server leitet `/api` an das Backend weiter.
 
 Alle im Wurzelordner; sie laufen über alle Pakete (`backend`, `frontend`, `shared`).
 
-| Befehl                                           | Zweck                                                                        |
-| ------------------------------------------------ | ---------------------------------------------------------------------------- |
-| `pnpm dev`                                       | Backend (`tsx watch`) und Frontend (Vite) mit Neustart                       |
-| `pnpm lint`                                      | ESLint                                                                       |
-| `pnpm format` / `pnpm format:check`              | Prettier                                                                     |
-| `pnpm typecheck`                                 | `tsc` bzw. `vue-tsc`                                                         |
-| `pnpm test`                                      | Vitest mit Mock-Client (Backend-Tests gegen Test-DB)                         |
-| `pnpm test:integration`                          | Backend gegen echtes Modell (z.ai, kostet wenig, nie in CI)                  |
-| `pnpm db:generate`                               | neue Migration aus den `*.tables.ts` erzeugen (drizzle-kit)                  |
-| `pnpm db:migrate`                                | Migrationen anwenden                                                         |
-| `pnpm user:create <email>`                       | Konto anlegen oder Passwort neu setzen                                       |
-| `pnpm eval coach_chat v1`                        | Fassung `v1` der Beispiel-Suite, **echtes** Modell (z.ai)                    |
-| `/claude-fassung v2` (in Claude Code)            | Claude-Antworten (Sonnet, Opus; low, high) zur Fassung `v2`, ohne API-Kosten |
-| `pnpm soma coach_chat vorbereiten v1 v2`         | Paare aus zwei Fassungen bilden, dann `/soma-bewertung v1-v2` in Claude Code |
-| `pnpm soma coach_chat auswerten v1-v2`           | Zählen, wo welche Fassung besser war                                         |
-| `pnpm soma coach_chat bewerten-glm v1-v2-claude` | Claude-Antworten von GLM-5.3 high blind vergleichen lassen (z.ai)            |
+| Befehl                                   | Zweck                                                                        |
+| ---------------------------------------- | ---------------------------------------------------------------------------- |
+| `pnpm dev`                               | Backend (`tsx watch`) und Frontend (Vite) mit Neustart                       |
+| `pnpm lint`                              | ESLint                                                                       |
+| `pnpm format` / `pnpm format:check`      | Prettier                                                                     |
+| `pnpm typecheck`                         | `tsc` bzw. `vue-tsc`                                                         |
+| `pnpm test`                              | Vitest mit Mock-Client (Backend-Tests gegen Test-DB)                         |
+| `pnpm test:integration`                  | Backend gegen echtes Modell (z.ai, kostet wenig, nie in CI)                  |
+| `pnpm db:generate`                       | neue Migration aus den `*.tables.ts` erzeugen (drizzle-kit)                  |
+| `pnpm db:migrate`                        | Migrationen anwenden                                                         |
+| `pnpm user:create <email>`               | Konto anlegen oder Passwort neu setzen                                       |
+| `pnpm eval coach_chat v1`                | Fassung `v1` der Beispiel-Suite, **echtes** Modell (z.ai)                    |
+| `/glm-fassung v3` (in Claude Code)       | Fassung `v3` erzeugen und Paare mit der Vorgängerfassung bilden              |
+| `pnpm soma coach_chat vorbereiten v1 v2` | Paare aus zwei Fassungen bilden, dann `/soma-bewertung v1-v2` in Claude Code |
+| `pnpm soma coach_chat auswerten v1-v2`   | Zählen, wo welche Fassung besser war                                         |
 
 Einzelnes Paket: `pnpm --filter @job-match/backend run test` (bzw. `frontend`, `shared`).
 

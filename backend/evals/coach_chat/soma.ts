@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url';
 
 import { z } from 'zod';
 
-import { CLAUDE_MODELS, GLM_MODELS } from '../../src/llm/models';
-import { VARIANTS, loadCases, zaiConfig } from './run';
+import { GLM_MODELS } from '../../src/llm/models';
+import { VARIANTS, loadCases } from './run';
 import type { EvalCase } from './run';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
@@ -66,27 +66,19 @@ function conversationUntil(evalCase: EvalCase, checkpoint: number): string {
     .join('\n\n');
 }
 
-export type Family = 'glm' | 'claude';
-
-export async function prepare(
-  older: string,
-  newer: string,
-  family: Family = 'glm',
-  baseDir = HERE,
-): Promise<string> {
-  const name = family === 'glm' ? `${older}-${newer}` : `${older}-${newer}-${family}`;
+export async function prepare(older: string, newer: string, baseDir = HERE): Promise<string> {
+  const name = `${older}-${newer}`;
   const dir = `${baseDir}bewertungen/${name}`;
   if (existsSync(dir)) throw new Error(`Bewertung ${name} gibt es schon.`);
   const cases = await loadCases(`${baseDir}cases.json`);
 
-  const models = family === 'claude' ? CLAUDE_MODELS : GLM_MODELS;
   const answers = async (fassung: string, variante: string) =>
     extractAnswers(await readFile(`${baseDir}fassungen/${fassung}/${variante}.md`, 'utf8'), cases);
 
   const pairs: Pair[] = [];
   const blocks: string[] = [];
   for (const { model, effort } of VARIANTS) {
-    const variante = `${models[model]}-${effort}`;
+    const variante = `${GLM_MODELS[model]}-${effort}`;
     const first = await answers(older, variante);
     const second = await answers(newer, variante);
     for (const [aufgabe, olderText] of first) {
@@ -184,31 +176,22 @@ export async function evaluate(name: string, bewerter: string, baseDir = HERE): 
 }
 
 export async function main(args: string[]): Promise<number> {
-  const [command, first, second, third] = args;
-  if (command === 'vorbereiten' && first && second && (!third || third === 'claude')) {
-    const name = await prepare(first, second, third === 'claude' ? 'claude' : 'glm');
-    const next =
-      third === 'claude'
-        ? `pnpm soma coach_chat bewerten-glm ${name}`
-        : `im Claude-Code-Fenster /soma-bewertung ${name}`;
-    console.log(`Vorbereitet: bewertungen/${name}/paare.md\nWeiter: ${next}`);
+  const [command, first, second] = args;
+  if (command === 'vorbereiten' && first && second) {
+    const name = await prepare(first, second);
+    console.log(
+      `Vorbereitet: bewertungen/${name}/paare.md\nWeiter: im Claude-Code-Fenster /soma-bewertung ${name}`,
+    );
     return 0;
   }
   if (command === 'auswerten' && first) {
     console.log(await evaluate(first, second ?? 'Claude Code'));
     return 0;
   }
-  if (command === 'bewerten-glm' && first) {
-    const { judgeWithGlm } = await import('./soma-glm');
-    await judgeWithGlm(first, zaiConfig(), console.log);
-    console.log(await evaluate(first, 'glm-5.3 (Effort high, über z.ai)'));
-    return 0;
-  }
   console.error(
     [
-      'Aufruf: pnpm soma coach_chat vorbereiten <ältere> <neuere> [claude]',
+      'Aufruf: pnpm soma coach_chat vorbereiten <ältere> <neuere>',
       '       pnpm soma coach_chat auswerten <name>',
-      '       pnpm soma coach_chat bewerten-glm <name>',
     ].join('\n'),
   );
   return 1;
