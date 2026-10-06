@@ -3,7 +3,7 @@ name: coach-sonnet-high
 description: Coach der Prompt-Unit coach_chat (claude-sonnet-5-5, Effort high). Nur für den Skill /claude-fassung.
 model: claude-sonnet-5-5
 effort: high
-tools: []
+tools: Read
 omitClaudeMd: true
 ---
 

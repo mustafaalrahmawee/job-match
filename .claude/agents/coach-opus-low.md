@@ -3,7 +3,7 @@ name: coach-opus-low
 description: Coach der Prompt-Unit coach_chat (claude-opus-5-5, Effort low). Nur für den Skill /claude-fassung.
 model: claude-opus-5-5
 effort: low
-tools: []
+tools: Read
 omitClaudeMd: true
 ---
 

@@ -275,22 +275,25 @@ export async function runCoachChatEval(args: {
   log(summary);
 }
 
+export function zaiConfig(): Config {
+  if (existsSync(ROOT_ENV_FILE)) process.loadEnvFile(ROOT_ENV_FILE);
+  if (!process.env.TEST_ANTHROPIC_API_KEY) {
+    throw new Error('TEST_ANTHROPIC_API_KEY fehlt in der .env (z.ai-Key, siehe .env.example).');
+  }
+  return parseConfig({
+    ...process.env,
+    ANTHROPIC_API_KEY: process.env.TEST_ANTHROPIC_API_KEY,
+    ANTHROPIC_BASE_URL: process.env.TEST_ANTHROPIC_BASE_URL ?? ZAI_BASE_URL,
+  });
+}
+
 export async function main(args: string[]): Promise<number> {
   const version = args[0] ?? '';
   if (!/^[a-z0-9-]+$/.test(version)) {
     console.error('Aufruf: pnpm eval coach_chat <fassung>   (z. B. v1)');
     return 1;
   }
-  if (existsSync(ROOT_ENV_FILE)) process.loadEnvFile(ROOT_ENV_FILE);
-  if (!process.env.TEST_ANTHROPIC_API_KEY) {
-    console.error('TEST_ANTHROPIC_API_KEY fehlt in der .env (z.ai-Key, siehe .env.example).');
-    return 1;
-  }
-  const config = parseConfig({
-    ...process.env,
-    ANTHROPIC_API_KEY: process.env.TEST_ANTHROPIC_API_KEY,
-    ANTHROPIC_BASE_URL: process.env.TEST_ANTHROPIC_BASE_URL ?? ZAI_BASE_URL,
-  });
+  const config = zaiConfig();
   await runCoachChatEval({ config, client: createLlmClient(config), version, log: console.log });
   return 0;
 }

@@ -1,6 +1,9 @@
+import { readFile } from 'node:fs/promises';
+
 import { describe, expect, it } from 'vitest';
 
 import { count, extractAnswers } from '../evals/coach_chat/soma';
+import { judgeSystemPrompt, parseVerdict } from '../evals/coach_chat/soma-glm';
 
 const cases = [
   {
@@ -96,5 +99,33 @@ describe('pairwise comparison for coach_chat', () => {
     expect(perAspect.relevanz).toEqual({ neuer: 2, gleich: 0, aelter: 0 });
     expect(perAspect.genug).toEqual({ neuer: 0, gleich: 2, aelter: 0 });
     expect(perVariant.flash).toEqual({ neuer: 1, gleich: 4, aelter: 0 });
+  });
+});
+
+describe('glm judge for the pairwise comparison', () => {
+  it('reads the verdict from the json object and rejects invalid choices', () => {
+    const verdict = {
+      begruendung: 'B ist kürzer.',
+      relevanz: 'gleich',
+      richtigkeit: 'gleich',
+      belegtheit: 'A',
+      genug: 'gleich',
+      nicht_zu_viel: 'B',
+    };
+
+    expect(parseVerdict(`Analyse …\n${JSON.stringify(verdict)}`)).toEqual(verdict);
+    expect(parseVerdict(JSON.stringify({ ...verdict, genug: 'C' }))).toBeUndefined();
+    expect(parseVerdict('kein JSON')).toBeUndefined();
+  });
+
+  it('states the questions before the pair arrives', async () => {
+    const fragen = await readFile(
+      new URL('../evals/coach_chat/soma-fragen.md', import.meta.url),
+      'utf8',
+    );
+    const prompt = judgeSystemPrompt(fragen);
+
+    expect(prompt.startsWith('Dies ist ein Gutachten')).toBe(true);
+    expect(prompt).toContain('**nicht_zu_viel:**');
   });
 });

@@ -255,17 +255,18 @@ backend/evals/<prompt-unit>/
 - Jeder Lauf protokolliert Modell, Effort, Tokens und Dauer (AP-58).
 - Sobald eine Unit ein festes Ergebnis hat (z. B. Score), kommen prüfbare Kriterien dazu.
 
-**Fassung mit Claude (über Claude Code statt API).** Damit Claude-Antworten nichts extra kosten,
-erzeugt sie der Skill `/claude-fassung v3` in einer Claude-Code-Sitzung: Ein Hauptagent (Opus,
-Effort high) gibt jede Aufgabe parallel an vier Subagents (`.claude/agents/coach-*.md`: Sonnet und
-Opus, je low und high). Ihr System-Prompt ist der Coach-Prompt, sie haben keine Werkzeuge.
+**Claude-Antworten zu einer Fassung (über Claude Code statt API).** Damit Claude-Antworten nichts
+extra kosten, erzeugt sie der Skill `/claude-fassung v2` in einer Claude-Code-Sitzung zu einer schon
+vorhandenen Fassung: Ein Hauptagent (Opus, Effort high) gibt jede Aufgabe parallel an vier Subagents
+(`.claude/agents/coach-*.md`: Sonnet und Opus, je low und high).
 
-1. Nach jeder Prompt-Änderung `pnpm eval-claude coach_chat agenten` (ein Test prüft, dass die
-   Agent-Dateien zum Prompt passen) und ein neues Claude-Code-Fenster öffnen.
-2. `/claude-fassung v3` ruft `vorbereiten` und `zusammenstellen` selbst auf und schreibt dieselben
-   Antwort-Dateien wie `pnpm eval`, aber ohne Thinking und mit Tokens als Gesamtzahl.
-3. Unterschiede zur App: Bei Gesprächen über mehrere Runden steht der Verlauf als Text in einer
-   Nachricht statt als einzelne Nachrichten, und Thinking und Token-Limit setzt Claude Code.
+- `pnpm eval-claude coach_chat vorbereiten v2` schreibt die Agent-Dateien mit dem Prompt von `v2` aus
+  `prompts.json` (Claude Code lädt sie ohne Neustart) und legt `claude-eingaben.json` an.
+- `pnpm eval-claude coach_chat zusammenstellen v2` schreibt `claude-…md` und `claude-metrics.tsv`
+  in denselben Ordner wie die GLM-Dateien; eine Fassung ist ein Prompt mit beiden Modellfamilien.
+- Unterschiede zur App: Bei Gesprächen über mehrere Runden steht der Verlauf als Text in einer
+  Nachricht; Subagents brauchen mindestens ein Werkzeug (`Read`); Thinking und Token-Limit setzt
+  Claude Code; vereinzelt richten Subagents Anmerkungen an den Aufrufer.
 
 **Paarvergleich (LLM Assessment, Prompt-Regeln AP-59/AP-60).** Zwei Fassungen werden zusätzlich zum
 Lesen blind verglichen, damit eine Prompt-Änderung messbar wird:
@@ -278,15 +279,16 @@ backend/evals/<prompt-unit>/bewertungen/<ältere>-<neuere>/
   ergebnis.md       Zählung je Aspekt und je Variante, dazu die Paare, in denen die ältere besser war
 ```
 
-1. `pnpm soma <prompt-unit> vorbereiten v1 v2`
-2. In einem eigenen Claude-Code-Fenster `/soma-bewertung v1-v2`: Claude vergleicht jedes Paar auf
-   fünf Fragen (relevanz, richtigkeit, belegtheit, genug, nicht_zu_viel). Claude ist eine andere
-   Modellfamilie als die verglichenen GLM-Modelle, und das Abo ersetzt teure API-Aufrufe.
-3. Der Skill führt am Ende `pnpm soma <prompt-unit> auswerten v1-v2` aus.
+Bewertet wird immer von der anderen Modellfamilie, damit niemand seine eigenen Antworten benotet:
 
-Verglichen werden immer gleiche Plätze (Normal/Erweitert, low/high); so lassen sich auch eine
-GLM- und eine Claude-Fassung paaren. Wer Claude-Antworten bewertet, sollte nicht Claude sein:
-dafür Claude Code mit z.ai als Anbieter (GLM) öffnen und dort `/soma-bewertung` aufrufen.
+| Antworten von | Vorbereiten                                     | Bewerten                                                       |
+| ------------- | ----------------------------------------------- | -------------------------------------------------------------- |
+| GLM           | `pnpm soma coach_chat vorbereiten v1 v2`        | Claude: `/soma-bewertung v1-v2` in Claude Code                 |
+| Claude        | `pnpm soma coach_chat vorbereiten v1 v2 claude` | GLM-5.3 high: `pnpm soma coach_chat bewerten-glm v1-v2-claude` |
+
+Beide Bewerter lesen dieselben fünf Fragen aus `soma-fragen.md`. `bewerten-glm` ruft z.ai auf
+(`TEST_ANTHROPIC_API_KEY`), setzt nach einer Unterbrechung beim ersten offenen Paar fort und wertet am
+Ende selbst aus; nach `/soma-bewertung` wertet der Skill aus.
 
 Das Ergebnis zeigt nur, welche Fassung öfter besser ist, nicht wie gut sie absolut ist. Bevor es
 Entscheidungen trägt, wird es an einigen Paaren mit eigenem Urteil abgeglichen.

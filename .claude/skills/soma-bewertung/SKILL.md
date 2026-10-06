@@ -18,24 +18,15 @@ Arbeitsordner: `backend/evals/coach_chat/bewertungen/$ARGUMENTS/`
 
 1. Prüfe, dass `paare.md` im Arbeitsordner existiert. Fehlt sie, brich ab und nenne den Befehl
    `pnpm soma coach_chat vorbereiten <ältere Fassung> <neuere Fassung>`.
-2. Lies nur `paare.md` und schreibe nur `bewertung.json`. Öffne `schluessel.json`, den Ordner
+2. Lies nur `backend/evals/coach_chat/soma-fragen.md` und `paare.md` und schreibe nur
+   `bewertung.json`. Öffne `schluessel.json`, den Ordner
    `fassungen/` und andere Vergleiche nicht, damit der Vergleich blind bleibt.
 
 ## Die fünf Fragen
 
-Lies diese Fragen zuerst. Beantworte jede mit `"A"`, `"B"` oder `"gleich"`. Wähle `"gleich"`,
-wenn der Unterschied klein ist, damit nur deutliche Unterschiede zählen.
-
-- **relevanz:** Welche Antwort geht besser auf die Frage ein und auf das, was unter
-  `worauf_es_ankommt` steht? Eine Antwort in einer anderen Sprache als der der Person geht
-  schlechter darauf ein.
-- **richtigkeit:** Welche Antwort ist sachlich richtiger (Recht, Arbeitsmarkt, Bewerbungspraxis)?
-  Ein Fehler, der der Person schaden kann, wiegt schwerer als eine Unschärfe.
-- **belegtheit:** Welche Antwort stützt sich mehr auf die Angaben der Person und erfindet weniger
-  über sie?
-- **genug:** Mit welcher Antwort kann die Person ihren nächsten Schritt besser gehen?
-- **nicht_zu_viel:** Welche Antwort hat weniger Überflüssiges, etwa Wiederholungen, lange Listen,
-  Einleitungen oder zu viele Fragen auf einmal?
+Lies zuerst `backend/evals/coach_chat/soma-fragen.md`, bevor du `paare.md` öffnest, damit du jedes
+Paar schon mit den Fragen im Kopf liest. Dieselbe Datei nutzt auch der GLM-Bewerter, so gelten für
+beide Bewerter dieselben Fragen.
 
 ## Ablauf
 
@@ -65,8 +56,11 @@ Datei ist ein JSON-Array mit genau einem Eintrag pro Paar:
 Wenn alle Paare bewertet sind, führe im Repo-Wurzelordner aus:
 
 ```bash
-pnpm soma coach_chat auswerten $ARGUMENTS
+pnpm soma coach_chat auswerten $ARGUMENTS "<dein Modellname>"
 ```
+
+Setze deinen tatsächlichen Modellnamen ein (z. B. `claude-opus-5-5` oder `glm-5.3`), damit
+`ergebnis.md` den richtigen Bewerter nennt.
 
 Meldet der Befehl fehlende Paare, ergänze sie und führe ihn erneut aus. Zeige danach die beiden
 Tabellen aus `ergebnis.md` und fasse in zwei, drei Sätzen zusammen, was sich verbessert und was sich

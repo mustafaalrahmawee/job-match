@@ -1,16 +1,16 @@
+import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import { z } from 'zod';
 
-import { COACH_CHAT_SYSTEM_PROMPT } from '../../src/chat/chat.prompts';
 import { CLAUDE_MODELS } from '../../src/llm/models';
 import {
   VARIANTS,
   caseSection,
   checkpointIds,
   loadCases,
-  registerVersion,
+  loadPrompts,
   variantMarkdown,
 } from './run';
 import type { EvalCase } from './run';
@@ -26,17 +26,17 @@ export const AGENTS = VARIANTS.map(({ model, effort }) => ({
 
 type Agent = (typeof AGENTS)[number];
 
-export function agentFile(agent: Agent): string {
+export function agentFile(agent: Agent, prompt: string): string {
   return `---
 name: ${agent.name}
 description: Coach der Prompt-Unit coach_chat (${agent.modelId}, Effort ${agent.effort}). Nur für den Skill /claude-fassung.
 model: ${agent.modelId}
 effort: ${agent.effort}
-tools: []
+tools: Read
 omitClaudeMd: true
 ---
 
-${COACH_CHAT_SYSTEM_PROMPT}
+${prompt}
 `;
 }
 
@@ -53,15 +53,6 @@ export function message(evalCase: EvalCase, checkpoint: number): string {
     .join('\n\n');
 }
 
-async function staleAgents(): Promise<string[]> {
-  const stale: string[] = [];
-  for (const agent of AGENTS) {
-    const current = await readFile(`${AGENTS_DIR}${agent.name}.md`, 'utf8').catch(() => '');
-    if (current !== agentFile(agent)) stale.push(agent.name);
-  }
-  return stale;
-}
-
 const AnswerSchema = z.object({
   aufgabe: z.string(),
   agent: z.string(),
@@ -71,13 +62,24 @@ const AnswerSchema = z.object({
 });
 
 export async function prepare(version: string, baseDir = HERE): Promise<number> {
-  const stale = await staleAgents();
-  if (stale.length > 0) {
+  const dir = `${baseDir}fassungen/${version}`;
+  const prompt = (await loadPrompts(`${baseDir}prompts.json`)).find(
+    (entry) => entry.version === version,
+  )?.prompt;
+  if (!prompt || !existsSync(dir)) {
     throw new Error(
-      `Agent-Dateien passen nicht zum Prompt (${stale.join(', ')}). Erst \`pnpm eval-claude coach_chat agenten\`, dann ein neues Claude-Code-Fenster öffnen.`,
+      `Fassung ${version} fehlt. Erst \`pnpm eval coach_chat ${version}\` ausführen.`,
     );
   }
-  const dir = await registerVersion(version, baseDir);
+  if (existsSync(`${dir}/claude-antworten.json`)) {
+    throw new Error(`Fassung ${version} hat schon Claude-Antworten.`);
+  }
+
+  await mkdir(AGENTS_DIR, { recursive: true });
+  for (const agent of AGENTS) {
+    await writeFile(`${AGENTS_DIR}${agent.name}.md`, agentFile(agent, prompt));
+  }
+
   const cases = await loadCases(`${baseDir}cases.json`);
   const eingaben = cases.flatMap((evalCase) =>
     checkpointIds(evalCase).map((aufgabe, index) => ({
@@ -85,8 +87,8 @@ export async function prepare(version: string, baseDir = HERE): Promise<number> 
       nachricht: message(evalCase, index + 1),
     })),
   );
-  await writeFile(`${dir}/eingaben.json`, `${JSON.stringify(eingaben, null, 2)}\n`);
-  await writeFile(`${dir}/antworten.json`, '[]\n');
+  await writeFile(`${dir}/claude-eingaben.json`, `${JSON.stringify(eingaben, null, 2)}\n`);
+  await writeFile(`${dir}/claude-antworten.json`, '[]\n');
   return eingaben.length;
 }
 
@@ -95,7 +97,7 @@ export async function assemble(version: string, baseDir = HERE): Promise<string[
   const cases = await loadCases(`${baseDir}cases.json`);
   const answers = z
     .array(AnswerSchema)
-    .parse(JSON.parse(await readFile(`${dir}/antworten.json`, 'utf8')));
+    .parse(JSON.parse(await readFile(`${dir}/claude-antworten.json`, 'utf8')));
   const byKey = new Map(answers.map((answer) => [`${answer.aufgabe}#${answer.agent}`, answer]));
 
   const missing = AGENTS.flatMap((agent) =>
@@ -127,21 +129,15 @@ export async function assemble(version: string, baseDir = HERE): Promise<string[
       );
     }
   }
-  await writeFile(`${dir}/metrics.tsv`, `${metrics.join('\n')}\n`);
+  await writeFile(`${dir}/claude-metrics.tsv`, `${metrics.join('\n')}\n`);
   return files;
 }
 
 export async function main(args: string[]): Promise<number> {
   const [command, version] = args;
-  if (command === 'agenten') {
-    await mkdir(AGENTS_DIR, { recursive: true });
-    for (const agent of AGENTS) await writeFile(`${AGENTS_DIR}${agent.name}.md`, agentFile(agent));
-    console.log(`Agent-Dateien geschrieben: ${AGENTS.map((agent) => agent.name).join(', ')}`);
-    return 0;
-  }
-  if (command === 'vorbereiten' && version && /^[a-z0-9-]+$/.test(version)) {
+  if (command === 'vorbereiten' && version) {
     console.log(
-      `Vorbereitet: fassungen/${version}/eingaben.json (${await prepare(version)} Aufgaben)`,
+      `Vorbereitet: fassungen/${version}/claude-eingaben.json (${await prepare(version)} Aufgaben), Agent-Dateien mit dem Prompt von ${version}`,
     );
     return 0;
   }
@@ -149,8 +145,6 @@ export async function main(args: string[]): Promise<number> {
     console.log(`Geschrieben: ${(await assemble(version)).join(', ')}`);
     return 0;
   }
-  console.error(
-    'Aufruf: pnpm eval-claude coach_chat agenten | vorbereiten <fassung> | zusammenstellen <fassung>',
-  );
+  console.error('Aufruf: pnpm eval-claude coach_chat vorbereiten|zusammenstellen <fassung>');
   return 1;
 }
