@@ -82,6 +82,32 @@ describe('toJob', () => {
     expect(job).toMatchObject({ city: 'Berlin', region: null, latitude: null });
   });
 
+  it('keeps a job that names only a region and no occupation', () => {
+    const job = toJob({
+      ...details[0],
+      hauptberuf: undefined,
+      stellenlokationen: [{ adresse: { region: 'BAYERN', land: 'DEUTSCHLAND' } }],
+    });
+
+    expect(job).toMatchObject({ occupation: null, city: null, region: 'BAYERN' });
+  });
+
+  it('uses the occupation as title when the ad has none', () => {
+    const job = toJob({
+      ...details[0],
+      stellenangebotsTitel: undefined,
+      hauptberuf: 'Koch/Köchin',
+    });
+    const neither = toJob({
+      ...details[0],
+      stellenangebotsTitel: undefined,
+      hauptberuf: undefined,
+    });
+
+    expect(job?.title).toBe('Koch/Köchin');
+    expect(neither).toBeNull();
+  });
+
   it('rejects a job without description', () => {
     expect(toJob({ ...details[0], stellenangebotsBeschreibung: '' })).toBeNull();
   });

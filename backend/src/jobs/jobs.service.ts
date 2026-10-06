@@ -18,15 +18,15 @@ const SearchSchema = z.object({
 
 const DetailSchema = z.object({
   referenznummer: z.string(),
-  stellenangebotsTitel: z.string(),
+  stellenangebotsTitel: z.string().min(1).optional(),
   firma: z.string(),
-  hauptberuf: z.string(),
+  hauptberuf: z.string().min(1).optional(),
   stellenangebotsBeschreibung: z.string().min(1),
   stellenlokationen: z.tuple(
     [
       z.object({
         adresse: z.object({
-          ort: z.string(),
+          ort: z.string().optional(),
           region: z.string().optional(),
           plz: z.string().optional(),
         }),
@@ -109,15 +109,17 @@ export function toJob(raw: unknown): NewJob | null {
   if (!parsed.success) return null;
   const job = parsed.data;
   const [location] = job.stellenlokationen;
+  const title = job.stellenangebotsTitel ?? job.hauptberuf;
+  if (!title) return null;
 
   return {
     source: 'ba',
     externalId: job.referenznummer,
-    title: job.stellenangebotsTitel,
+    title,
     company: job.firma,
-    occupation: job.hauptberuf,
+    occupation: job.hauptberuf ?? null,
     description: job.stellenangebotsBeschreibung,
-    city: location.adresse.ort,
+    city: location.adresse.ort ?? null,
     region: location.adresse.region ?? null,
     postalCode: location.adresse.plz ?? null,
     latitude: location.breite ?? null,
