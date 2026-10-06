@@ -1,0 +1,1 @@
+ALTER TABLE "jobs" ADD COLUMN "offer_type" text;

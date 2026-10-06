@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import type { Db } from '../db';
 import { jobs } from './jobs.tables';
+import type { OfferType } from './jobs.tables';
 
 const BA_URL = 'https://rest.arbeitsagentur.de/jobboerse/jobsuche-service';
 const BA_HEADERS = { 'X-API-Key': 'jobboerse-jobsuche' };
@@ -11,6 +12,13 @@ const BA_ATTEMPTS = 3;
 const PAGE_SIZE = 100;
 const MAX_AGE_DAYS = 30;
 const WORK_HOURS_PER_YEAR = 2080;
+
+const OFFER_TYPES: Readonly<Record<string, OfferType>> = {
+  ARBEIT: 'job',
+  AUSBILDUNG: 'apprenticeship',
+  PRAKTIKUM_TRAINEE: 'internship',
+  SELBSTAENDIGKEIT: 'self_employed',
+};
 
 const SearchSchema = z.object({
   ergebnisliste: z.array(z.object({ referenznummer: z.string() })).default([]),
@@ -21,6 +29,7 @@ const DetailSchema = z.object({
   stellenangebotsTitel: z.string().min(1).optional(),
   firma: z.string(),
   hauptberuf: z.string().min(1).optional(),
+  stellenangebotsart: z.string().optional(),
   stellenangebotsBeschreibung: z.string().min(1),
   stellenlokationen: z.tuple(
     [
@@ -115,6 +124,7 @@ export function toJob(raw: unknown): NewJob | null {
   return {
     source: 'ba',
     externalId: job.referenznummer,
+    offerType: OFFER_TYPES[job.stellenangebotsart ?? ''] ?? null,
     title,
     company: job.firma,
     occupation: job.hauptberuf ?? null,

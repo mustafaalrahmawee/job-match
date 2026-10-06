@@ -11,12 +11,15 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
+export type OfferType = 'job' | 'apprenticeship' | 'internship' | 'self_employed';
+
 export const jobs = pgTable(
   'jobs',
   {
     id: uuid().primaryKey().defaultRandom(),
     source: text().$type<'ba'>().notNull(),
     externalId: text().notNull(),
+    offerType: text().$type<OfferType>(),
     title: text().notNull(),
     company: text().notNull(),
     occupation: text(),

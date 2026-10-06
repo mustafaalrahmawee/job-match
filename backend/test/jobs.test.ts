@@ -108,6 +108,13 @@ describe('toJob', () => {
     expect(neither).toBeNull();
   });
 
+  it('maps the offer type and keeps unknown types unknown', () => {
+    expect(toJob({ ...details[0], stellenangebotsart: 'AUSBILDUNG' })?.offerType).toBe(
+      'apprenticeship',
+    );
+    expect(toJob({ ...details[0], stellenangebotsart: 'NEU' })?.offerType).toBeNull();
+  });
+
   it('rejects a job without description', () => {
     expect(toJob({ ...details[0], stellenangebotsBeschreibung: '' })).toBeNull();
   });

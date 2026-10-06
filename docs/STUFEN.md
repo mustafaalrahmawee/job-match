@@ -157,6 +157,8 @@ bevor Lebenslauf und Match gebaut werden.
       eindeutig je Quelle und Referenznummer
 - [x] Umwandeln: fehlende Angaben bleiben `null` (unbekannt), Gehalt in Euro pro Jahr, erster Ort,
       Vermittler und Zeitarbeit werden markiert (`agency`), nicht aussortiert
+- [x] Stellenart als Spalte `offerType` (Arbeit, Ausbildung, Praktikum, Selbstständigkeit), damit
+      Jobsuchende Ausbildungsplätze herausfiltern können
 - [x] Nur Stellen der letzten 30 Tage (Erstveröffentlichung, im Code geprüft – der Filter der API
       allein lässt ältere durch); bekannte Stellen werden übersprungen, ohne Details neu zu laden
 - [x] `pnpm jobs:import <anzahl> ["<was>"] ["<wo>"]`, ohne Suchbegriff alle Bereiche (max. 10.000
