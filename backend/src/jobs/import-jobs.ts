@@ -26,6 +26,7 @@ const result = await importJobs(db, search.data, (done, total) => {
 });
 console.log(
   `Gefunden: ${result.found}, schon vorhanden: ${result.known}, ` +
-    `neu gespeichert: ${result.saved}, älter als 30 Tage: ${result.tooOld}, ungültig: ${result.invalid}`,
+    `neu gespeichert: ${result.saved}, älter als 30 Tage: ${result.tooOld}, ` +
+    `ungültig: ${result.invalid}, doppelter Text: ${result.duplicate}`,
 );
 await db.$client.end();

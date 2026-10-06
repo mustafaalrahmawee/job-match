@@ -9,9 +9,36 @@ const BA_URL = 'https://rest.arbeitsagentur.de/jobboerse/jobsuche-service';
 const BA_HEADERS = { 'X-API-Key': 'jobboerse-jobsuche' };
 const BA_TIMEOUT_MS = 20_000;
 const BA_ATTEMPTS = 3;
-const PAGE_SIZE = 100;
+const PAGE_SIZE = 25;
+const MAX_REACHABLE_RESULTS = 10_000;
 const MAX_AGE_DAYS = 30;
-const WORK_HOURS_PER_YEAR = 2080;
+const MIN_SALARY_YEAR = 15_000;
+const MAX_SALARY_YEAR = 250_000;
+
+const STATES = [
+  'Baden-Württemberg',
+  'Bayern',
+  'Berlin',
+  'Brandenburg',
+  'Bremen',
+  'Hamburg',
+  'Hessen',
+  'Mecklenburg-Vorpommern',
+  'Niedersachsen',
+  'Nordrhein-Westfalen',
+  'Rheinland-Pfalz',
+  'Saarland',
+  'Sachsen',
+  'Sachsen-Anhalt',
+  'Schleswig-Holstein',
+  'Thüringen',
+];
+
+const SALARY_FACTORS: Readonly<Record<string, number>> = {
+  JAHRESGEHALT: 1,
+  MONATSGEHALT: 12,
+  STUNDENLOHN: 2080,
+};
 
 const OFFER_TYPES: Readonly<Record<string, OfferType>> = {
   ARBEIT: 'job',
@@ -22,6 +49,7 @@ const OFFER_TYPES: Readonly<Record<string, OfferType>> = {
 
 const SearchSchema = z.object({
   ergebnisliste: z.array(z.object({ referenznummer: z.string() })).default([]),
+  maxErgebnisse: z.number().default(0),
 });
 
 const DetailSchema = z.object({
@@ -100,11 +128,10 @@ function anyTrue(values: readonly (boolean | undefined)[]) {
 }
 
 function perYear(job: BaJob, amount: number | undefined) {
-  if (amount === undefined) return null;
-  if (job.verguetungsangabe === 'JAHRESGEHALT') return Math.round(amount);
-  if (job.verguetungsangabe === 'MONATSGEHALT') return Math.round(amount * 12);
-  if (job.verguetungsangabe === 'STUNDENLOHN') return Math.round(amount * WORK_HOURS_PER_YEAR);
-  return null;
+  const factor = SALARY_FACTORS[job.verguetungsangabe ?? ''];
+  if (amount === undefined || factor === undefined) return null;
+  const yearly = Math.round(amount * factor);
+  return yearly >= MIN_SALARY_YEAR && yearly <= MAX_SALARY_YEAR ? yearly : null;
 }
 
 function permanent(contract: string | undefined) {
@@ -120,6 +147,13 @@ export function toJob(raw: unknown): NewJob | null {
   const [location] = job.stellenlokationen;
   const title = job.stellenangebotsTitel ?? job.hauptberuf;
   if (!title) return null;
+  const partTime = anyTrue([
+    job.arbeitszeitTeilzeitVormittag,
+    job.arbeitszeitTeilzeitNachmittag,
+    job.arbeitszeitTeilzeitAbend,
+    job.arbeitszeitTeilzeitFlexibel,
+  ]);
+  const salaryClear = !(partTime === true && job.arbeitszeitVollzeit !== true);
 
   return {
     source: 'ba',
@@ -135,16 +169,11 @@ export function toJob(raw: unknown): NewJob | null {
     latitude: location.breite ?? null,
     longitude: location.laenge ?? null,
     fullTime: job.arbeitszeitVollzeit ?? null,
-    partTime: anyTrue([
-      job.arbeitszeitTeilzeitVormittag,
-      job.arbeitszeitTeilzeitNachmittag,
-      job.arbeitszeitTeilzeitAbend,
-      job.arbeitszeitTeilzeitFlexibel,
-    ]),
+    partTime,
     remote: job.homeofficemoeglich ?? null,
     permanent: permanent(job.vertragsdauer),
-    salaryMinYear: perYear(job, job.gehaltsspanneVon ?? job.festgehalt),
-    salaryMaxYear: perYear(job, job.gehaltsspanneBis ?? job.festgehalt),
+    salaryMinYear: salaryClear ? perYear(job, job.gehaltsspanneVon ?? job.festgehalt) : null,
+    salaryMaxYear: salaryClear ? perYear(job, job.gehaltsspanneBis ?? job.festgehalt) : null,
     agency: anyTrue([job.istPrivateArbeitsvermittlung, job.istArbeitnehmerUeberlassung]),
     url:
       job.externeURL ??
@@ -154,19 +183,36 @@ export function toJob(raw: unknown): NewJob | null {
   };
 }
 
+async function searchPage(what: string | undefined, where: string, page: number) {
+  const params = new URLSearchParams({
+    wo: where,
+    page: String(page),
+    size: String(PAGE_SIZE),
+    veroeffentlichtseit: String(MAX_AGE_DAYS),
+  });
+  if (what) params.set('was', what);
+  return SearchSchema.parse(await fetchBa(`/pc/v6/jobs?${params.toString()}`));
+}
+
+async function searchSpread(what: string | undefined, where: string, limit: number) {
+  const first = await searchPage(what, where, 1);
+  const reachable = Math.min(first.maxErgebnisse, MAX_REACHABLE_RESULTS);
+  const pages = Math.ceil(reachable / PAGE_SIZE);
+  const wanted = Math.min(pages, Math.ceil(limit / PAGE_SIZE));
+  const results = [first];
+  for (let index = 1; index < wanted; index++) {
+    results.push(await searchPage(what, where, 1 + Math.floor((index * pages) / wanted)));
+  }
+  return results.flatMap((result) => result.ergebnisliste.map((job) => job.referenznummer));
+}
+
 async function searchJobIds(search: JobSearch) {
+  const areas = search.where ? [search.where] : STATES.map((state) => `${state} (Bundesland)`);
+  const share = Math.ceil(search.limit / areas.length);
   const ids = new Set<string>();
-  for (let page = 1; ids.size < search.limit; page++) {
-    const params = new URLSearchParams({
-      page: String(page),
-      size: String(PAGE_SIZE),
-      veroeffentlichtseit: String(MAX_AGE_DAYS),
-    });
-    if (search.what) params.set('was', search.what);
-    if (search.where) params.set('wo', search.where);
-    const { ergebnisliste } = SearchSchema.parse(await fetchBa(`/pc/v6/jobs?${params.toString()}`));
-    ergebnisliste.forEach((job) => ids.add(job.referenznummer));
-    if (ergebnisliste.length < PAGE_SIZE) break;
+  for (const where of areas) {
+    const found = await searchSpread(search.what, where, share);
+    found.slice(0, share).forEach((id) => ids.add(id));
   }
   return [...ids].slice(0, search.limit);
 }
@@ -193,6 +239,7 @@ export async function importJobs(db: Db, search: JobSearch, onProgress?: ImportP
   let saved = 0;
   let invalid = 0;
   let tooOld = 0;
+  let duplicate = 0;
 
   for (const [index, id] of missing.entries()) {
     onProgress?.(index, missing.length);
@@ -205,9 +252,14 @@ export async function importJobs(db: Db, search: JobSearch, onProgress?: ImportP
       tooOld++;
       continue;
     }
-    await db.insert(jobs).values(job).onConflictDoNothing();
-    saved++;
+    const inserted = await db
+      .insert(jobs)
+      .values(job)
+      .onConflictDoNothing()
+      .returning({ id: jobs.id });
+    if (inserted.length === 0) duplicate++;
+    else saved++;
   }
 
-  return { found: ids.length, known: known.size, saved, invalid, tooOld };
+  return { found: ids.length, known: known.size, saved, invalid, tooOld, duplicate };
 }

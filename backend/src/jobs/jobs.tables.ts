@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
   boolean,
   date,
@@ -8,6 +9,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -41,5 +43,11 @@ export const jobs = pgTable(
     raw: jsonb().notNull(),
     importedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [unique('jobs_source_external_id_unique').on(table.source, table.externalId)],
+  (table) => [
+    unique('jobs_source_external_id_unique').on(table.source, table.externalId),
+    uniqueIndex('jobs_company_description_unique').on(
+      table.company,
+      sql`md5(${table.description})`,
+    ),
+  ],
 );

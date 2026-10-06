@@ -19,7 +19,7 @@ function fixture(name: string): unknown {
 
 const search = fixture('ba-search.json');
 const details = fixture('ba-details.json') as BaDetail[];
-const ids = details.map((detail) => detail.referenznummer);
+const ids = [...details.map((detail) => detail.referenznummer), 'kopie-1', 'kopie-2'];
 const fetchedOn = new Date('2026-10-06T12:00:00Z');
 const recent = details.filter(
   (detail) => String(detail.datumErsteVeroeffentlichung) >= '2026-09-06',
@@ -50,6 +50,21 @@ describe('toJob', () => {
 
     expect(yearly).toMatchObject({ salaryMinYear: 40000 });
     expect(hourly).toMatchObject({ salaryMinYear: 70866, salaryMaxYear: 72946 });
+  });
+
+  it('drops salaries that are unclear or implausible', () => {
+    const base = {
+      ...details[0],
+      arbeitszeitVollzeit: true,
+      verguetungsangabe: 'MONATSGEHALT',
+      gehaltsspanneVon: undefined,
+      festgehalt: 3000,
+    };
+    const partTimeOnly = { arbeitszeitVollzeit: false, arbeitszeitTeilzeitVormittag: true };
+
+    expect(toJob(base)?.salaryMinYear).toBe(36000);
+    expect(toJob({ ...base, ...partTimeOnly })?.salaryMinYear).toBeNull();
+    expect(toJob({ ...base, festgehalt: 538 })?.salaryMinYear).toBeNull();
   });
 
   it('keeps missing details unknown instead of false', () => {
@@ -144,23 +159,60 @@ describe.skipIf(!TEST_DATABASE_URL)('importJobs', () => {
     const first = await importJobs(db, { what: 'Entwickler', where: 'Berlin', limit: 20 });
     const second = await importJobs(db, { what: 'Entwickler', where: 'Berlin', limit: 20 });
 
-    expect(first).toEqual({ found: 20, known: 0, saved: recent.length, invalid: 0, tooOld: old });
-    expect(second).toEqual({ found: 20, known: recent.length, saved: 0, invalid: 0, tooOld: old });
+    expect(first).toMatchObject({ found: 20, known: 0, saved: recent.length, tooOld: old });
+    expect(second).toMatchObject({ found: 20, known: recent.length, saved: 0, tooOld: old });
     expect(String(fetch.mock.calls[0]?.[0])).toContain('veroeffentlichtseit=30');
     expect(fetch).toHaveBeenCalledTimes(2 + 20 + old);
   });
 
-  it('searches all fields without a keyword and retries a failed request', async () => {
-    vi.useFakeTimers({ toFake: ['Date'], now: fetchedOn });
+  it('searches every state without a keyword and retries a failed request', async () => {
     const fetch = vi
       .fn((url: string) => Promise.resolve(fakeBa(url)))
       .mockRejectedValueOnce(new TypeError('fetch failed'));
     vi.stubGlobal('fetch', fetch);
 
-    const result = await importJobs(db, { limit: 20 });
+    await importJobs(db, { limit: 16 });
 
-    const searchUrl = new URL(String(fetch.mock.calls[1]?.[0]));
-    expect(searchUrl.searchParams.has('was')).toBe(false);
-    expect(result).toMatchObject({ found: 20, known: recent.length, saved: 0 });
+    const searches = fetch.mock.calls
+      .map(([url]) => new URL(url))
+      .filter((url) => url.pathname.endsWith('/pc/v6/jobs'));
+    expect(searches.some((url) => url.searchParams.has('was'))).toBe(false);
+    const states = new Set(searches.map((url) => url.searchParams.get('wo')));
+    expect(states.size).toBe(16);
+    expect(states.has('Hessen (Bundesland)')).toBe(true);
+  });
+
+  it('spreads the search over all reachable pages', async () => {
+    const fetch = vi.fn((_url: string) =>
+      Promise.resolve(Response.json({ maxErgebnisse: 50_000 })),
+    );
+    vi.stubGlobal('fetch', fetch);
+
+    await importJobs(db, { where: 'Bayern', limit: 100 });
+
+    const pages = fetch.mock.calls.map(([url]) => new URL(url).searchParams.get('page'));
+    expect(pages).toEqual(['1', '101', '201', '301']);
+  });
+
+  it('skips a job whose company already has the same text', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: fetchedOn });
+    const copy = { ...recent[0], stellenangebotsBeschreibung: 'Gleicher Text bei zwei Stellen' };
+    vi.stubGlobal('fetch', (url: string) => {
+      const path = new URL(url).pathname;
+      if (path.endsWith('/pc/v6/jobs')) {
+        return Promise.resolve(
+          Response.json({
+            maxErgebnisse: 2,
+            ergebnisliste: [{ referenznummer: 'kopie-1' }, { referenznummer: 'kopie-2' }],
+          }),
+        );
+      }
+      const id = Buffer.from(path.split('/').at(-1) ?? '', 'base64').toString();
+      return Promise.resolve(Response.json({ ...copy, referenznummer: id }));
+    });
+
+    const result = await importJobs(db, { where: 'Berlin', limit: 5 });
+
+    expect(result).toMatchObject({ found: 2, saved: 1, duplicate: 1 });
   });
 });

@@ -161,9 +161,13 @@ bevor Lebenslauf und Match gebaut werden.
       Jobsuchende Ausbildungsplätze herausfiltern können
 - [x] Nur Stellen der letzten 30 Tage (Erstveröffentlichung, im Code geprüft – der Filter der API
       allein lässt ältere durch); bekannte Stellen werden übersprungen, ohne Details neu zu laden
-- [x] `pnpm jobs:import <anzahl> ["<was>"] ["<wo>"]`, ohne Suchbegriff alle Bereiche (max. 10.000
-      je Lauf, Grenze der API); Tests mit 20 echten Beispielstellen
+- [x] `pnpm jobs:import <anzahl> ["<was>"] ["<wo>"]`; ohne Ort gleich viele Stellen je Bundesland,
+      die Seiten über die erreichbaren 10.000 Treffer je Suche verteilt (die API sortiert nur nach
+      Aktualität und kennt keinen Datumsbereich); Tests mit 20 echten Beispielstellen
       (`backend/test/fixtures/`) statt echter Aufrufe
+- [x] Saubere Daten per Regel: gleiche Firma mit gleichem Text wird nur einmal gespeichert (fängt
+      Dubletten und Platzhaltertexte unter vielen Titeln); Gehalt bei reiner Teilzeit oder außerhalb
+      15.000–250.000 €/Jahr bleibt unbekannt
 
 ---
 
