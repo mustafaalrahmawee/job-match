@@ -234,6 +234,7 @@ backend/evals/<prompt-unit>/
   cases.json              Array mit 5–20 Fällen (je Objekt: id, art, note, conversation)
   prompts.json            Array der Prompt-Fassungen ({ version, prompt }), jeder Lauf hängt an
   run.ts                  baut den Prompt wie die App, holt die Antworten, schreibt eine Fassung
+  bericht.md              Bericht über die Fassungen: Befund, Prompt-Änderung, gemessene Wirkung
   fassungen/<fassung>/    committet, wird nie überschrieben
     summary.md            je Variante: Tokens, Zeit gesamt und im Schnitt, längste Frage
     <modell>-<effort>.md  alle Fälle als Gespräch, je Variante eine Datei

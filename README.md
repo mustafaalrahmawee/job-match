@@ -27,6 +27,8 @@ Coach-Prompt. Als Nächstes Stufe 2 (Lebenslauf und Profil). Plan: [docs/STUFEN.
 - [docs/STACK.md](docs/STACK.md) – **Tech Stack, Struktur und Stil**. Verbindlich für neuen Code.
 - [docs/app-prompting-anchor.md](docs/app-prompting-anchor.md) – **Wie Prompts geschrieben werden**
   (nach Berryman & Ziegler, _Prompt Engineering for LLMs_). Verbindlich für jeden Prompt der App.
+- [backend/evals/coach_chat/bericht.md](backend/evals/coach_chat/bericht.md) – **Bericht zur
+  Prompt-Verbesserung des Coachs**: Befunde, Prompt-Änderungen v1 bis v4 und ihre gemessene Wirkung.
 
 ## Tech Stack
 
