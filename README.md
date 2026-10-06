@@ -84,6 +84,7 @@ Alle im Wurzelordner; sie laufen über alle Pakete (`backend`, `frontend`, `shar
 | `pnpm db:generate`                       | neue Migration aus den `*.tables.ts` erzeugen (drizzle-kit)                  |
 | `pnpm db:migrate`                        | Migrationen anwenden                                                         |
 | `pnpm user:create <email>`               | Konto anlegen oder Passwort neu setzen                                       |
+| `pnpm jobs:import "<was>" ["<wo>"] [n]`  | bis zu `n` Stellen (Standard 50) der Bundesagentur importieren, ≤ 30 Tage    |
 | `pnpm eval coach_chat v1`                | Fassung `v1` der Beispiel-Suite, **echtes** Modell (z.ai)                    |
 | `/glm-fassung v3` (in Claude Code)       | Fassung `v3` erzeugen und Paare mit der Vorgängerfassung bilden              |
 | `pnpm soma coach_chat vorbereiten v1 v2` | Paare aus zwei Fassungen bilden, dann `/soma-bewertung v1-v2` in Claude Code |

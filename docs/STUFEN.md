@@ -37,6 +37,7 @@ grün, CI grün, README aktualisiert, Lernziele abgehakt.
 | ------- | ------------------------------------------------------- | ---------------------------------------------------- |
 | 0       | Fundament: leeres Backend + Frontend, DB, CI            | Client, Konfiguration, Fehlerklassen                 |
 | 1       | Konto + Coach-Chat                                      | Messages API, Streaming, System-Prompt, Stopp-Gründe |
+| 1b      | Stellen der Bundesagentur importieren (ohne KI)         | – (Datenbasis für Stufe 2, 3 und 7)                  |
 | 2       | Lebenslauf-PDF, einmalige Analyse, Rolle, Fassungen     | PDF-Eingabe, Structured Outputs, Effort/Thinking     |
 | 3       | Stellen (Text/Screenshot) + Match-Analyse               | Vision, Structured Outputs, Evals mit Kriterien      |
 | 4       | Bewerbungen, Notizen, Coach handelt im Chat             | Tool Use, Server-Tool Websuche                       |
@@ -128,7 +129,7 @@ gespeichert. Konten legt bis zum Go-live nur das Skript `pnpm user:create` an.
 - [x] Prompt nach Anchor §7 (Frame, Regeln mit Begründung, Scope-Satz)
 - [x] Effort wird immer ausdrücklich gesendet (die Standardstufe ist je Modell verschieden);
       `thinking` bleibt ungesetzt, weil adaptives Thinking bei den Zielmodellen Standard ist
-- [ ] Beispiel-Suite `evals/coach_chat/` mit 5–10 typischen Fragen
+- [x] Beispiel-Suite `evals/coach_chat/` mit 5–10 typischen Fragen
 
 **Frontend**
 
@@ -142,6 +143,24 @@ gespeichert. Konten legt bis zum Go-live nur das Skript `pnpm user:create` an.
 - [ ] Effort und adaptives Thinking: was sie kosten, wie man sie steuert
 - [ ] Tokenverbrauch loggen und Kosten abschätzen
 - [ ] Sicherheit: Hash statt Klartext, Nutzer-Enumeration, Ownership-Check, 404 statt 403
+
+---
+
+## Stufe 1b – Stellen importieren (vorgezogen)
+
+Vorgezogener Teil von Stufe 7, ohne Embeddings und ohne KI: echte Stellen liegen lokal in der DB,
+bevor Lebenslauf und Match gebaut werden.
+
+- [x] Quelle: Jobsuche der Bundesagentur (kostenlos, inoffiziell dokumentiert auf bund.dev; fester
+      Schlüssel `jobboerse-jobsuche`); Suche `/pc/v6/jobs`, Volltext `/pc/v4/jobdetails/{base64}`
+- [x] Domäne `jobs`: Tabelle `jobs` mit eigenen, bereinigten Spalten und der Originalantwort `raw`;
+      eindeutig je Quelle und Referenznummer
+- [x] Umwandeln: fehlende Angaben bleiben `null` (unbekannt), Gehalt in Euro pro Jahr, erster Ort,
+      Vermittler und Zeitarbeit werden markiert (`agency`), nicht aussortiert
+- [x] Nur Stellen der letzten 30 Tage (Erstveröffentlichung, im Code geprüft – der Filter der API
+      allein lässt ältere durch); bekannte Stellen werden übersprungen, ohne Details neu zu laden
+- [x] `pnpm jobs:import "<was>" ["<wo>"] [anzahl]`; Tests mit 20 echten Beispielstellen
+      (`backend/test/fixtures/`) statt echter Aufrufe
 
 ---
 
@@ -179,7 +198,7 @@ neue Fassungen ersetzen die alte; der Coach kennt die aktive Fassung.
 
 **Ziel:** Eigene Stellen speichern (Text oder Screenshot) und sehen, wie gut die aktive Fassung passt.
 
-- [ ] Domäne `jobs`: Stelle (Titel, Firma, Ort, Text, Quelle/Link, Sprache)
+- [ ] Domäne `jobs` (aus Stufe 1b) erweitern: Stelle von Hand anlegen, Sprache
 - [ ] Screenshot einer Anzeige → Text (Vision)
 - [ ] Domäne `matching`: Score 0–100, Stärken, Lücken, Tipps (zweigeteilt, falls bestätigt);
       gespeichert, nicht jedes Mal neu berechnet; bei Fassungswechsel ins Archiv
