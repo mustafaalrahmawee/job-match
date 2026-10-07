@@ -27,6 +27,7 @@ entschieden – bestätigen oder streichen) · ✖ fällt weg
 | 02.10.2026 | Das **Original-PDF** des Lebenslaufs bleibt gespeichert (ansehen, herunterladen).                                                                                                                                                                                                    |
 | 02.10.2026 | Rollenwechsel: **Interview-Trainings und Chats** der alten Rolle bleiben sichtbar.                                                                                                                                                                                                   |
 | 02.10.2026 | Die App ist auf Deutsch, versteht aber auch **englische** Lebensläufe und Stellenanzeigen.                                                                                                                                                                                           |
+| 07.10.2026 | Fassungen kann man **löschen** (eine oder mehrere). Mit ihnen verschwindet alles, was die KI daraus erstellt hat (Analyse, Match-Ergebnisse). **Bewerbungen, Chats und Trainings bleiben**. Wird die aktive Fassung gelöscht, ist keine mehr aktiv, bis du eine wählst.              |
 
 ---
 
@@ -131,6 +132,9 @@ Coach-Chat: daneben, jederzeit – kennt deine Lebenslauf-Analyse (und später d
 - ⬜ Eine alte Fassung **wieder aktiv** machen – ohne neues Hochladen und ohne neue Analyse (die
   gespeicherte Analyse wird wiederverwendet). Ihre Rolle gilt dann wieder.
 - ✚ Beim Reaktivieren kommen auch die archivierten Match-Ergebnisse dieser Fassung zurück.
+- ⬜ Eine oder mehrere Fassungen **löschen** – samt allem, was die KI daraus erstellt hat (Analyse,
+  Match-Ergebnisse). Bewerbungen, Chats und Trainings bleiben. Nach dem Löschen der aktiven
+  Fassung ist keine aktiv, bis du eine aus dem Archiv wählst oder eine neue hochlädst.
 - ✚ Fehler in der Analyse von Hand korrigieren (z. B. eine falsch erkannte Station).
 - ✚ Wünsche festhalten: Ort, Remote ja/nein, Gehaltsvorstellung, frühester Start.
   Daran orientieren sich Tipps und Job-Empfehlungen.

@@ -177,11 +177,22 @@ Ablauf, API-Eigenheiten, Probleme und Lösungen: [STELLEN-IMPORT.md](STELLEN-IMP
 **Ziel:** Lebenslauf als PDF hochladen, einmal analysieren, Ergebnis speichern; die Rolle bestätigen;
 neue Fassungen ersetzen die alte; der Coach kennt die aktive Fassung.
 
-- [ ] Domäne `profile`: Tabelle für Fassungen (PDF, Analyse als JSON, Rolle, aktiv/archiviert)
-- [ ] PDF-Upload (Größenlimit, nur PDF), Original bleibt gespeichert und abrufbar
+**Schritt 1 – Fassungen ohne KI**
+
+- [x] Domäne `profile`: Tabelle `cv_versions` (PDF als `bytea`, Rolle, aktiv/archiviert); die
+      Datenbank erlaubt nur eine aktive Fassung je Nutzer (eindeutiger Teil-Index)
+- [x] PDF-Upload (höchstens 5 MB, nur PDF); Dateiname kommt URL-kodiert im Header `X-File-Name` und wird im Log geschwärzt, Original bleibt gespeichert und abrufbar
+- [x] Rolle von Hand aus einer festen Liste (12 IT-Rollen in `shared/src/profile.ts`)
+- [x] Neue Fassung macht die alte inaktiv; alte Fassung reaktivieren ohne neues Hochladen
+- [x] Seite „Mein Lebenslauf“: aktive Fassung, Rolle, PDF ansehen, Archiv
+- [x] Eine oder mehrere Fassungen löschen (`POST /api/cvs/delete`, alles oder nichts); danach ist
+      ggf. keine Fassung aktiv
+
+**Schritt 2 – Analyse mit KI**
+
 - [ ] Analyse **einmal** pro Fassung; Ergebnis als geprüftes Schema gespeichert
-- [ ] Rollen-Vorschlag aus einer festen Liste; Bestätigen oder andere wählen
-- [ ] Neue Fassung macht die alte inaktiv; alte Fassung reaktivieren ohne neue Analyse
+- [ ] Rollen-Vorschlag aus der festen Liste; Bestätigen oder andere wählen
+- [ ] Reaktivieren nutzt die gespeicherte Analyse (keine neue Analyse)
 - [ ] Coach-Chat bekommt die Analyse der aktiven Fassung als Kontext (nicht das PDF)
 - [ ] Lebensläufe auf Deutsch und Englisch
 
@@ -209,7 +220,8 @@ neue Fassungen ersetzen die alte; der Coach kennt die aktive Fassung.
 - [ ] Domäne `jobs` (aus Stufe 1b) erweitern: Stelle von Hand anlegen, Sprache
 - [ ] Screenshot einer Anzeige → Text (Vision)
 - [ ] Domäne `matching`: Score 0–100, Stärken, Lücken, Tipps (zweigeteilt, falls bestätigt);
-      gespeichert, nicht jedes Mal neu berechnet; bei Fassungswechsel ins Archiv
+      gespeichert, nicht jedes Mal neu berechnet; bei Fassungswechsel ins Archiv; Fremdschlüssel
+      auf `cv_versions` mit `onDelete: 'cascade'`, damit Löschen der Fassung die Ergebnisse mitnimmt
 - [ ] Anzeigentext geht als markierter Block in den Prompt (fremder Text = Daten)
 - [ ] Nachfragen zum Ergebnis im Coach-Chat
 
@@ -235,7 +247,8 @@ neue Fassungen ersetzen die alte; der Coach kennt die aktive Fassung.
 
 **Ziel:** Bewerbungen mit Status, Verlauf und Notizen führen; der Coach kann im Chat handeln.
 
-- [ ] Domäne `applications`: Bewerbung, Statusverlauf mit Datum, Notizen mit Datum
+- [ ] Domäne `applications`: Bewerbung, Statusverlauf mit Datum, Notizen mit Datum; ein Verweis
+      auf die Fassung bekommt `onDelete: 'set null'` (Bewerbung bleibt, wenn die Fassung gelöscht wird)
 - [ ] Seite „Bewerbungen“: Liste, Status ändern, Notizen; bleiben bei Rollenwechsel sichtbar
 - [ ] Tools für den Coach: Stelle speichern, Status setzen, Interviewfragen erzeugen
 - [ ] Server-Tool Websuche: Infos zur Firma

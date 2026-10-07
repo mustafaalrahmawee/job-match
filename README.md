@@ -110,18 +110,24 @@ nicht und nennt jedes Problem einzeln.
 | `LOG_LEVEL`           | nein    | `info`                      | `fatal`, `error`, `warn`, `info`, `debug` oder `trace`         |
 | `CHAT_HISTORY_LIMIT`  | nein    | `40`                        | so viele letzte Nachrichten gehen pro Chat-Anfrage ans Modell  |
 
-## API (Stufe 1)
+## API (Stufe 1 und 2)
 
 Alle Routen unter `/api`; Fehler haben die Form `{ "error": { "code", "message" } }`. Ab Konto-Routen
 außer Login: `Authorization: Bearer <token>`.
 
-| Route                                 | Zweck                                                                |
-| ------------------------------------- | -------------------------------------------------------------------- |
-| `POST /auth/login`                    | Token holen (30 Tage gültig); 10 Fehlversuche je 15 Min. und IP      |
-| `POST /auth/logout`, `GET /auth/me`   | Token ungültig machen / angemeldeten Nutzer lesen                    |
-| `GET /conversations`                  | eigene Gespräche, neueste Aktivität zuerst                           |
-| `GET/PATCH/DELETE /conversations/:id` | laden (mit Nachrichten), umbenennen, löschen – fremde ID: 404        |
-| `POST /chat`                          | Antwort als SSE: `conversation`, `delta`, `done`, `refusal`, `error` |
+| Route                                 | Zweck                                                                          |
+| ------------------------------------- | ------------------------------------------------------------------------------ |
+| `POST /auth/login`                    | Token holen (30 Tage gültig); 10 Fehlversuche je 15 Min. und IP                |
+| `POST /auth/logout`, `GET /auth/me`   | Token ungültig machen / angemeldeten Nutzer lesen                              |
+| `GET /conversations`                  | eigene Gespräche, neueste Aktivität zuerst                                     |
+| `GET/PATCH/DELETE /conversations/:id` | laden (mit Nachrichten), umbenennen, löschen – fremde ID: 404                  |
+| `POST /chat`                          | Antwort als SSE: `conversation`, `delta`, `done`, `refusal`, `error`           |
+| `GET /cvs`                            | eigene Lebenslauf-Fassungen, neueste zuerst (ohne PDF)                         |
+| `POST /cvs`                           | PDF als Body (`application/pdf`, max. 5 MB), Name in `X-File-Name`; wird aktiv |
+| `GET /cvs/:id/pdf`                    | Original-PDF der Fassung                                                       |
+| `PATCH /cvs/:id`                      | Rolle aus der festen Liste setzen (`{ "role" }`)                               |
+| `POST /cvs/:id/activate`              | Fassung wieder aktiv machen, die bisherige geht ins Archiv                     |
+| `POST /cvs/delete`                    | `{ "ids": [...] }` löschen, alles oder nichts (fremde ID: 404) – 204           |
 
 `POST /chat` mit `conversationId` und ohne `message` setzt ein Gespräch fort („Erneut versuchen“).
 Trennt der Browser die Verbindung, bricht das Backend die Modellanfrage ab und speichert die

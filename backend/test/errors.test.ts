@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { ErrorResponseSchema } from '@job-match/shared';
 import express from 'express';
 import { pinoHttp } from 'pino-http';
 import request from 'supertest';
@@ -38,4 +39,21 @@ it('maps provider errors to stable codes for the client', () => {
     'llm_unavailable',
   );
   expect(describeLlmError(new Error('x')).code).toBe('internal');
+});
+
+it('answers 413 when a body is larger than the limit', async () => {
+  const app = express();
+  app.use(pinoHttp({ logger: silentLogger() }));
+  app.post('/upload', express.raw({ type: 'application/pdf', limit: 10 }), (_req, res) => {
+    res.end();
+  });
+  app.use(errorHandler);
+
+  const response = await request(app)
+    .post('/upload')
+    .set('Content-Type', 'application/pdf')
+    .send(Buffer.alloc(100));
+
+  expect(response.status).toBe(413);
+  expect(ErrorResponseSchema.parse(response.body).error.code).toBe('payload_too_large');
 });

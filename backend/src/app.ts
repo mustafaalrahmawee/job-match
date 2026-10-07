@@ -10,6 +10,7 @@ import type { Config } from './config';
 import { createConversationsRouter } from './conversations/conversations.router';
 import type { Db } from './db';
 import { errorHandler, notFoundHandler } from './errors';
+import { createProfileRouter } from './profile/profile.router';
 
 export interface AppDeps {
   readonly db: Db;
@@ -31,6 +32,7 @@ export function createApp(deps: AppDeps): Express {
   api.use(createAuthRouter(deps.db));
   api.use(createConversationsRouter(deps.db));
   api.use(createChatRouter(deps));
+  api.use(createProfileRouter(deps.db));
   api.use(notFoundHandler);
 
   app.use('/api', api);
