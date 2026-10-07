@@ -16,6 +16,7 @@ export const useProfileStore = defineStore('profile', () => {
 
   const active = computed(() => cvs.value.find((cv) => cv.active) ?? null);
   const archived = computed(() => cvs.value.filter((cv) => !cv.active));
+  const analyzing = computed(() => cvs.value.some((cv) => cv.analysisStatus === 'running'));
 
   async function attempt(action: () => Promise<void>): Promise<void> {
     error.value = null;
@@ -32,6 +33,11 @@ export const useProfileStore = defineStore('profile', () => {
     });
   }
 
+  async function refresh(): Promise<void> {
+    const list = await apiJson('GET', '/api/cvs', CvListSchema).catch(() => null);
+    if (list) cvs.value = list;
+  }
+
   async function upload(file: File): Promise<void> {
     if (file.type !== 'application/pdf') {
       error.value = 'Bitte lade eine PDF-Datei hoch.';
@@ -43,14 +49,21 @@ export const useProfileStore = defineStore('profile', () => {
     }
     uploading.value = true;
     await attempt(async () => {
-      await apiUpload('/api/cvs', file, CvSchema);
+      const cv = await apiUpload('/api/cvs', file, CvSchema);
       cvs.value = await apiJson('GET', '/api/cvs', CvListSchema);
+      replace(await apiJson('POST', `/api/cvs/${cv.id}/analysis`, CvSchema));
     });
     uploading.value = false;
   }
 
   function replace(updated: Cv): void {
     cvs.value = cvs.value.map((cv) => (cv.id === updated.id ? updated : cv));
+  }
+
+  async function analyze(id: string): Promise<void> {
+    await attempt(async () => {
+      replace(await apiJson('POST', `/api/cvs/${id}/analysis`, CvSchema));
+    });
   }
 
   async function setRole(id: string, role: Role): Promise<void> {
@@ -92,8 +105,11 @@ export const useProfileStore = defineStore('profile', () => {
     error,
     active,
     archived,
+    analyzing,
     load,
+    refresh,
     upload,
+    analyze,
     setRole,
     activate,
     remove,

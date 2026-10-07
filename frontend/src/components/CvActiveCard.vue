@@ -1,30 +1,21 @@
 <script setup lang="ts">
-import { ROLE_LABELS, RoleSchema } from '@job-match/shared';
+import { ROLE_LABELS } from '@job-match/shared';
 import type { Cv, Role } from '@job-match/shared';
-import { Eye, Trash2, TriangleAlert } from '@lucide/vue';
+import { Eye, Trash2 } from '@lucide/vue';
 
+import CvAnalysisState from '@/components/CvAnalysisState.vue';
+import CvRolePicker from '@/components/CvRolePicker.vue';
 import CvThumbnail from '@/components/CvThumbnail.vue';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { cvTitle, formatDate, formatSize } from '@/lib/format';
 
-const props = defineProps<{ cv: Cv }>();
+defineProps<{ cv: Cv }>();
 const emit = defineEmits<{
   open: [id: string];
   remove: [ids: string[]];
   role: [id: string, role: Role];
+  analyze: [id: string];
 }>();
-
-function selectRole(value: unknown): void {
-  const parsed = RoleSchema.safeParse(value);
-  if (parsed.success && parsed.data !== props.cv.role) emit('role', props.cv.id, parsed.data);
-}
 </script>
 
 <template>
@@ -68,37 +59,7 @@ function selectRole(value: unknown): void {
       </div>
     </div>
 
-    <div
-      :class="[
-        'flex flex-col gap-3 border-t px-5 py-4 sm:flex-row sm:items-center',
-        cv.role ? 'bg-muted/40' : 'bg-warning/10',
-      ]"
-    >
-      <div class="flex min-w-0 flex-1 items-start gap-2.5">
-        <TriangleAlert v-if="!cv.role" class="text-warning mt-0.5 size-4 shrink-0" />
-        <div class="flex flex-col gap-0.5">
-          <label for="role-select" class="text-sm font-medium">
-            {{ cv.role ? 'Deine Rolle' : 'Wähle deine Rolle' }}
-          </label>
-          <p class="text-muted-foreground text-xs">
-            Danach richten sich später Stellen, Matches und Empfehlungen.
-          </p>
-        </div>
-      </div>
-      <Select :model-value="cv.role ?? undefined" @update:model-value="selectRole">
-        <SelectTrigger
-          id="role-select"
-          class="bg-background w-full sm:w-64"
-          data-testid="role-select"
-        >
-          <SelectValue placeholder="Rolle wählen" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem v-for="role in RoleSchema.options" :key="role" :value="role">
-            {{ ROLE_LABELS[role] }}
-          </SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
+    <CvAnalysisState :cv="cv" @analyze="(id) => emit('analyze', id)" />
+    <CvRolePicker :cv="cv" @role="(id, role) => emit('role', id, role)" />
   </section>
 </template>

@@ -210,7 +210,7 @@ ausschließlich, um Kosten zu senken. Gebaut Kapitel für Kapitel, je ein Konzep
 - [x] 2 – Ergebnis prüfen und speichern, Randfälle (max_tokens, Ablehnung, kein Lebenslauf …)
 - [x] 3 – Message Batches: Analyse als Batch, Ergebnis abholen, Ergebnis-Typen
 - [x] 4 – Prompt Caching: System immer, PDF nur in der Eval, `ttl: '1h'`; gemessen: gemeinsamer Teil 2.579 Tokens
-- [ ] 5 – Frontend: „Wird analysiert …“, Analyse anzeigen, Rolle bestätigen
+- [x] 5 – Frontend: „Wird analysiert …“, Analyse anzeigen, Rolle bestätigen
 - [ ] 6 – Beispiel-Suite mit 15 erfundenen Lebensläufen × 5 Läufe (Batch 1 schreibt, Batch 2 liest den Cache)
 - [ ] 7 – Coach-Chat bekommt die Analyse als Kontext
 

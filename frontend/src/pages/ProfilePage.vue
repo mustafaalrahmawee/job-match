@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { CircleAlert, Upload } from '@lucide/vue';
-import { onMounted, ref } from 'vue';
+import { useIntervalFn } from '@vueuse/core';
+import { onMounted, ref, watch } from 'vue';
 
 import CvActiveCard from '@/components/CvActiveCard.vue';
+import CvAnalysisView from '@/components/CvAnalysisView.vue';
 import CvArchiveList from '@/components/CvArchiveList.vue';
 import CvDeleteDialog from '@/components/CvDeleteDialog.vue';
 import CvDropTarget from '@/components/CvDropTarget.vue';
@@ -19,6 +21,13 @@ const pendingIds = ref<string[]>([]);
 const deleteDialogOpen = ref(false);
 
 onMounted(() => profile.load());
+
+const polling = useIntervalFn(() => profile.refresh(), 10_000, { immediate: false });
+watch(
+  () => profile.analyzing,
+  (analyzing) => (analyzing ? polling.resume() : polling.pause()),
+  { immediate: true },
+);
 
 function chooseFile(): void {
   fileInput.value?.click();
@@ -81,6 +90,7 @@ function askDelete(ids: string[]): void {
               @open="profile.openPdf"
               @remove="askDelete"
               @role="profile.setRole"
+              @analyze="profile.analyze"
             />
             <CvUploadZone
               v-else
@@ -95,6 +105,17 @@ function askDelete(ids: string[]): void {
               :uploading="profile.uploading"
               @choose="chooseFile"
             />
+          </section>
+
+          <section
+            v-if="profile.active?.analysis && profile.active.analysisStatus === 'done'"
+            class="flex flex-col gap-3"
+          >
+            <SectionHeading
+              title="Analyse"
+              description="Einmal von der KI aus deiner aktiven Fassung erstellt und gespeichert."
+            />
+            <CvAnalysisView :analysis="profile.active.analysis" />
           </section>
 
           <CvArchiveList
