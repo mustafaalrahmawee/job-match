@@ -32,7 +32,7 @@ export function createApp(deps: AppDeps): Express {
   api.use(createAuthRouter(deps.db));
   api.use(createConversationsRouter(deps.db));
   api.use(createChatRouter(deps));
-  api.use(createProfileRouter(deps.db));
+  api.use(createProfileRouter(deps));
   api.use(notFoundHandler);
 
   app.use('/api', api);

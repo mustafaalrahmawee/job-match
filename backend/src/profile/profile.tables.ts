@@ -1,10 +1,11 @@
-import type { Role } from '@job-match/shared';
+import type { AnalysisError, AnalysisStatus, CvAnalysis, Role } from '@job-match/shared';
 import { sql } from 'drizzle-orm';
 import {
   boolean,
   customType,
   index,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -30,6 +31,15 @@ export const cvVersions = pgTable(
     sizeBytes: integer().notNull(),
     role: text().$type<Role>(),
     active: boolean().notNull().default(true),
+    analysis: jsonb().$type<CvAnalysis>(),
+    analysisStatus: text().$type<AnalysisStatus>().notNull().default('none'),
+    analysisError: text().$type<AnalysisError>(),
+    analysisBatchId: text(),
+    analysisStartedAt: timestamp({ withTimezone: true }),
+    analysisInputTokens: integer(),
+    analysisOutputTokens: integer(),
+    analysisCacheReadTokens: integer(),
+    analysisCacheWriteTokens: integer(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

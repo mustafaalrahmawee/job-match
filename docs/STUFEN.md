@@ -198,11 +198,21 @@ neue Fassungen ersetzen die alte; der Coach kennt die aktive Fassung.
 
 **Prompt-Unit `cv_analysis`**
 
-| Form        | Archetyp            | Surface              | Slots        | Stopp          | Code erzwingt                        |
-| ----------- | ------------------- | -------------------- | ------------ | -------------- | ------------------------------------ |
-| single call | structured document | geprüftes Zod-Objekt | PDF (direkt) | Schema erfüllt | Schema, Rolle aus Liste, Größenlimit |
+| Form                    | Archetyp            | Surface                               | Slots                                          | Stopp                      | Code erzwingt                                                                                             |
+| ----------------------- | ------------------- | ------------------------------------- | ---------------------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------- |
+| single call (als Batch) | structured document | JSON nach Schema (Structured Outputs) | System (statisch), PDF als `document` (direkt) | Schema erfüllt, `end_turn` | Zod, Rolle aus Liste, Listen gekürzt, `isCv`, Status nur einmal `running`, nie bei `max_tokens` speichern |
 
-- [ ] Beispiel-Suite mit 5–10 echten oder erfundenen Lebensläufen (keine fremden Personendaten)
+Nur Claude Sonnet 5.5 mit Effort `low` und Structured Outputs (`output_config.format` aus dem
+Zod-Schema, kein Tool). Batches und Prompt Caching sind für diese Unit aus Stufe 6/7 vorgezogen –
+ausschließlich, um Kosten zu senken. Gebaut Kapitel für Kapitel, je ein Konzept:
+
+- [x] 1 – Structured Outputs statt Tool, ein Aufruf von Hand (`pnpm cv:try <pdf>`)
+- [x] 2 – Ergebnis prüfen und speichern, Randfälle (max_tokens, Ablehnung, kein Lebenslauf …)
+- [x] 3 – Message Batches: Analyse als Batch, Ergebnis abholen, Ergebnis-Typen
+- [ ] 4 – Prompt Caching: System und PDF mit `ttl: '1h'`, Treffer messen
+- [ ] 5 – Frontend: „Wird analysiert …“, Analyse anzeigen, Rolle bestätigen
+- [ ] 6 – Beispiel-Suite mit 15 erfundenen Lebensläufen × 5 Läufe (Batch 1 schreibt, Batch 2 liest den Cache)
+- [ ] 7 – Coach-Chat bekommt die Analyse als Kontext
 
 **Lernziele**
 
@@ -210,6 +220,8 @@ neue Fassungen ersetzen die alte; der Coach kennt die aktive Fassung.
 - [ ] Structured Outputs mit Zod (`messages.parse`): garantiert vs. nur erbeten
 - [ ] Warum „einmal analysieren und speichern“ billiger ist als das PDF bei jeder Nachricht
 - [ ] Wann man mehr Effort braucht – an der Beispiel-Suite gemessen
+- [ ] Message Batches: asynchron, 50 % billiger, Ergebnis-Typen (`succeeded`, `errored`, `expired`)
+- [ ] Prompt Caching: Präfix-Treffer, Schreiben vs. Lesen, TTL 5 Min. vs. 1 Std., Mindestlänge
 
 ---
 

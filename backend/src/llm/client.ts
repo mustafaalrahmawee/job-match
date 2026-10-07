@@ -14,7 +14,7 @@ export function createLlmClient(config: Config): Anthropic {
   });
 }
 
-export function answerText(message: Message): string {
+export function answerText(message: Pick<Message, 'content'>): string {
   return message.content
     .map((block) => (block.type === 'text' ? block.text : ''))
     .join('')

@@ -28,6 +28,7 @@ entschieden – bestätigen oder streichen) · ✖ fällt weg
 | 02.10.2026 | Rollenwechsel: **Interview-Trainings und Chats** der alten Rolle bleiben sichtbar.                                                                                                                                                                                                   |
 | 02.10.2026 | Die App ist auf Deutsch, versteht aber auch **englische** Lebensläufe und Stellenanzeigen.                                                                                                                                                                                           |
 | 07.10.2026 | Fassungen kann man **löschen** (eine oder mehrere). Mit ihnen verschwindet alles, was die KI daraus erstellt hat (Analyse, Match-Ergebnisse). **Bewerbungen, Chats und Trainings bleiben**. Wird die aktive Fassung gelöscht, ist keine mehr aktiv, bis du eine wählst.              |
+| 07.10.2026 | Die Lebenslauf-Analyse läuft **nur mit Claude Sonnet 5.5** (Structured Outputs, kein Tool). Um Kosten zu sparen, läuft sie als **Batch** (Ergebnis nach einigen Minuten) und mit **Prompt Caching**; z.ai wird dafür nicht genutzt.                                                  |
 
 ---
 

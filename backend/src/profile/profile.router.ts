@@ -8,17 +8,19 @@ import express, { Router } from 'express';
 import { z } from 'zod';
 
 import { getAuth, requireAuth } from '../auth/auth.router';
-import type { Db } from '../db';
 import {
   activateCv,
+  collectAnalyses,
   CvNotFoundError,
   getCvPdf,
   listCvs,
   NotAPdfError,
   removeCvs,
   setCvRole,
+  startAnalysis,
   uploadCv,
 } from './profile.service';
+import type { ProfileDeps } from './profile.service';
 
 function parseId(value: unknown): string {
   const result = z.uuid().safeParse(value);
@@ -41,12 +43,15 @@ function toFileName(header: string | undefined): string | null {
   }
 }
 
-export function createProfileRouter(db: Db): Router {
+export function createProfileRouter(deps: ProfileDeps): Router {
+  const { db } = deps;
   const router = Router();
   router.use('/cvs', requireAuth(db));
 
   router.get('/cvs', async (_req, res) => {
-    res.json(await listCvs(db, getAuth(res).user.id));
+    const userId = getAuth(res).user.id;
+    await collectAnalyses(deps, userId);
+    res.json(await listCvs(db, userId));
   });
 
   router.post(
@@ -75,6 +80,10 @@ export function createProfileRouter(db: Db): Router {
     const { ids } = DeleteCvsSchema.parse(req.body);
     await removeCvs(db, getAuth(res).user.id, ids);
     res.status(204).end();
+  });
+
+  router.post('/cvs/:id/analysis', async (req, res) => {
+    res.json(await startAnalysis(deps, getAuth(res).user.id, parseId(req.params.id)));
   });
 
   router.post('/cvs/:id/activate', async (req, res) => {

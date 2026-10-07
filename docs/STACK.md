@@ -253,6 +253,8 @@ backend/evals/<prompt-unit>/
 - Evals rufen das **echte** Modell auf: nur bewusst und von Hand starten
   (`pnpm eval <prompt-unit> <fassung>`), nie in CI. Sie nutzen wie die Integrationstests
   `TEST_ANTHROPIC_API_KEY` und z.ai (`TEST_ANTHROPIC_BASE_URL`), weil Claude dafür zu teuer ist.
+  Ausnahme `cv_analysis`: läuft nur auf Claude Sonnet 5.5 (`ANTHROPIC_API_KEY`), dafür als Message
+  Batch mit Prompt Caching, damit ein Durchgang wenige Dollar kostet.
 - Jeder Lauf protokolliert Modell, Effort, Tokens und Dauer (AP-58).
 - Sobald eine Unit ein festes Ergebnis hat (z. B. Score), kommen prüfbare Kriterien dazu.
 

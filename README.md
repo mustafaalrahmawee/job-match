@@ -86,6 +86,7 @@ Alle im Wurzelordner; sie laufen über alle Pakete (`backend`, `frontend`, `shar
 | `pnpm user:create <email>`                | Konto anlegen oder Passwort neu setzen                                        |
 | `pnpm jobs:import <n> ["<was>"] ["<wo>"]` | bis zu `n` Stellen der Bundesagentur, ohne Ort verteilt auf alle Bundesländer |
 | `pnpm eval coach_chat v1`                 | Fassung `v1` der Beispiel-Suite, **echtes** Modell (z.ai)                     |
+| `pnpm cv:try <pdf>`                       | ein PDF von Hand analysieren, **echtes** Modell (Claude Sonnet 5.5, ~2 Cent)  |
 | `/glm-fassung v3` (in Claude Code)        | Fassung `v3` erzeugen und Paare mit der Vorgängerfassung bilden               |
 | `pnpm soma coach_chat vorbereiten v1 v2`  | Paare aus zwei Fassungen bilden, dann `/soma-bewertung v1-v2` in Claude Code  |
 | `pnpm soma coach_chat auswerten v1-v2`    | Zählen, wo welche Fassung besser war                                          |
@@ -115,19 +116,20 @@ nicht und nennt jedes Problem einzeln.
 Alle Routen unter `/api`; Fehler haben die Form `{ "error": { "code", "message" } }`. Ab Konto-Routen
 außer Login: `Authorization: Bearer <token>`.
 
-| Route                                 | Zweck                                                                          |
-| ------------------------------------- | ------------------------------------------------------------------------------ |
-| `POST /auth/login`                    | Token holen (30 Tage gültig); 10 Fehlversuche je 15 Min. und IP                |
-| `POST /auth/logout`, `GET /auth/me`   | Token ungültig machen / angemeldeten Nutzer lesen                              |
-| `GET /conversations`                  | eigene Gespräche, neueste Aktivität zuerst                                     |
-| `GET/PATCH/DELETE /conversations/:id` | laden (mit Nachrichten), umbenennen, löschen – fremde ID: 404                  |
-| `POST /chat`                          | Antwort als SSE: `conversation`, `delta`, `done`, `refusal`, `error`           |
-| `GET /cvs`                            | eigene Lebenslauf-Fassungen, neueste zuerst (ohne PDF)                         |
-| `POST /cvs`                           | PDF als Body (`application/pdf`, max. 5 MB), Name in `X-File-Name`; wird aktiv |
-| `GET /cvs/:id/pdf`                    | Original-PDF der Fassung                                                       |
-| `PATCH /cvs/:id`                      | Rolle aus der festen Liste setzen (`{ "role" }`)                               |
-| `POST /cvs/:id/activate`              | Fassung wieder aktiv machen, die bisherige geht ins Archiv                     |
-| `POST /cvs/delete`                    | `{ "ids": [...] }` löschen, alles oder nichts (fremde ID: 404) – 204           |
+| Route                                 | Zweck                                                                                      |
+| ------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `POST /auth/login`                    | Token holen (30 Tage gültig); 10 Fehlversuche je 15 Min. und IP                            |
+| `POST /auth/logout`, `GET /auth/me`   | Token ungültig machen / angemeldeten Nutzer lesen                                          |
+| `GET /conversations`                  | eigene Gespräche, neueste Aktivität zuerst                                                 |
+| `GET/PATCH/DELETE /conversations/:id` | laden (mit Nachrichten), umbenennen, löschen – fremde ID: 404                              |
+| `POST /chat`                          | Antwort als SSE: `conversation`, `delta`, `done`, `refusal`, `error`                       |
+| `GET /cvs`                            | eigene Fassungen, neueste zuerst (ohne PDF); holt fertige Analysen aus dem Batch ab        |
+| `POST /cvs`                           | PDF als Body (`application/pdf`, max. 5 MB), Name in `X-File-Name`; wird aktiv             |
+| `GET /cvs/:id/pdf`                    | Original-PDF der Fassung                                                                   |
+| `PATCH /cvs/:id`                      | Rolle aus der festen Liste setzen (`{ "role" }`)                                           |
+| `POST /cvs/:id/activate`              | Fassung wieder aktiv machen, die bisherige geht ins Archiv                                 |
+| `POST /cvs/:id/analysis`              | Analyse als Message Batch starten (Claude Sonnet 5.5); 409, wenn sie läuft oder fertig ist |
+| `POST /cvs/delete`                    | `{ "ids": [...] }` löschen, alles oder nichts (fremde ID: 404) – 204                       |
 
 `POST /chat` mit `conversationId` und ohne `message` setzt ein Gespräch fort („Erneut versuchen“).
 Trennt der Browser die Verbindung, bricht das Backend die Modellanfrage ab und speichert die
