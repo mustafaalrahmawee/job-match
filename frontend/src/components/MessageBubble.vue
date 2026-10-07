@@ -36,7 +36,7 @@ async function copy(): Promise<void> {
 <template>
   <div v-if="role === 'user'" class="flex justify-end" data-role="user">
     <p
-      class="bg-primary text-primary-foreground max-w-[80%] rounded-2xl rounded-br-md px-4 py-2.5 text-sm whitespace-pre-wrap shadow-xs"
+      class="bg-secondary text-secondary-foreground max-w-[80%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap"
       data-testid="message-text"
     >
       {{ text }}
@@ -44,12 +44,10 @@ async function copy(): Promise<void> {
   </div>
 
   <div v-else class="flex gap-3" data-role="assistant">
-    <div
-      class="bg-accent text-primary flex size-8 shrink-0 items-center justify-center rounded-full"
-    >
-      <Sparkles class="size-4" />
+    <div class="text-brand flex size-7 shrink-0 items-center justify-center rounded-full border">
+      <Sparkles class="size-3.5" />
     </div>
-    <div class="min-w-0 flex-1 pt-1 text-sm">
+    <div class="min-w-0 flex-1 pt-0.5 text-sm">
       <p
         v-if="streaming && text === ''"
         class="text-muted-foreground animate-pulse"

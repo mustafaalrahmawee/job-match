@@ -47,12 +47,10 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <main
-    class="flex min-h-svh items-center justify-center bg-[radial-gradient(ellipse_at_top,var(--accent),transparent_60%)] p-4"
-  >
+  <main class="bg-sidebar flex min-h-svh items-center justify-center p-4">
     <div class="flex w-full max-w-sm flex-col items-center gap-8">
       <AppLogo />
-      <Card class="w-full shadow-lg">
+      <Card class="w-full shadow-sm">
         <CardHeader>
           <CardTitle class="text-xl">Willkommen zurück</CardTitle>
           <CardDescription>Melde dich an, um mit deinem Karriere-Coach zu chatten.</CardDescription>

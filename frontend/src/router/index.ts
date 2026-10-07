@@ -1,7 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
+import AppLayout from '@/components/AppLayout.vue';
 import ChatPage from '@/pages/ChatPage.vue';
 import LoginPage from '@/pages/LoginPage.vue';
+import ProfilePage from '@/pages/ProfilePage.vue';
 import { useAuthStore } from '@/stores/auth';
 
 declare module 'vue-router' {
@@ -14,9 +16,17 @@ declare module 'vue-router' {
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', redirect: '/chat' },
     { path: '/login', name: 'login', component: LoginPage, meta: { guestOnly: true } },
-    { path: '/chat/:id?', name: 'chat', component: ChatPage, meta: { requiresAuth: true } },
+    {
+      path: '/',
+      component: AppLayout,
+      meta: { requiresAuth: true },
+      children: [
+        { path: '', redirect: { name: 'chat' } },
+        { path: 'chat/:id?', name: 'chat', component: ChatPage },
+        { path: 'profile', name: 'profile', component: ProfilePage },
+      ],
+    },
   ],
 });
 

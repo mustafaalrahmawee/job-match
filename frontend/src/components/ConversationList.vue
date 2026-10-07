@@ -54,18 +54,18 @@ function confirmDelete(): void {
 
 <template>
   <nav aria-label="Gespräche">
-    <p v-if="conversations.length === 0" class="text-muted-foreground px-3 py-2 text-sm">
-      Noch keine Gespräche – stelle deine erste Frage.
+    <p v-if="conversations.length === 0" class="text-muted-foreground px-3 py-2 text-xs">
+      Noch keine Gespräche.
     </p>
     <ul class="flex flex-col gap-0.5">
       <li
         v-for="conversation in conversations"
         :key="conversation.id"
         :class="[
-          'group flex items-center rounded-lg transition-colors',
+          'group flex items-center rounded-md transition-colors',
           conversation.id === activeId
-            ? 'bg-background font-medium shadow-xs'
-            : 'text-foreground/80 hover:bg-background/70',
+            ? 'bg-accent text-foreground'
+            : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
         ]"
         data-testid="conversation-item"
       >
@@ -83,7 +83,7 @@ function confirmDelete(): void {
         <template v-else>
           <button
             type="button"
-            class="min-w-0 flex-1 truncate px-3 py-2 text-left text-sm"
+            class="min-w-0 flex-1 truncate px-3 py-1.5 text-left text-sm"
             :aria-current="conversation.id === activeId ? 'page' : undefined"
             @click="emit('select', conversation.id)"
           >

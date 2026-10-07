@@ -44,7 +44,7 @@ function selectEffort(value: unknown): void {
 
 <template>
   <form
-    class="bg-card focus-within:border-ring focus-within:ring-ring/30 flex flex-col rounded-2xl border shadow-sm transition-shadow focus-within:ring-3"
+    class="bg-card focus-within:border-ring flex flex-col rounded-xl border shadow-xs transition-colors"
     @submit.prevent="submit"
   >
     <Textarea

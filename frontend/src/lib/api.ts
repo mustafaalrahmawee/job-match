@@ -48,16 +48,28 @@ export async function toApiError(response: Response, hadToken: boolean): Promise
   );
 }
 
-async function send(method: string, path: string, body?: unknown): Promise<Response> {
-  const headers: Record<string, string> = { Accept: 'application/json', ...authHeaders() };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
-  const response = await fetch(path, {
-    method,
-    headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+interface SendOptions {
+  readonly body?: BodyInit;
+  readonly contentType?: string;
+  readonly headers?: Record<string, string>;
+}
+
+async function send(method: string, path: string, options: SendOptions = {}): Promise<Response> {
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    ...authHeaders(),
+    ...options.headers,
+  };
+  if (options.contentType) headers['Content-Type'] = options.contentType;
+  const response = await fetch(path, { method, headers, body: options.body });
   if (!response.ok) throw await toApiError(response, 'Authorization' in headers);
   return response;
+}
+
+async function parseJson<T>(response: Response, path: string, schema: z.ZodType<T>): Promise<T> {
+  const parsed = schema.safeParse(await response.json().catch(() => undefined));
+  if (!parsed.success) throw new ApiError(response.status, `Unerwartete Antwort von ${path}`);
+  return parsed.data;
 }
 
 export async function apiJson<T>(
@@ -66,12 +78,35 @@ export async function apiJson<T>(
   schema: z.ZodType<T>,
   body?: unknown,
 ): Promise<T> {
-  const response = await send(method, path, body);
-  const parsed = schema.safeParse(await response.json().catch(() => undefined));
-  if (!parsed.success) throw new ApiError(response.status, `Unerwartete Antwort von ${path}`);
-  return parsed.data;
+  const response = await send(
+    method,
+    path,
+    body === undefined ? {} : { body: JSON.stringify(body), contentType: 'application/json' },
+  );
+  return parseJson(response, path, schema);
 }
 
-export async function apiVoid(method: 'POST' | 'DELETE', path: string): Promise<void> {
-  await send(method, path);
+export async function apiUpload<T>(path: string, file: File, schema: z.ZodType<T>): Promise<T> {
+  const response = await send('POST', path, {
+    body: file,
+    contentType: file.type,
+    headers: { 'X-File-Name': encodeURIComponent(file.name) },
+  });
+  return parseJson(response, path, schema);
+}
+
+export async function apiBlob(path: string): Promise<Blob> {
+  return (await send('GET', path)).blob();
+}
+
+export async function apiVoid(
+  method: 'POST' | 'DELETE',
+  path: string,
+  body?: unknown,
+): Promise<void> {
+  await send(
+    method,
+    path,
+    body === undefined ? {} : { body: JSON.stringify(body), contentType: 'application/json' },
+  );
 }
