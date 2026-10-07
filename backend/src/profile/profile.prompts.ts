@@ -24,12 +24,18 @@ Die feste Rollenliste lautet: ${ROLE_LIST}.
 
 Ist das Dokument kein Lebenslauf, steht isCv auf false, die Listen bleiben leer, das Kurzprofil nennt in einem Satz, was das Dokument stattdessen ist, und die Erklärung zur Rolle bleibt leer, weil die App dann keine Analyse anzeigt.`;
 
-export function buildCvAnalysisRequest(pdfBase64: string, maxTokens: number) {
+const CACHE_ONE_HOUR = { type: 'ephemeral', ttl: '1h' } as const;
+
+export function buildCvAnalysisRequest(
+  pdfBase64: string,
+  maxTokens: number,
+  cacheDocument = false,
+) {
   return {
     model: CV_ANALYSIS_MODEL,
     max_tokens: maxTokens,
     output_config: { effort: CV_ANALYSIS_EFFORT, format: zodOutputFormat(CvAnalysisSchema) },
-    system: CV_ANALYSIS_SYSTEM_PROMPT,
+    system: [{ type: 'text', text: CV_ANALYSIS_SYSTEM_PROMPT, cache_control: CACHE_ONE_HOUR }],
     messages: [
       {
         role: 'user',
@@ -37,6 +43,7 @@ export function buildCvAnalysisRequest(pdfBase64: string, maxTokens: number) {
           {
             type: 'document',
             source: { type: 'base64', media_type: 'application/pdf', data: pdfBase64 },
+            ...(cacheDocument ? { cache_control: CACHE_ONE_HOUR } : {}),
           },
           { type: 'text', text: 'Übertrage diesen Lebenslauf in das Analyse-Formular.' },
         ],

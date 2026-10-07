@@ -4,9 +4,9 @@ import { loadConfig } from '../../src/config';
 import { createLlmClient } from '../../src/llm/client';
 import { buildCvAnalysisRequest } from '../../src/profile/profile.prompts';
 
-const pdfPath = process.argv[2];
-if (!pdfPath) {
-  console.error('Aufruf: pnpm cv:try <pdf>');
+const [pdfPath, cacheFlag] = process.argv.slice(2);
+if (!pdfPath || (cacheFlag !== undefined && cacheFlag !== 'cache-document')) {
+  console.error('Aufruf: pnpm cv:try <pdf> [cache-document]');
   process.exit(1);
 }
 
@@ -20,7 +20,7 @@ const client = createLlmClient(config);
 const pdfBase64 = (await readFile(pdfPath)).toString('base64');
 const startedAt = performance.now();
 const message = await client.messages.parse(
-  buildCvAnalysisRequest(pdfBase64, config.llmMaxTokens),
+  buildCvAnalysisRequest(pdfBase64, config.llmMaxTokens, cacheFlag === 'cache-document'),
   { timeout: 180_000 },
 );
 

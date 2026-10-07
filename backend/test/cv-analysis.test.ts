@@ -51,11 +51,23 @@ describe('buildCvAnalysisRequest', () => {
       model: 'claude-sonnet-5-5',
       max_tokens: 8000,
       output_config: { effort: 'low', format: { type: 'json_schema' } },
-      system: CV_ANALYSIS_SYSTEM_PROMPT,
+      system: [{ type: 'text', text: CV_ANALYSIS_SYSTEM_PROMPT }],
     });
     expect(request.messages[0]?.content[0]).toMatchObject({
       type: 'document',
       source: { media_type: 'application/pdf', data: 'UERG' },
+    });
+  });
+
+  it('caches the system prompt for an hour and the pdf only on request', () => {
+    const app = buildCvAnalysisRequest('UERG', 8000);
+    const evaluation = buildCvAnalysisRequest('UERG', 8000, true);
+
+    expect(app.system[0]?.cache_control).toEqual({ type: 'ephemeral', ttl: '1h' });
+    expect(app.messages[0]?.content[0]).not.toHaveProperty('cache_control');
+    expect(evaluation.messages[0]?.content[0]).toHaveProperty('cache_control', {
+      type: 'ephemeral',
+      ttl: '1h',
     });
   });
 

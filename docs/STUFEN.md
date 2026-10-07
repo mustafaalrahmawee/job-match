@@ -198,9 +198,9 @@ neue Fassungen ersetzen die alte; der Coach kennt die aktive Fassung.
 
 **Prompt-Unit `cv_analysis`**
 
-| Form                    | Archetyp            | Surface                               | Slots                                          | Stopp                      | Code erzwingt                                                                                             |
-| ----------------------- | ------------------- | ------------------------------------- | ---------------------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------- |
-| single call (als Batch) | structured document | JSON nach Schema (Structured Outputs) | System (statisch), PDF als `document` (direkt) | Schema erfüllt, `end_turn` | Zod, Rolle aus Liste, Listen gekürzt, `isCv`, Status nur einmal `running`, nie bei `max_tokens` speichern |
+| Form                    | Archetyp            | Surface                               | Slots                                                                                | Stopp                      | Code erzwingt                                                                                             |
+| ----------------------- | ------------------- | ------------------------------------- | ------------------------------------------------------------------------------------ | -------------------------- | --------------------------------------------------------------------------------------------------------- |
+| single call (als Batch) | structured document | JSON nach Schema (Structured Outputs) | System (statisch, 1 h gecacht), PDF als `document` (direkt; gecacht nur in der Eval) | Schema erfüllt, `end_turn` | Zod, Rolle aus Liste, Listen gekürzt, `isCv`, Status nur einmal `running`, nie bei `max_tokens` speichern |
 
 Nur Claude Sonnet 5.5 mit Effort `low` und Structured Outputs (`output_config.format` aus dem
 Zod-Schema, kein Tool). Batches und Prompt Caching sind für diese Unit aus Stufe 6/7 vorgezogen –
@@ -209,7 +209,7 @@ ausschließlich, um Kosten zu senken. Gebaut Kapitel für Kapitel, je ein Konzep
 - [x] 1 – Structured Outputs statt Tool, ein Aufruf von Hand (`pnpm cv:try <pdf>`)
 - [x] 2 – Ergebnis prüfen und speichern, Randfälle (max_tokens, Ablehnung, kein Lebenslauf …)
 - [x] 3 – Message Batches: Analyse als Batch, Ergebnis abholen, Ergebnis-Typen
-- [ ] 4 – Prompt Caching: System und PDF mit `ttl: '1h'`, Treffer messen
+- [x] 4 – Prompt Caching: System immer, PDF nur in der Eval, `ttl: '1h'`; gemessen: gemeinsamer Teil 2.579 Tokens
 - [ ] 5 – Frontend: „Wird analysiert …“, Analyse anzeigen, Rolle bestätigen
 - [ ] 6 – Beispiel-Suite mit 15 erfundenen Lebensläufen × 5 Läufe (Batch 1 schreibt, Batch 2 liest den Cache)
 - [ ] 7 – Coach-Chat bekommt die Analyse als Kontext
