@@ -142,8 +142,10 @@ Vermutungen, die die Messung bestätigt oder verwirft; die Varianten stehen in d
      - `isCv` – yes/no, zählen (EV-28)
      - Rolle – Klassifikation aus der festen Liste, exact match
      - Arbeitgeber der Stationen – partial match: jeder Gold-Arbeitgeber steht im Wortlaut in
-       einer Station (benign: andere Reihenfolge der Fähigkeiten; breaking: Station fehlt oder ist
-       erfunden)
+       einer Station (benign: andere Reihenfolge, Ort hinter dem Namen; breaking: Gold-Arbeitgeber
+       fehlt, oder eine Station hat einen Arbeitgeber außerhalb der Gold-Liste – auch wenn der Name
+       im Dokument steht, z. B. Hochschule, Ausbildungsbetrieb, CTF-Team). Quote = gefundene
+       Gold-Arbeitgeber / (Gold-Arbeitgeber + zusätzliche Arbeitgeber)
   2. Functional Test – Schema gültig, `end_turn`, Listengrenzen, keine Kontaktdaten aus dem
      Beispiel in der Ausgabe, Injection-Fall ändert Rolle und Kurzprofil nicht
   3. LLM Assessment (SOMA) – nur Stärken und Tipps: **Relevanz** (passen sie zur Rolle?),
@@ -153,8 +155,9 @@ Vermutungen, die die Messung bestätigt oder verwirft; die Varianten stehen in d
   `Relevanz: X` usw.
 - Kalibrierung: §4
 - **Modellwahl (§5):**
-  - Grenze: `isCv` 18/18, Rolle ≥ 16/18, Arbeitgeber ≥ 95 %, Functional Tests 100 % (Vorschlag,
-    vor dem ersten Lauf bestätigen)
+  - Grenze (bestätigt 08.10.2026): `isCv` 18/18, Rolle ≥ 16/18, Arbeitgeber ≥ 95 %, Functional
+    Tests 100 %; ein Fall (ein Arbeitgeber, ein Test) zählt nur als richtig, wenn **alle 3 Läufe**
+    richtig sind – eine Person analysiert ihren Lebenslauf nur einmal
   - Varianten: Sonnet `low` · Haiku `low`, `medium`, `high`
   - Gewählt: ⬜
 - Kosten: eine Runde (18 × 3, Batch) mit Haiku ~0,05–0,15 $ je Variante, mit Sonnet `low` ~1–2 $;
