@@ -144,7 +144,7 @@ describe.skipIf(!TEST_DATABASE_URL)('POST /api/chat', () => {
     expect(saved[1]?.content).toEqual([{ type: 'text', text: 'Lies die Anzeige genau.' }]);
     expect(stream).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        model: 'claude-sonnet-5-5',
+        model: 'claude-haiku-5-5',
         system: COACH_CHAT_SYSTEM_PROMPT,
         output_config: { effort: 'low' },
         messages: [user(BODY.message)],

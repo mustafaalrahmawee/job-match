@@ -44,11 +44,11 @@ function answer(text: string, stopReason: StopReason = 'end_turn') {
 }
 
 describe('buildCvAnalysisRequest', () => {
-  it('asks Claude Sonnet with low effort for the schema and sends the pdf first', () => {
+  it('asks Claude Haiku with low effort for the schema and sends the pdf first', () => {
     const request = buildCvAnalysisRequest('UERG', 8000);
 
     expect(request).toMatchObject({
-      model: 'claude-sonnet-5-5',
+      model: 'claude-haiku-5-5',
       max_tokens: 8000,
       output_config: { effort: 'low', format: { type: 'json_schema' } },
       system: [{ type: 'text', text: CV_ANALYSIS_SYSTEM_PROMPT }],
@@ -215,7 +215,7 @@ function succeeded(text: string, stopReason: StopReason = 'end_turn', outputToke
   return {
     type: 'succeeded',
     message: {
-      model: 'claude-sonnet-5-5',
+      model: 'claude-haiku-5-5',
       stop_reason: stopReason,
       content: [{ type: 'text', text, citations: null }],
       usage: {
