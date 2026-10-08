@@ -9,4 +9,7 @@ Gebaut wird Stufe für Stufe nach [docs/STUFEN.md](docs/STUFEN.md); nur die aktu
 Jeder Prompt folgt [docs/app-prompting-anchor.md](docs/app-prompting-anchor.md). Fachliche Idee:
 [docs/IDEE.md](docs/IDEE.md). Überblick: [README.md](README.md).
 
+Jede Eval folgt [docs/app-evaluation-anchor.md](docs/app-evaluation-anchor.md); Plan je Prompt-Unit in
+[docs/EVAL.md](docs/EVAL.md).
+
 Stellen importieren oder den Import ändern: erst [docs/STELLEN-IMPORT.md](docs/STELLEN-IMPORT.md) lesen.

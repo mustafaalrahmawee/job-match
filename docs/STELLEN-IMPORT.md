@@ -159,7 +159,8 @@ haben sie sichtbar gemacht.
 
 - **Text passt inhaltlich nicht zum Titel:** Eine Regel kann das nicht prüfen (eine Wortsuche hat
   fast nur korrekte Anzeigen markiert). Das ist eine Aufgabe für Claude: Prompt-Unit
-  `job_extraction` in Stufe 3, mit Structured Outputs und Beispiel-Suite.
+  `job_extraction` in Stufe 3, mit Structured Outputs. Die importierten Stellen sind dafür zugleich
+  der Gold Standard der Evaluation ([EVAL.md](EVAL.md) 6.3).
 - **Zeitliche Streuung:** Trotz verteilter Seiten stammen rund 70 % der Stellen aus der letzten
   Woche, weil pro Land nur die neuesten 10.000 erreichbar sind.
 - **Saarland** hat weniger Stellen (~64 statt ~180): Dort gibt es insgesamt wenig, und mehr davon

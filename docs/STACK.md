@@ -56,13 +56,12 @@ backend/              Express-App (TypeScript)
   src/                Anwendungscode
   drizzle/            Migrationen (generiert, geprüft, nicht von Hand umgeschrieben)
   test/               Vitest-Tests
-  evals/              Beispiel-Suites je Prompt-Unit (siehe §7)
+  evals/              Example Suites je Prompt-Unit (siehe §7)
 frontend/             Vue-App (TypeScript)
 shared/               Zod-Schemas und Typen des API-Vertrags (Backend + Frontend)
-docs/                 IDEE, STUFEN, STACK, Prompt-Regeln
+docs/                 IDEE, STUFEN, STACK, EVAL, Prompt- und Eval-Anchor
 docker-compose.yml    Postgres 17 + pgvector (Host-Port 5433)
 docker/initdb/        SQL beim ersten Start des DB-Containers (legt jobmatch_test an)
-.claude/skills/       Claude-Code-Skills des Projekts (z. B. SOMA-Bewertung der Evals, §7)
 pnpm-workspace.yaml   Workspace-Pakete
 .github/workflows/    CI: Lint, Typen und Tests für Backend und Frontend
 ```
@@ -128,7 +127,8 @@ Migration + Model, Zod-Schema ≈ FormRequest + API-Resource.
 2. Migration mit `pnpm db:generate` erzeugen und prüfen (`drizzle-kit` findet alle
    `*.tables.ts` selbst).
 3. Zod-Schemas in `shared/src/<domäne>.ts`, Router in `app.ts` einhängen.
-4. Tests mit Mock-Client, für Modellabläufe zusätzlich Integrationstests (siehe §5) und Beispiel-Suite.
+4. Tests mit Mock-Client, für Modellabläufe zusätzlich Integrationstests (siehe §5) und Example Suite
+   (siehe §7).
 
 ---
 
@@ -225,62 +225,30 @@ lib/          Hilfen ohne Vue-Bezug (API-Client mit Token, Chat-Stream, Markdown
 
 ---
 
-## 7. Evals (Beispiel-Suites)
+## 7. Evals
 
-Jede Prompt-Unit bekommt ab ihrer ersten Version eine Beispiel-Suite (Prompt-Regeln AP-56):
+Jede Evaluation folgt verbindlich [app-evaluation-anchor.md](app-evaluation-anchor.md); welche
+Beispiele und welche Benotung je Prompt-Unit gelten, steht in [EVAL.md](EVAL.md).
 
 ```
 backend/evals/<prompt-unit>/
-  cases.json              Array mit 5–20 Fällen (je Objekt: id, art, note, conversation)
-  prompts.json            Array der Prompt-Fassungen ({ version, prompt }), jeder Lauf hängt an
-  run.ts                  baut den Prompt wie die App, holt die Antworten, schreibt eine Fassung
-  bericht.md              Bericht über die Fassungen: Befund, Prompt-Änderung, gemessene Wirkung
-  fassungen/<fassung>/    committet, wird nie überschrieben
-    summary.md            je Variante: Tokens, Zeit gesamt und im Schnitt, längste Frage
-    <modell>-<effort>.md  alle Fälle als Gespräch, je Variante eine Datei
-    <modell>-<effort>.thinking.md  Thinking des Modells je Aufruf (nur wenn es welches gab)
-    metrics.tsv           Stopp-Grund, Tokens, Thinking-Zeichen und Dauer je Fall und Variante
+  samples/            Example Problems, wo vorhanden mit Gold-Lösung
+  run.ts              baut den Prompt wie die App und holt die Candidate Solutions
+  check.ts            Gold Standard und Functional Tests
+  judge.ts            SOMA-Fragen an den Judge (nur wo EVAL.md es vorsieht)
+  runs/<fassung>/     committet, nie überschrieben: Prompt und Antwort je Fall, metrics.tsv, Noten
 ```
 
-- Fälle decken die Bandbreite ab: `art` ist `typisch`, `rand` oder `schwierig`. Typische Fälle
-  überwiegen wie in der echten Nutzung (bei `coach_chat` 8/5/5).
-- Mehrstufige Fälle sind Canned Conversations: Das Modell antwortet an jeder `user`-Stelle, danach
-  geht es mit der festen `assistant`-Antwort aus dem Skript weiter. So bleiben Fassungen vergleichbar.
-- Ablauf: Fassung `v1` erzeugen, Prompt verbessern, `v2` erzeugen, beide Ordner vergleichen. Pro
-  Fassung nur eine Prompt-Änderung, damit klar ist, welche Regel welche Wirkung hat.
-- Jede Fassung läuft in vier Varianten: beide Modelle (Normal, Erweitert) je mit Effort `low` und
-  `high`.
-- Evals rufen das **echte** Modell auf: nur bewusst und von Hand starten
-  (`pnpm eval <prompt-unit> <fassung>`), nie in CI. Sie nutzen wie die Integrationstests
-  `TEST_ANTHROPIC_API_KEY` und z.ai (`TEST_ANTHROPIC_BASE_URL`), weil Claude dafür zu teuer ist.
-  Ausnahme `cv_analysis`: läuft nur auf Claude Sonnet 5.5 (`ANTHROPIC_API_KEY`), dafür als Message
-  Batch mit Prompt Caching, damit ein Durchgang wenige Dollar kostet.
-- Jeder Lauf protokolliert Modell, Effort, Tokens und Dauer (AP-58).
-- Sobald eine Unit ein festes Ergebnis hat (z. B. Score), kommen prüfbare Kriterien dazu.
+Der genaue Aufbau wird mit der ersten Suite (`cv_analysis`, Stufe 2 Kapitel 6) festgelegt und hier
+nachgetragen.
 
-**Fassung per Skill.** `/glm-fassung v3` in Claude Code nimmt die Schritte ab, die sonst von Hand
-laufen: Er prüft, dass der Prompt in `chat.prompts.ts` neu ist, startet `pnpm eval coach_chat v3`
-(z.ai, wie oben), zeigt `summary.md` und bildet mit `pnpm soma coach_chat vorbereiten` die Paare mit
-der Vorgängerfassung. Die Antworten liest er nicht; bewertet wird danach getrennt mit
-`/soma-bewertung`, am besten in einer neuen Sitzung.
-
-**Paarvergleich (LLM Assessment, Prompt-Regeln AP-59/AP-60).** Zwei Fassungen werden zusätzlich zum
-Lesen blind verglichen, damit eine Prompt-Änderung messbar wird:
-
-```
-backend/evals/<prompt-unit>/bewertungen/<ältere>-<neuere>/
-  paare.md          je Frage und Variante zwei Antworten (A, B), welche die neuere ist, ist ausgelost
-  schluessel.json   welche Antwort aus welcher Fassung stammt (der Bewerter öffnet sie nicht)
-  bewertung.json    pro Paar eine Begründung und fünfmal "A", "B" oder "gleich"
-  ergebnis.md       Zählung je Aspekt und je Variante, dazu die Paare, in denen die ältere besser war
-```
-
-Die Antworten stammen von GLM (z.ai), bewertet wird von Claude, damit kein Modell seine eigenen
-Antworten benotet: `pnpm soma coach_chat vorbereiten v1 v2`, dann `/soma-bewertung v1-v2` in Claude
-Code. Die fünf Fragen stehen in `soma-fragen.md`; nach der Bewertung wertet der Skill selbst aus.
-
-Das Ergebnis zeigt nur, welche Fassung öfter besser ist, nicht wie gut sie absolut ist. Bevor es
-Entscheidungen trägt, wird es an einigen Paaren mit eigenem Urteil abgeglichen.
+- Getestet wird mit **Claude Haiku 5.5** (`ANTHROPIC_API_KEY`), als Message Batch mit Prompt
+  Caching, wo es geht. **Judge** ist glm-5.3 mit Effort `high` über z.ai (`TEST_ANTHROPIC_API_KEY`).
+- Unterschiede zwischen zwei Fassungen werden per `git diff` auf `runs/` gelesen (EV-09).
+- Evals rufen echte Modelle auf: nur bewusst und von Hand, nie in CI; vor jedem Lauf die Kosten
+  schätzen.
+- Jeder Lauf protokolliert Modell, Effort, Latenz, Tokens und Kosten je Fall (EV-05).
+- Pro Fassung nur eine Änderung, damit klar ist, welche Wirkung sie hat.
 
 ---
 

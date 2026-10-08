@@ -9,14 +9,14 @@ Bewerbungen, Status und Notizen werden gespeichert.
 Das Projekt ist zugleich ein Lernprojekt für den Bau von LLM-Anwendungen mit der **Claude API**:
 Jede Stufe führt ein neues Thema ein – von Streaming über Structured Outputs, Tools und Agenten bis
 zu Prompt Caching, RAG und MCP. Jeder Prompt folgt einer festen, begründeten Methode, und jede
-KI-Funktion hat eine Beispiel-Suite (Evals).
+KI-Funktion wird nach einem festen Plan bewertet (Evals).
 
 ## Stand
 
 **Stufe 1 (Konto + Coach-Chat) steht:** Anmelden mit opaken Tokens, Chat mit dem Karriere-Coach
 (Antworten live per Server-Sent Events, Stopp, „Erneut versuchen“), gespeicherte Gespräche
-(auflisten, umbenennen, löschen), Auswahl von Qualität und Gründlichkeit, Beispiel-Suite für den
-Coach-Prompt. Als Nächstes Stufe 2 (Lebenslauf und Profil). Plan: [docs/STUFEN.md](docs/STUFEN.md).
+(auflisten, umbenennen, löschen), Auswahl von Qualität und Gründlichkeit. Die
+Evals beginnen am 08.10.2026 neu nach [docs/EVAL.md](docs/EVAL.md). Als Nächstes Stufe 2 (Lebenslauf und Profil). Plan: [docs/STUFEN.md](docs/STUFEN.md).
 
 ## Dokumentation
 
@@ -27,8 +27,10 @@ Coach-Prompt. Als Nächstes Stufe 2 (Lebenslauf und Profil). Plan: [docs/STUFEN.
 - [docs/STACK.md](docs/STACK.md) – **Tech Stack, Struktur und Stil**. Verbindlich für neuen Code.
 - [docs/app-prompting-anchor.md](docs/app-prompting-anchor.md) – **Wie Prompts geschrieben werden**
   (nach Berryman & Ziegler, _Prompt Engineering for LLMs_). Verbindlich für jeden Prompt der App.
-- [backend/evals/coach_chat/bericht.md](backend/evals/coach_chat/bericht.md) – **Bericht zur
-  Prompt-Verbesserung des Coachs**: Befunde, Prompt-Änderungen v1 bis v4 und ihre gemessene Wirkung.
+- [docs/app-evaluation-anchor.md](docs/app-evaluation-anchor.md) – **Wie bewertet wird** (nach
+  Berryman & Ziegler, Kapitel 10). Verbindlich für jede Eval.
+- [docs/EVAL.md](docs/EVAL.md) – **Eval-Plan**: Modelle, Beispiel-Quellen und Benotung je
+  Prompt-Unit.
 
 ## Tech Stack
 
@@ -85,11 +87,6 @@ Alle im Wurzelordner; sie laufen über alle Pakete (`backend`, `frontend`, `shar
 | `pnpm db:migrate`                         | Migrationen anwenden                                                          |
 | `pnpm user:create <email>`                | Konto anlegen oder Passwort neu setzen                                        |
 | `pnpm jobs:import <n> ["<was>"] ["<wo>"]` | bis zu `n` Stellen der Bundesagentur, ohne Ort verteilt auf alle Bundesländer |
-| `pnpm eval coach_chat v1`                 | Fassung `v1` der Beispiel-Suite, **echtes** Modell (z.ai)                     |
-| `pnpm cv:try <pdf>`                       | ein PDF von Hand analysieren, **echtes** Modell (Claude Sonnet 5.5, ~2 Cent)  |
-| `/glm-fassung v3` (in Claude Code)        | Fassung `v3` erzeugen und Paare mit der Vorgängerfassung bilden               |
-| `pnpm soma coach_chat vorbereiten v1 v2`  | Paare aus zwei Fassungen bilden, dann `/soma-bewertung v1-v2` in Claude Code  |
-| `pnpm soma coach_chat auswerten v1-v2`    | Zählen, wo welche Fassung besser war                                          |
 
 Einzelnes Paket: `pnpm --filter @job-match/backend run test` (bzw. `frontend`, `shared`).
 
@@ -128,7 +125,7 @@ außer Login: `Authorization: Bearer <token>`.
 | `GET /cvs/:id/pdf`                    | Original-PDF der Fassung                                                                   |
 | `PATCH /cvs/:id`                      | Rolle aus der festen Liste setzen (`{ "role" }`)                                           |
 | `POST /cvs/:id/activate`              | Fassung wieder aktiv machen, die bisherige geht ins Archiv                                 |
-| `POST /cvs/:id/analysis`              | Analyse als Message Batch starten (Claude Sonnet 5.5); 409, wenn sie läuft oder fertig ist |
+| `POST /cvs/:id/analysis`              | Analyse als Message Batch starten (Claude Haiku 5.5); 409 , wenn sie läuft oder fertig ist |
 | `POST /cvs/delete`                    | `{ "ids": [...] }` löschen, alles oder nichts (fremde ID: 404) – 204                       |
 
 `POST /chat` mit `conversationId` und ohne `message` setzt ein Gespräch fort („Erneut versuchen“).
@@ -143,5 +140,6 @@ bisherige Teilantwort.
   häufig bereits ein Postgres auf 5432 läuft.
 - **Test-Datenbank bei bestehendem Volume:** `docker/initdb` läuft nur beim allerersten Start. Gab
   es das Volume schon: `docker compose exec db createdb -U jobmatch jobmatch_test`.
-- **`pnpm test` ruft kein echtes Modell auf** (Mock-Client). `pnpm test:integration` und
-  `pnpm eval …` tun das – nur von Hand, mit `TEST_ANTHROPIC_API_KEY` über z.ai.
+- **`pnpm test` ruft kein echtes Modell auf** (Mock-Client). `pnpm test:integration` tut das –
+  nur von Hand, mit `TEST_ANTHROPIC_API_KEY` über z.ai. Evals laufen mit Claude Haiku 5.5, ihr
+  Judge mit glm-5.3 über z.ai ([docs/EVAL.md](docs/EVAL.md)).
