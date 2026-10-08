@@ -141,5 +141,6 @@ bisherige Teilantwort.
 - **Test-Datenbank bei bestehendem Volume:** `docker/initdb` läuft nur beim allerersten Start. Gab
   es das Volume schon: `docker compose exec db createdb -U jobmatch jobmatch_test`.
 - **`pnpm test` ruft kein echtes Modell auf** (Mock-Client). `pnpm test:integration` tut das –
-  nur von Hand, mit `TEST_ANTHROPIC_API_KEY` über z.ai. Evals laufen mit Claude Haiku 5.5, ihr
-  Judge mit glm-5.3 über z.ai ([docs/EVAL.md](docs/EVAL.md)).
+  nur von Hand, mit `TEST_ANTHROPIC_API_KEY` über z.ai. Evals laufen mit dem Modell, das die
+  jeweilige Funktion in der App nutzt (Standard Claude Haiku 5.5), ihr Judge mit glm-5.3 über z.ai
+  ([docs/EVAL.md](docs/EVAL.md)).

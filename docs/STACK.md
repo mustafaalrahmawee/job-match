@@ -242,8 +242,10 @@ backend/evals/<prompt-unit>/
 Der genaue Aufbau wird mit der ersten Suite (`cv_analysis`, Stufe 2 Kapitel 6) festgelegt und hier
 nachgetragen.
 
-- Getestet wird mit **Claude Haiku 5.5** (`ANTHROPIC_API_KEY`), als Message Batch mit Prompt
-  Caching, wo es geht. **Judge** ist glm-5.3 mit Effort `high` über z.ai (`TEST_ANTHROPIC_API_KEY`).
+- Getestet wird **das Modell der Unit** (`ANTHROPIC_API_KEY`), als Message Batch mit Prompt
+  Caching: `run.ts` baut die Anfrage mit derselben Funktion wie die App und übernimmt Modell und
+  Effort aus den Konstanten der Unit; nur für die Modellwahl (EVAL.md §5) werden sie überschrieben.
+  **Judge** ist glm-5.3 mit Effort `high` über z.ai (`TEST_ANTHROPIC_API_KEY`).
 - Unterschiede zwischen zwei Fassungen werden per `git diff` auf `runs/` gelesen (EV-09).
 - Evals rufen echte Modelle auf: nur bewusst und von Hand, nie in CI; vor jedem Lauf die Kosten
   schätzen.

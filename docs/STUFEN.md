@@ -20,9 +20,11 @@ Legende: `[x]` erledigt · `[ ]` offen
 - **Jede KI-Funktion ist eine Prompt-Unit** mit Steckbrief (Form, Archetyp, Surface, Slots, Stopp,
   was der Code erzwingt) und bekommt mit dem ersten Prompt eine Example Suite nach ihrem
   Evaluation-Sheet in [EVAL.md](EVAL.md).
-- **Claude ist das Ziel.** Während der Entwicklung schreibt **Claude Haiku 5.5** in App und Evals;
-  glm-5.3 (`high`) über z.ai ist nur Judge der Evals und Modell der Integrationstests. Wenn die App
-  fertig ist, folgt einmal der Vergleich mit Claude Sonnet 5.5 (Go-live, EVAL.md §5).
+- **Claude ist das Ziel, das Modell wählt jede Prompt-Unit selbst.** Standard ist **Claude Haiku
+  5.5**; sobald die Example Suite einer Unit steht, wird gemessen, ob Sonnet 5.5 oder ein anderer
+  Effort nötig ist, und die billigste Variante über der Grenze gewählt (EVAL.md §5). App und Eval
+  nutzen dasselbe Modell. Opus 5.5 kommt nicht in die App. glm-5.3 (`high`) über z.ai ist Judge
+  der Evals und Modell der Integrationstests; synthetische Beispiele erzeugt Claude Code im Abo.
 - **Schwerpunkt KI im Produkt:** Structured Outputs, Tool Use mit eigener Agent-Schleife und
   Abbruchbedingungen, Evals, Kosten und Tokens messen, Prompt Injection abwehren. Alles andere bleibt
   so einfach wie möglich (STACK.md, Leitlinie).
@@ -204,8 +206,8 @@ neue Fassungen ersetzen die alte; der Coach kennt die aktive Fassung.
 | ----------------------- | ------------------- | ------------------------------------- | ------------------------------------------------------------------------------------ | -------------------------- | --------------------------------------------------------------------------------------------------------- |
 | single call (als Batch) | structured document | JSON nach Schema (Structured Outputs) | System (statisch, 1 h gecacht), PDF als `document` (direkt; gecacht nur in der Eval) | Schema erfüllt, `end_turn` | Zod, Rolle aus Liste, Listen gekürzt, `isCv`, Status nur einmal `running`, nie bei `max_tokens` speichern |
 
-In der Entwicklung nur Claude Haiku 5.5 mit Effort `low` und Structured Outputs (`output_config.format` aus dem
-Zod-Schema, kein Tool). Batches und Prompt Caching sind für diese Unit aus Stufe 6/7 vorgezogen –
+Bis zur Modellwahl in Kapitel 6 Claude Haiku 5.5 mit Effort `low` und Structured Outputs
+(`output_config.format` aus dem Zod-Schema, kein Tool). Batches und Prompt Caching sind für diese Unit aus Stufe 6/7 vorgezogen –
 ausschließlich, um Kosten zu senken. Gebaut Kapitel für Kapitel, je ein Konzept:
 
 - [x] 1 – Structured Outputs statt Tool, ein Aufruf von Hand (Skript `cv:try` später entfernt)
@@ -213,9 +215,12 @@ ausschließlich, um Kosten zu senken. Gebaut Kapitel für Kapitel, je ein Konzep
 - [x] 3 – Message Batches: Analyse als Batch, Ergebnis abholen, Ergebnis-Typen
 - [x] 4 – Prompt Caching: System immer, PDF nur in der Eval, `ttl: '1h'`; gemessen: gemeinsamer Teil 2.579 Tokens
 - [x] 5 – Frontend: „Wird analysiert …“, Analyse anzeigen, Rolle bestätigen
-- [ ] 6 – Evaluation nach [EVAL.md](EVAL.md) 6.1: 18 Lebensläufe × 3 Läufe, Effort `low` und `high`;
-      Gold Standard (`isCv`, Rolle, Arbeitgeber), Functional Tests, SOMA-Judge glm-5.3 `high`
-- [ ] 7 – Coach-Chat bekommt die Analyse als Kontext; Example Suite `coach_chat` neu (EVAL.md 6.2)
+- [ ] 6 – Evaluation nach [EVAL.md](EVAL.md) 6.1: 18 Lebensläufe × 3 Läufe; Gold Standard (`isCv`,
+      Rolle, Arbeitgeber), Functional Tests, SOMA-Judge glm-5.3 `high`; Modellwahl (EVAL.md §5):
+      Sonnet `low`, Haiku `low`/`medium`/`high`, billigste Variante über der Grenze; dafür im Code
+      Effort `medium` und Sonnet-Preise ergänzen
+- [ ] 7 – Coach-Chat bekommt die Analyse als Kontext; Example Suite `coach_chat` neu (EVAL.md 6.2);
+      vorher Judge kalibrieren (EVAL.md §4), dann Modellwahl für Normal/Erweitert
 
 **Lernziele**
 
@@ -248,7 +253,7 @@ ausschließlich, um Kosten zu senken. Gebaut Kapitel für Kapitel, je ein Konzep
 | `match_analysis` | single call | structured document | Ergebnis-Karte | Schema erfüllt | Score 0–100, Bezug auf Angaben |
 
 - [ ] Evaluation nach [EVAL.md](EVAL.md) 6.3 und 6.4: `job_extraction` gegen die importierten
-      Stellen (Gold Standard), `match_analysis` mit Score-Band je Fall
+      Stellen (Gold Standard), `match_analysis` mit Score-Band je Fall; Modellwahl je Unit (EVAL.md §5)
 
 **Lernziele**
 
@@ -269,7 +274,8 @@ ausschließlich, um Kosten zu senken. Gebaut Kapitel für Kapitel, je ein Konzep
 - [ ] Server-Tool Websuche: Infos zur Firma
 - [ ] Tool-Schleife im Chat; SSE-Events zeigen, was der Coach gerade tut
 - [ ] Werte, die die App kennt (Nutzer, aktive Fassung), füllt der Code – nicht das Modell
-- [ ] Evaluation nach [EVAL.md](EVAL.md) 6.5: Canned Conversations mit erwartetem Tool-Aufruf
+- [ ] Evaluation nach [EVAL.md](EVAL.md) 6.5: Canned Conversations mit erwartetem Tool-Aufruf;
+      Modellwahl (EVAL.md §5)
 
 **Lernziele**
 
@@ -289,7 +295,8 @@ abbrechen und fortsetzen.
 - [ ] Domäne `interviews`: Sitzung, Fragen, Antworten, Bewertungen, Bericht
 - [ ] Einstellungen: Anzahl Fragen, Schwierigkeit (✚ Fragenart, ✚ Fokus auf Lücken – falls bestätigt)
 - [ ] Bewertung je Antwort sichtbar; Abschlussbericht; Rundenlimit und Stopp im Code
-- [ ] Evaluation nach [EVAL.md](EVAL.md) 6.6: Antworten unterschiedlicher Qualität, User Mock
+- [ ] Evaluation nach [EVAL.md](EVAL.md) 6.6: Antworten unterschiedlicher Qualität, User Mock;
+      Modellwahl je Pass (EVAL.md §5)
 
 **Lernziele**
 
@@ -325,7 +332,8 @@ abbrechen und fortsetzen.
 - [ ] Embeddings (Anbieter wählen – Anthropic bietet keine), pgvector-Index, Filter nach Rolle
 - [ ] „Top 5“: Vektorsuche → Modell begründet die Auswahl mit Verweis auf die Stellen-ID
 - [ ] Viele Matches auf einmal über Message Batches (günstiger, asynchron)
-- [ ] Evaluation nach [EVAL.md](EVAL.md) 6.7: erwartete Treffer unter den Top 5
+- [ ] Evaluation nach [EVAL.md](EVAL.md) 6.7: erwartete Treffer unter den Top 5; Modellwahl
+      (EVAL.md §5)
 
 **Lernziele**
 
@@ -340,7 +348,8 @@ abbrechen und fortsetzen.
 **Ziel:** Anschreiben als Word-Datei; Interviewtermine im Kalender.
 
 - [ ] Anschreiben passend zu Stelle und aktiver Fassung, als `.docx` per Agent Skill
-- [ ] Evaluation nach [EVAL.md](EVAL.md) 6.8: Functional Tests der Datei, SOMA-Judge
+- [ ] Evaluation nach [EVAL.md](EVAL.md) 6.8: Functional Tests der Datei, SOMA-Judge; Modellwahl
+      (EVAL.md §5)
 - [ ] Datei über die Files API herunterladen und der Bewerbung zuordnen
 - [ ] Kalender per MCP: Termine eintragen und anzeigen; Zugangsdaten nur im Backend
 
@@ -358,6 +367,4 @@ abbrechen und fortsetzen.
 - [ ] **Nutzungslimit** pro Konto (kostenlos mit Limit), ✚ Anzeige des Restlimits
 - [ ] Datenschutzerklärung und Impressum; Logs ohne Inhalte geprüft
 - [ ] Deployment (Hosting, HTTPS, Backups, Secrets)
-- [ ] Judge kalibriert (EVAL.md §4)
-- [ ] Wenn die App fertig ist: Vergleich Haiku 5.5 gegen Sonnet 5.5 über dieselben Suites (einmal,
-      ~4 $ je Suite); Modell je Prompt-Unit nach Qualität und Kosten begründet wählen (EVAL.md §5)
+- [ ] Regressionslauf aller Suites mit den gewählten Modellen (EVAL.md §5) – ohne neue Modellwahl

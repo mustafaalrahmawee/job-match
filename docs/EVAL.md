@@ -19,14 +19,23 @@ beginnt neu nach diesem Plan.
 
 ## 2. Modelle in der Evaluation
 
-| Rolle                                     | Modell                         | Warum                                                                  |
-| ----------------------------------------- | ------------------------------ | ---------------------------------------------------------------------- |
-| **Getestetes Modell** (App und Schreiber) | Claude Haiku 5.5               | rund 20-mal billiger als Sonnet; kann PDF, Structured Outputs, Batches |
-| **Judge** (LLM Assessment)                | glm-5.3, Effort `high`, z.ai   | läuft über das Abo (pauschal); ist nicht das getestete Modell          |
-| **Erzeuger** synthetischer Beispiele      | Claude Code (Opus 5.5, im Abo) | weder Haiku noch Sonnet (EV-25); kennt die Domäne gut genug (EV-24)    |
-| **Vergleich am Ende**                     | Claude Sonnet 5.5              | einmal, nachdem die App fertig ist (§5)                                |
+| Rolle                                     | Modell                                   | Warum                                                                                       |
+| ----------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------- |
+| **Getestetes Modell** (App und Schreiber) | je Unit gewählt (§5); Standard Haiku 5.5 | Haiku ist rund 20-mal billiger als Sonnet; Sonnet nur, wo es gemessen gewinnt               |
+| **Judge** (LLM Assessment)                | glm-5.3, Effort `high`, z.ai             | läuft über das Abo (pauschal); ist nicht das getestete Modell                               |
+| **Erzeuger** synthetischer Beispiele      | Claude Code (Opus 5.5, im Abo)           | weder Haiku noch Sonnet (EV-25); kennt die Domäne gut genug (EV-24); kostet kein API-Budget |
+| **User Mock** (ab Stufe 5)                | glm-5.3 über z.ai                        | läuft über das Abo; ist nicht das getestete Modell                                          |
 
-glm-5.3 liest nur Text: Der Judge bekommt Lebensläufe und Anzeigen als Text, nie als PDF oder Bild.
+- **Opus 5.5 kommt nicht in die App:** doppelt so teuer wie Sonnet, und als Erzeuger der Beispiele
+  wäre ein Test von Opus verzerrt (EV-25).
+- **App und Eval nutzen dasselbe Modell:** Modell und Effort stehen je Unit als Konstanten in ihrer
+  `*.prompts.ts`; die Eval baut die Anfrage mit derselben Funktion. Nur der Modellvergleich (§5)
+  darf Modell und Effort überschreiben. Bietet die App eine Wahl an (Coach-Chat: Normal/Erweitert,
+  Niedrig/Hoch), kommt jede angebotene Kombination in die Eval.
+- glm-5.3 liest nur Text: Der Judge bekommt Lebensläufe und Anzeigen als Text, nie als PDF oder Bild.
+
+Preise je 1 Mio. Tokens (Eingabe/Ausgabe, Stand 08.10.2026): Haiku 5.5 0,10/0,50 $, Sonnet 5.5
+2/10 $, Opus 5.5 4/20 $; Batch spart 50 %.
 
 ## 3. Grundsätze für alle Units
 
@@ -45,21 +54,71 @@ glm-5.3 liest nur Text: Der Judge bekommt Lebensläufe und Anzeigen als Text, ni
 - **Judge relativ lesen (EV-38).** Judge-Noten vergleichen Fassungen; sie entscheiden erst nach der
   Kalibrierung (§4).
 - **Läufe von Hand, nie in CI.** Vor jedem bezahlten Lauf werden die Kosten geschätzt.
+- **Jede Eval als Batch mit Prompt Caching**, auch Chat und Tools: Canned Conversations bestehen
+  aus unabhängigen Einzelaufrufen.
 
 ## 4. Kalibrierung des Judges (EV-49, EV-50)
 
-Bevor Judge-Noten eine Entscheidung tragen (spätestens vor dem Vergleich in §5): **2–3 Personen**
+Bevor Judge-Noten eine Entscheidung tragen – spätestens vor der ersten Modellwahl, die am Judge
+hängt (`coach_chat`, Stufe 2 Kapitel 7, weil es dort keinen Gold Standard gibt): **2–3 Personen**
 benoten **10–20 Fälle** je Aspekt mit denselben Fragen wie der Judge; Kendall's Tau je Aspekt muss
 stabil bleiben, wenn glm-5.3 (einmal) dazukommt.
 
 ⬜ **Offen:** Wer neben dem Maintainer mitbenotet (eine oder zwei weitere Personen).
 
-## 5. Vergleich Haiku gegen Sonnet (am Ende)
+## 5. Modellwahl je Unit
 
-Erst wenn die App fertig ist (vor dem Go-live): Ein Modellwechsel wird mit Regression Tests über
-möglichst den ganzen Loop geprüft, je Pass, weil Modelle gemischt werden dürfen (EV-06). Dieselben
-Suites laufen einmal mit Sonnet 5.5 (Schätzung ~4 $ je Suite). Danach wird **je Prompt-Unit** nach
-Qualität und Kosten begründet gewählt und das Ergebnis hier festgehalten.
+Jede Prompt-Unit bekommt ihr Modell, sobald ihre Example Suite steht – nicht erst am Ende.
+Prompt-Verbesserungen übertragen sich nicht zuverlässig auf ein anderes Modell; deshalb wird erst
+das Modell festgelegt, dann der Prompt verbessert. Modelle werden je Pass gemischt (EV-06).
+
+1. **Grenze vorher festlegen** – was „gut genug“ heißt, in Gold-Standard- und Functional-Zahlen,
+   bevor der erste Lauf startet.
+2. **Varianten der Reihe nach messen** (Prompt v1, alle Fälle × 3 Läufe, Batch): zuerst Sonnet 5.5
+   `low` – zeigt, was erreichbar ist –, dann Haiku 5.5 `low`, `medium`, `high`. Gewählt wird die
+   **billigste Variante über der Grenze**. Schafft auch Sonnet `low` die Grenze nicht, folgt Sonnet
+   `medium`; scheitert auch das, liegt es am Prompt, nicht am Modell. Knapp an der Grenze: ein
+   zweiter Lauf, bevor gewählt wird.
+3. **Festlegen:** Modell und Effort werden Konstanten der Unit; der Prompt wird nur noch mit dieser
+   Einstellung verbessert (eine Änderung je Fassung).
+4. **Einmal nach unten nachprüfen:** Mit dem besseren Prompt läuft die nächstbilligere Variante noch
+   einmal; liegt sie über der Grenze, wird sie gewählt.
+5. **Festhalten** im Sheet unter „Gewählt“: Variante, Gold-Zahlen und Kosten je Fall, dazu die
+   verworfenen Varianten.
+
+Für die Wahl zählen Gold Standard und Functional Tests; Judge-Noten erst nach der Kalibrierung (§4).
+Vor dem Go-live laufen alle Suites einmal als **Regressionslauf** mit den gewählten Modellen – ohne
+neue Modellentscheidung.
+
+### Budget (100 $ API, Stand 08.10.2026)
+
+Eine Runde (~20 Fälle × 3 Läufe, Batch) kostet mit Haiku ~0,05–0,20 $, mit Sonnet ~1–4 $.
+
+| Posten                                                     | grob  |
+| ---------------------------------------------------------- | ----- |
+| Modellvergleich für alle 8 Units                           | ~20 $ |
+| Prompt-Runden auf Haiku-Units                              | ~5 $  |
+| Prompt-Runden auf Sonnet-Units (geschätzt 3 × 6 Fassungen) | ~35 $ |
+| Von Hand in der App testen                                 | ~10 $ |
+| Reserve (Wiederholungen, Demo nach dem Go-live)            | ~30 $ |
+
+Vor dem ersten Sonnet-Lauf wird in der Anthropic Console ein Ausgabenlimit gesetzt, damit ein
+Fehler nicht das ganze Budget verbraucht.
+
+### Startplan
+
+Vermutungen, die die Messung bestätigt oder verwirft; die Varianten stehen in den Sheets (§6).
+
+| Unit                 | Vermutung                                      |
+| -------------------- | ---------------------------------------------- |
+| `cv_analysis`        | Haiku `medium`                                 |
+| `coach_chat`         | Normal = Haiku `low`, Erweitert = Sonnet `low` |
+| `job_extraction`     | Haiku `low`                                    |
+| `match_analysis`     | offen, am ehesten Sonnet                       |
+| Coach-Tools          | Sonnet `medium`                                |
+| `interview_training` | offen                                          |
+| Top 5                | Haiku                                          |
+| Anschreiben          | eher Sonnet                                    |
 
 ---
 
@@ -72,7 +131,7 @@ Qualität und Kosten begründet gewählt und das Ergebnis hier festgehalten.
 - Example suite: **18 Lebensläufe** – typisch (Rollen der festen Liste, Deutsch und Englisch),
   Rand (zweispaltig, sehr lang, Scan ohne Textebene, Quereinsteiger, Berufseinsteiger) und
   schwierig (kein Lebenslauf, z. B. Stellenanzeige; versteckte Anweisung im Text) · 3 Läufe je
-  Fall · Effort `low` und `high`
+  Fall
 - Sample source: synthetic — Frage beantwortet mit ja: echte Lebensläufe darf die App nicht
   sammeln (Datenschutz); erfundene lassen sich vom Ergebnis her bauen
 - Erzeugt von: Claude Code (≠ Haiku, ≠ Sonnet); je Fall erst die Gold-Angaben (Rolle, Stationen,
@@ -93,7 +152,13 @@ Qualität und Kosten begründet gewählt und das Ergebnis hier festgehalten.
 - Judge: glm-5.3 `high`, Third-Party Framing, ein Prompt je Aspekt, Skala 1–5, Score-Zeile
   `Relevanz: X` usw.
 - Kalibrierung: §4
-- Kosten: eine Runde (18 × 3 × 2 Efforts) mit Haiku grob 0,20 $; Judge über das Abo
+- **Modellwahl (§5):**
+  - Grenze: `isCv` 18/18, Rolle ≥ 16/18, Arbeitgeber ≥ 95 %, Functional Tests 100 % (Vorschlag,
+    vor dem ersten Lauf bestätigen)
+  - Varianten: Sonnet `low` · Haiku `low`, `medium`, `high`
+  - Gewählt: ⬜
+- Kosten: eine Runde (18 × 3, Batch) mit Haiku ~0,05–0,15 $ je Variante, mit Sonnet `low` ~1–2 $;
+  Judge über das Abo
 
 ### 6.2 `coach_chat` (Stufe 1, neu in Stufe 2 Kapitel 7) ⬜
 
@@ -112,6 +177,9 @@ Qualität und Kosten begründet gewählt und das Ergebnis hier festgehalten.
 - First decision with a real chance of error: beantwortet die Antwort die gestellte Frage
   (Relevanz)
 - Judge: wie 6.1
+- **Modellwahl (§5):** Grenze festlegen, wenn die Kalibrierung steht (§4) · Varianten: Sonnet `low` ·
+  Haiku `low`, `medium` · jede Kombination, die die App anbietet (Normal/Erweitert, Niedrig/Hoch) ·
+  Gewählt: ⬜
 
 ### 6.3 `job_extraction` (Stufe 3) ⬜
 
@@ -130,6 +198,8 @@ Qualität und Kosten begründet gewählt und das Ergebnis hier festgehalten.
   2. Functional Test – Schema gültig, Pflichtfelder
   3. LLM Assessment – nicht nötig
 - First decision with a real chance of error: „passt / passt nicht“, danach der Titel
+- **Modellwahl (§5):** Varianten: Haiku `low`, `medium`; Sonnet `low` nur, wenn Haiku die Grenze
+  nicht schafft (läuft über Tausende Stellen, Batch) · Gewählt: ⬜
 
 ### 6.4 `match_analysis` (Stufe 3) ⬜
 
@@ -144,6 +214,7 @@ Qualität und Kosten begründet gewählt und das Ergebnis hier festgehalten.
      Lebenslauf oder Anzeige vorkommt
   3. LLM Assessment (SOMA) – **Wahrheit** der Stärken und Lücken, **Nützlichkeit** der Tipps
 - First decision with a real chance of error: das Score-Band
+- **Modellwahl (§5):** Varianten: Sonnet `low`, `medium` · Haiku `medium`, `high` · Gewählt: ⬜
 
 ### 6.5 Coach-Tools (Stufe 4) ⬜
 
@@ -157,6 +228,8 @@ Qualität und Kosten begründet gewählt und das Ergebnis hier festgehalten.
   3. LLM Assessment (SOMA) – **Intent** und **Execution** (EV-45) für die Antwort nach dem Tool
 - First decision with a real chance of error: Tool ja oder nein
 - Regression Test: ganzer Loop mit festen Tool-Ergebnissen
+- **Modellwahl (§5):** Varianten: Sonnet `low`, `medium` · Haiku `medium`, `high` (die Websuche mit
+  Filter, `web_search_20260209`, gibt es nur für Sonnet und Opus) · Gewählt: ⬜
 
 ### 6.6 `interview_training` (Stufe 5) ⬜
 
@@ -171,6 +244,8 @@ Qualität und Kosten begründet gewählt und das Ergebnis hier festgehalten.
   2. Functional Test – Rundenlimit eingehalten, Bericht vorhanden, Schema
   3. LLM Assessment (SOMA) – Fragen: **Relevanz** zur Stelle; Bericht: RTC
 - First decision with a real chance of error: das Punkte-Band der Bewertung
+- **Modellwahl (§5):** je Pass – Bewertung: Sonnet `low` · Haiku `medium`, `high`; Fragen und
+  Bericht: Haiku zuerst · Gewählt: ⬜
 
 ### 6.7 Empfehlungen „Top 5“ (Stufe 7) ⬜
 
@@ -182,6 +257,7 @@ Qualität und Kosten begründet gewählt und das Ergebnis hier festgehalten.
   2. Functional Test – jede genannte Stellen-ID gehört zu den Kandidaten und zur Rolle
   3. LLM Assessment (SOMA) – **Wahrheit** der Begründung (steht sie in der Anzeige?)
 - First decision with a real chance of error: die Auswahl der fünf
+- **Modellwahl (§5):** Varianten: Sonnet `low` · Haiku `medium` · Gewählt: ⬜
 
 ### 6.8 Anschreiben (Stufe 8) ⬜
 
@@ -195,3 +271,4 @@ Qualität und Kosten begründet gewählt und das Ergebnis hier festgehalten.
   3. LLM Assessment (SOMA) – **Relevanz**, **Wahrheit**, Goldilocks getrennt: **genug** und **nicht
      zu viel**
 - First decision with a real chance of error: Bezug auf die richtige Stelle
+- **Modellwahl (§5):** Varianten: Sonnet `low` · Haiku `medium`, `high` · Gewählt: ⬜
