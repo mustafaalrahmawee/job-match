@@ -4,13 +4,14 @@ import type {
   MessageCreateParamsNonStreaming,
 } from '@anthropic-ai/sdk/resources/messages';
 import { CvAnalysisSchema, ROLE_LABELS, RoleSchema } from '@job-match/shared';
-import type { AnalysisError, CvAnalysis, Effort } from '@job-match/shared';
+import type { AnalysisError, CvAnalysis } from '@job-match/shared';
 
 import { answerText } from '../llm/client';
 import { CLAUDE_MODELS } from '../llm/models';
+import type { ModelEffort } from '../llm/models';
 
 export const CV_ANALYSIS_MODEL = CLAUDE_MODELS.standard;
-export const CV_ANALYSIS_EFFORT: Effort = 'low';
+export const CV_ANALYSIS_EFFORT: ModelEffort = 'low';
 export const CV_ANALYSIS_MAX_TOKENS = 16_000;
 export const CV_ANALYSIS_MAX_TOKENS_CAP = 32_000;
 
@@ -26,15 +27,25 @@ Ist das Dokument kein Lebenslauf, steht isCv auf false, die Listen bleiben leer,
 
 const CACHE_ONE_HOUR = { type: 'ephemeral', ttl: '1h' } as const;
 
+export interface CvAnalysisOptions {
+  readonly cacheDocument?: boolean;
+  readonly model?: string;
+  readonly effort?: ModelEffort;
+}
+
 export function buildCvAnalysisRequest(
   pdfBase64: string,
   maxTokens: number,
-  cacheDocument = false,
+  {
+    cacheDocument = false,
+    model = CV_ANALYSIS_MODEL,
+    effort = CV_ANALYSIS_EFFORT,
+  }: CvAnalysisOptions = {},
 ) {
   return {
-    model: CV_ANALYSIS_MODEL,
+    model,
     max_tokens: maxTokens,
-    output_config: { effort: CV_ANALYSIS_EFFORT, format: zodOutputFormat(CvAnalysisSchema) },
+    output_config: { effort, format: zodOutputFormat(CvAnalysisSchema) },
     system: [{ type: 'text', text: CV_ANALYSIS_SYSTEM_PROMPT, cache_control: CACHE_ONE_HOUR }],
     messages: [
       {

@@ -61,7 +61,7 @@ describe('buildCvAnalysisRequest', () => {
 
   it('caches the system prompt for an hour and the pdf only on request', () => {
     const app = buildCvAnalysisRequest('UERG', 8000);
-    const evaluation = buildCvAnalysisRequest('UERG', 8000, true);
+    const evaluation = buildCvAnalysisRequest('UERG', 8000, { cacheDocument: true });
 
     expect(app.system[0]?.cache_control).toEqual({ type: 'ephemeral', ttl: '1h' });
     expect(app.messages[0]?.content[0]).not.toHaveProperty('cache_control');
@@ -69,6 +69,16 @@ describe('buildCvAnalysisRequest', () => {
       type: 'ephemeral',
       ttl: '1h',
     });
+  });
+
+  it('lets the model comparison override model and effort', () => {
+    const request = buildCvAnalysisRequest('UERG', 8000, {
+      model: 'claude-sonnet-5-5',
+      effort: 'medium',
+    });
+
+    expect(request.model).toBe('claude-sonnet-5-5');
+    expect(request.output_config.effort).toBe('medium');
   });
 
   it('the analysis prompt follows the prompt rules', () => {

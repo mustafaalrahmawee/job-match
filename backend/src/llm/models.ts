@@ -2,6 +2,8 @@ import type { ModelChoice } from '@job-match/shared';
 
 export type ModelMap = Readonly<Record<ModelChoice, string>>;
 
+export type ModelEffort = 'low' | 'medium' | 'high';
+
 const ANTHROPIC_HOST = 'api.anthropic.com';
 
 export const ZAI_BASE_URL = 'https://api.z.ai/api/anthropic';
@@ -20,6 +22,7 @@ export const PRICES_USD_PER_MILLION: Readonly<
   Record<string, { readonly input: number; readonly output: number }>
 > = {
   'claude-haiku-5-5': { input: 0.1, output: 0.5 },
+  'claude-sonnet-5-5': { input: 2, output: 10 },
   'glm-5.3-flash': { input: 0.15, output: 0.5 },
   'glm-5.3': { input: 1.4, output: 4.4 },
 };

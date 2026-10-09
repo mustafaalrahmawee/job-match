@@ -232,15 +232,20 @@ Beispiele und welche Benotung je Prompt-Unit gelten, steht in [EVAL.md](EVAL.md)
 
 ```
 backend/evals/<prompt-unit>/
-  samples/            Example Problems, wo vorhanden mit Gold-Lösung
-  run.ts              baut den Prompt wie die App und holt die Candidate Solutions
-  check.ts            Gold Standard und Functional Tests
+  samples/<fall>/     Example Problem mit gold.json (Gold-Lösung und Prüfdaten), Quelle, Eingabe
+  samples/build.sh    baut die Eingaben aus den Quellen neu (cv_analysis: HTML → PDF)
+  suite.ts            Fälle und gespeicherte Läufe lesen und schreiben
+  run.ts              baut den Prompt wie die App und holt die Candidate Solutions (Batch)
+  check.ts            Gold Standard und Functional Tests, Vergleich mit der Grenze
   judge.ts            SOMA-Fragen an den Judge (nur wo EVAL.md es vorsieht)
-  runs/<fassung>/     committet, nie überschrieben: Prompt und Antwort je Fall, metrics.tsv, Noten
+  runs/<fassung>/     committet, nie überschrieben: meta.json (Modell, Effort, Prompt, Batches),
+                      <fall>/run-N.json (Antwort, Tokens, Kosten), metrics.tsv, check.txt, Noten
 ```
 
-Der genaue Aufbau wird mit der ersten Suite (`cv_analysis`, Stufe 2 Kapitel 6) festgelegt und hier
-nachgetragen.
+Aufruf am Beispiel `cv_analysis`: `pnpm eval:cv:run <fassung> [modell] [effort]` schickt zuerst
+Lauf 1 als Batch (schreibt den Cache), danach Lauf 2 und 3 (lesen ihn); fehlende Läufe werden beim
+nächsten Aufruf nachgeholt. `pnpm eval:cv:check <fassung>` benotet. `check.ts` hat Tests in
+`backend/test/`, ohne Modell. Die Latenz wird je Batch gemessen, nicht je Fall.
 
 - Getestet wird **das Modell der Unit** (`ANTHROPIC_API_KEY`), als Message Batch mit Prompt
   Caching: `run.ts` baut die Anfrage mit derselben Funktion wie die App und übernimmt Modell und
