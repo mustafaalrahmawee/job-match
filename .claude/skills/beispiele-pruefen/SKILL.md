@@ -1,46 +1,41 @@
 ---
 name: beispiele-pruefen
-description: Prüft die Beispiele einer Eval-Suite gemeinsam mit dem Menschen, Fall für Fall, nach den Fragen in ihrer review.md. Die Prüfung macht glm-5.3 (high) über z.ai, nicht der Chat-Agent; beide Ergebnisse kommen in die review.md. Aufruf mit der Prompt-Unit, z. B. /beispiele-pruefen cv_analysis.
+description: Prüft die Beispiele einer Eval-Suite nach den Fragen in ihrer review.md. glm-5.3 (high) prüft die Textdateien, glm-5.3-flash das PDF, der Mensch ergänzt; alles kommt in die review.md. Aufruf mit der Prompt-Unit und optional Fällen, z. B. /beispiele-pruefen cv_analysis oder /beispiele-pruefen cv_analysis 11 13 18 19.
 disable-model-invocation: true
 ---
 
 # Beispiele prüfen
 
-Prompt-Unit: **$ARGUMENTS**
+Argumente: **$ARGUMENTS** – das erste Wort ist die Prompt-Unit, weitere Wörter sind Fälle
+(Anfang des Ordnernamens, z. B. `11`). Ohne Fälle: alle, die noch nicht in `review.md` stehen.
 
-Die Beispiele hat ein Claude-Modell geschrieben. Damit es sie nicht selbst prüft, prüft
-**glm-5.3 (high)** über z.ai – über das Skript `pruefen.mjs` in diesem Ordner. Du prüfst nicht
-selbst und liest die Dateien der Fälle nicht; du führst nur durch den Ablauf und trägst ein.
+Die Beispiele hat ein Claude-Modell geschrieben. Damit es sie nicht selbst prüft, prüfen
+**glm-5.3 (high)** (Textdateien) und **glm-5.3-flash** (PDF) über z.ai – über das Skript
+`pruefen.mjs` in diesem Ordner. Du prüfst nicht selbst und liest die Dateien der Fälle nicht; du
+führst nur durch den Ablauf und trägst ein.
 
 ## Vorbereitung
 
-1. Ordner: `backend/evals/$ARGUMENTS/` (ist das Argument schon ein Pfad, diesen nehmen).
-2. Lies nur `<ordner>/review.md`: die Fragen unter „## Fragen“ und welche Fälle unter
-   „## Ergebnisse“ schon stehen.
+1. Ordner: `backend/evals/<unit>/` (ist die Unit schon ein Pfad, diesen nehmen).
+2. Lies nur `<ordner>/review.md`: die Fragen unter „## Fragen“ und „## PDF-Fragen“ und welche
+   Fälle unter „## Ergebnisse“ schon stehen.
 3. Die Fälle sind die Unterordner von `<ordner>/samples/`, alphabetisch. Fälle, die schon unter
    „## Ergebnisse“ stehen, überspringen.
 
 ## Je Fall – immer nur einen Fall, dann warten
 
-1. **Prüfung holen:**
-   `node .claude/skills/beispiele-pruefen/pruefen.mjs $ARGUMENTS <fall>`
+1. **Prüfung holen** (dauert 1–2 Minuten):
+   `node .claude/skills/beispiele-pruefen/pruefen.mjs <unit> <fall>`
 2. **Dem Menschen zeigen:**
-   - die Ausgabe von glm-5.3 unverändert,
+   - die Ausgabe des Skripts unverändert,
    - darunter die Fragen aus „## Fragen“ und welche Dateien zu öffnen sind, z. B.
      „Öffne `samples/<fall>/cv.pdf` und `gold.json` und prüf selbst. Was ist deine Bemerkung zu F1
      bis F10?“
-   - den Hinweis: glm-5.3 liest keine PDFs, nur die Textdateien; was nur im PDF zu sehen ist
-     (Scan, Textebene, Layout), prüft der Mensch.
 3. **Warten**, bis der Mensch antwortet. Nichts eintragen, keinen weiteren Fall beginnen.
-4. **Eintragen** in `<ordner>/review.md` am Ende von „## Ergebnisse“:
+4. **Eintragen** in `<ordner>/review.md` am Ende von „## Ergebnisse“: die Ausgabe des Skripts
+   unverändert, darunter
 
    ```markdown
-   ### <fall>
-
-   **glm-5.3 (high)**
-
-   - F1: …
-
    **Mensch**
 
    - F1: …
@@ -48,19 +43,29 @@ selbst und liest die Dateien der Fälle nicht; du führst nur durch den Ablauf u
    **Urteil:** behalten / ändern / entfernen – …
    ```
 
-   Die Ausgabe von glm-5.3 und die Bemerkungen des Menschen wörtlich oder sinngemäß, nie ergänzt.
-   Kommt zu einer Frage nichts, steht dort „–“. Das Urteil kommt vom Menschen.
+   Die Bemerkungen des Menschen wörtlich oder sinngemäß, nie ergänzt. Kommt zu einer Frage
+   nichts, steht dort „–“. Das Urteil kommt vom Menschen.
 
 5. Fragen: „Nächster Fall?“ – erst nach einem Ja weitermachen.
 
+## Restliche Fälle ohne den Menschen
+
+Sagt der Mensch, die übrigen Fälle sollen nur die Modelle prüfen:
+`node .claude/skills/beispiele-pruefen/pruefen.mjs <unit> rest [fälle, die er selbst prüft]`
+Das Skript trägt jeden offenen Fall selbst in `review.md` ein, mit „Mensch: nicht geprüft“ und
+„Urteil: offen“ (etwa 2 Minuten je Fall). Danach dem Menschen zeigen, welche Fälle eine
+Änderung vorschlagen.
+
 ## Zum Schluss
 
-Sind alle Fälle durch, die Fragen unter „## Über alle Fälle“ genauso behandeln, mit
-`node .claude/skills/beispiele-pruefen/pruefen.mjs $ARGUMENTS alle`, Überschrift `### Über alle
+Sind alle Fälle durch, die Fragen unter „## Über alle Fälle“ wie einen Fall behandeln, mit
+`node .claude/skills/beispiele-pruefen/pruefen.mjs <unit> alle`, Überschrift `### Über alle
 Fälle`.
 
 ## Regeln für dich
 
-- Nur `review.md` ändern. Beispiele, Gold-Dateien und Code bleiben, wie sie sind.
-- Keine eigene Bewertung hinzufügen – weder zu glm-5.3 noch zum Menschen.
+- **Nur `review.md` ändern – nichts anderes, nie.** Keine `gold.json`, keine Quelle, kein PDF,
+  kein Code. Das gilt auch, wenn ein Modell oder der Mensch eine Änderung vorschlägt: Der
+  Vorschlag kommt als Text in `review.md`, umgesetzt wird er später in einer eigenen Sitzung.
+- Keine eigene Bewertung hinzufügen – weder zu den Modellen noch zum Menschen.
 - Bricht das Skript ab, die Fehlermeldung zeigen und warten.
