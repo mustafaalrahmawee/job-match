@@ -215,7 +215,7 @@ ausschließlich, um Kosten zu senken. Gebaut Kapitel für Kapitel, je ein Konzep
 - [x] 3 – Message Batches: Analyse als Batch, Ergebnis abholen, Ergebnis-Typen
 - [x] 4 – Prompt Caching: System immer, PDF nur in der Eval, `ttl: '1h'`; gemessen: gemeinsamer Teil 2.579 Tokens
 - [x] 5 – Frontend: „Wird analysiert …“, Analyse anzeigen, Rolle bestätigen
-- [ ] 6 – Evaluation nach [EVAL.md](EVAL.md) 6.1: 18 Lebensläufe × 3 Läufe; Gold Standard (`isCv`,
+- [ ] 6 – Evaluation nach [EVAL.md](EVAL.md) 6.1: 19 Dokumente × 3 Läufe; Gold Standard (`isCv`,
       Rolle, Arbeitgeber), Functional Tests, SOMA-Judge glm-5.3 `high`; Modellwahl (EVAL.md §5):
       Sonnet `low`, Haiku `low`/`medium`/`high`, billigste Variante über der Grenze; dafür im Code
       Effort `medium` und Sonnet-Preise ergänzen
