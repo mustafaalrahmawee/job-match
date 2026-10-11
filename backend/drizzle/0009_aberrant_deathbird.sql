@@ -1,1 +1,0 @@
-ALTER TABLE "cv_versions" ADD COLUMN "file_name" text;

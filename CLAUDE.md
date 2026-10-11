@@ -1,15 +1,14 @@
 # job-match
 
-Vor dem Anlegen oder Verschieben von Dateien: [docs/STACK.md](docs/STACK.md) lesen. Es legt
-Tech Stack (Express/TypeScript-Backend, Vue-Frontend, Zod-Schemas in `shared/`), Ordnerstruktur
-(pro Backend-Domäne `router`, `service`, `tables`) und Code-Stil verbindlich fest.
-Kurz: einfach halten, dünne Dateien, keine Kommentare im Code; Tests nach STACK.md §5 (Mock-Client, Integration gegen z.ai).
+Neustart (11.10.2026): Die App wird von null mit **FastAPI** (Backend) und **Vue 3 + Tailwind**
+(Frontend) gebaut, Stufe für Stufe. Fachliche Idee, Domänenmodell, Use Cases je Stufe und
+Entscheidungen: [docs/APP_IDEA.md](docs/APP_IDEA.md). Nur die aktuelle Stufe umsetzen.
 
-Gebaut wird Stufe für Stufe nach [docs/STUFEN.md](docs/STUFEN.md); nur die aktuelle Stufe umsetzen.
-Jeder Prompt folgt [docs/app-prompting-anchor.md](docs/app-prompting-anchor.md). Fachliche Idee:
-[docs/IDEE.md](docs/IDEE.md). Überblick: [README.md](README.md).
+Jeder Prompt folgt [docs/app-prompting-anchor.md](docs/app-prompting-anchor.md), jede Eval
+[docs/app-evaluation-anchor.md](docs/app-evaluation-anchor.md).
 
-Jede Eval folgt [docs/app-evaluation-anchor.md](docs/app-evaluation-anchor.md); Plan je Prompt-Unit in
-[docs/EVAL.md](docs/EVAL.md).
+Vorhanden: `docker-compose.yml` (PostgreSQL 17 + pgvector, Host-Port 5433) und `theme.css`
+(Tailwind-Farben, Hintergrund, Dark Mode) – beim Anlegen des Frontends als
+`frontend/src/assets/main.css` übernehmen.
 
-Stellen importieren oder den Import ändern: erst [docs/STELLEN-IMPORT.md](docs/STELLEN-IMPORT.md) lesen.
+Kurz: einfach halten, dünne Dateien, keine Kommentare im Code.

@@ -1,1 +1,0 @@
-CREATE UNIQUE INDEX "jobs_company_description_unique" ON "jobs" USING btree ("company",md5("description"));
