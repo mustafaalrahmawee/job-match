@@ -26,7 +26,8 @@ export class AuthService {
 
   async authenticate(email: string, password: string): Promise<User | null> {
     const user = await this.getUserByEmail(email)
-    const valid = await verifyPassword(user?.passwordHash ?? dummyHash, password)
+    const hash = user ? user.passwordHash : dummyHash
+    const valid = await verifyPassword(hash, password)
     return valid ? user : null
   }
 
