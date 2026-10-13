@@ -1,10 +1,3 @@
-<script setup lang="ts">
-import { CircleAlert } from '@lucide/vue'
-import AppLogo from './AppLogo.vue'
-
-defineProps<{ title: string; description: string; error?: string | null }>()
-</script>
-
 <template>
   <main class="flex min-h-svh items-center justify-center bg-sidebar p-4">
     <div class="flex w-full max-w-sm flex-col items-center gap-8">
@@ -28,3 +21,10 @@ defineProps<{ title: string; description: string; error?: string | null }>()
     </div>
   </main>
 </template>
+
+<script setup lang="ts">
+import { CircleAlert } from '@lucide/vue'
+import AppLogo from './AppLogo.vue'
+
+defineProps<{ title: string; description: string; error?: string | null }>()
+</script>

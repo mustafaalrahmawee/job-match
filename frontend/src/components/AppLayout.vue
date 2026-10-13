@@ -1,7 +1,3 @@
-<script setup lang="ts">
-import AppSidebar from './AppSidebar.vue'
-</script>
-
 <template>
   <div class="flex h-svh">
     <AppSidebar />
@@ -10,3 +6,7 @@ import AppSidebar from './AppSidebar.vue'
     </main>
   </div>
 </template>
+
+<script setup lang="ts">
+import AppSidebar from './AppSidebar.vue'
+</script>
