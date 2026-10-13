@@ -30,7 +30,7 @@ test('an expired token is dropped when loading the user', async () => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 401 })))
   const auth = useAuthStore()
 
-  await auth.loadUser()
+  await expect(auth.loadUser()).rejects.toMatchObject({ status: 401 })
 
   expect(auth.token).toBeNull()
 })

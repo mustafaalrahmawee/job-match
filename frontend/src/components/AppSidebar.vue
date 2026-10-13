@@ -1,37 +1,3 @@
-<script setup lang="ts">
-import { House, LogOut, PanelLeft } from '@lucide/vue'
-import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-import { useLayoutStore } from '../stores/layout'
-import AppLogo from './AppLogo.vue'
-
-const NAV = [{ to: '/', label: 'Start', icon: House }]
-
-const auth = useAuthStore()
-const layout = useLayoutStore()
-const route = useRoute()
-const router = useRouter()
-const sidebar = useTemplateRef('sidebar')
-
-function closeWhenMouseLeaves(event: MouseEvent) {
-  if (layout.floating && sidebar.value && event.clientX > sidebar.value.offsetWidth) layout.close()
-}
-
-onMounted(() => document.addEventListener('mousemove', closeWhenMouseLeaves))
-onBeforeUnmount(() => document.removeEventListener('mousemove', closeWhenMouseLeaves))
-
-watch(
-  () => route.fullPath,
-  () => layout.close(),
-)
-
-async function logout() {
-  await auth.logout()
-  await router.replace('/login')
-}
-</script>
-
 <template>
   <div
     v-if="layout.floating"
@@ -66,7 +32,7 @@ async function logout() {
         :key="item.to"
         :to="item.to"
         class="flex h-9 items-center gap-2.5 rounded-md px-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        exact-active-class="bg-accent font-medium text-foreground!"
+        :class="isActive(item) && 'bg-accent font-medium text-foreground!'"
       >
         <component :is="item.icon" class="size-4" />
         {{ item.label }}
@@ -95,3 +61,52 @@ async function logout() {
     </div>
   </aside>
 </template>
+
+<script setup lang="ts">
+import { House, LogOut, MessageSquare, PanelLeft } from '@lucide/vue'
+import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
+import { useCoachStore } from '../stores/coach'
+import { useLayoutStore } from '../stores/layout'
+import AppLogo from './AppLogo.vue'
+
+const NAV = [
+  { to: '/', label: 'Start', icon: House, exact: true },
+  { to: '/coach', label: 'Coach', icon: MessageSquare, exact: false },
+]
+
+const auth = useAuthStore()
+const coach = useCoachStore()
+const layout = useLayoutStore()
+const route = useRoute()
+const router = useRouter()
+const sidebar = useTemplateRef('sidebar')
+
+function isActive(item: (typeof NAV)[number]) {
+  return item.exact ? route.path === item.to : route.path.startsWith(item.to)
+}
+
+function closeWhenMouseLeaves(event: MouseEvent) {
+  if (layout.floating && sidebar.value && event.clientX > sidebar.value.offsetWidth) layout.close()
+}
+
+onMounted(() => document.addEventListener('mousemove', closeWhenMouseLeaves))
+onBeforeUnmount(() => document.removeEventListener('mousemove', closeWhenMouseLeaves))
+
+watch(
+  () => route.fullPath,
+  () => layout.close(),
+)
+
+async function logout() {
+  coach.startNew()
+  try {
+    await auth.logout()
+  } catch {
+    return
+  } finally {
+    await router.replace('/login')
+  }
+}
+</script>

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-
-type User = { id: number; email: string }
+import { ApiError, fetchApi } from '../api'
+import type { User } from '../types'
 
 const TOKEN_KEY = 'token'
 
@@ -15,44 +15,33 @@ export const useAuthStore = defineStore('auth', () => {
     else localStorage.removeItem(TOKEN_KEY)
   }
 
-  function clear() {
-    setToken(null)
-    user.value = null
-  }
-
-  async function login(email: string, password: string): Promise<string | null> {
-    let response: Response
-    try {
-      response = await fetch('/api/v1/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-    } catch {
-      return 'Server nicht erreichbar.'
-    }
-    if (response.status === 401) return 'E-Mail oder Passwort ist falsch.'
-    if (!response.ok) return 'Anmeldung gerade nicht möglich.'
+  async function login(email: string, password: string) {
+    const response = await fetchApi('/auth/login', { method: 'POST', body: { email, password } })
     const body = await response.json()
     setToken(body.token)
     user.value = body.user
-    return null
   }
 
   async function loadUser() {
-    const response = await fetch('/api/v1/auth/me', {
-      headers: { Authorization: `Bearer ${token.value}` },
-    }).catch(() => null)
-    if (response?.ok) user.value = await response.json()
-    else if (response?.status === 401) clear()
+    try {
+      const response = await fetchApi('/auth/me')
+      user.value = await response.json()
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        setToken(null)
+        user.value = null
+      }
+      throw error
+    }
   }
 
   async function logout() {
-    await fetch('/api/v1/auth/logout', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token.value}` },
-    }).catch(() => undefined)
-    clear()
+    try {
+      await fetchApi('/auth/logout', { method: 'POST' })
+    } finally {
+      setToken(null)
+      user.value = null
+    }
   }
 
   return { token, user, login, loadUser, logout }

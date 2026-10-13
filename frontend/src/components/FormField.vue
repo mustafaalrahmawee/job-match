@@ -1,12 +1,3 @@
-<script setup lang="ts">
-import { useId } from 'vue'
-
-defineProps<{ label: string; type?: string; autocomplete?: string }>()
-
-const model = defineModel<string>({ default: '' })
-const id = useId()
-</script>
-
 <template>
   <div class="flex flex-col gap-2">
     <label :for="id" class="text-sm font-medium">{{ label }}</label>
@@ -20,3 +11,12 @@ const id = useId()
     />
   </div>
 </template>
+
+<script setup lang="ts">
+import { useId } from 'vue'
+
+defineProps<{ label: string; type?: string; autocomplete?: string }>()
+
+const model = defineModel<string>({ default: '' })
+const id = useId()
+</script>

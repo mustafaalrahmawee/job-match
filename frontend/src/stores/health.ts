@@ -1,17 +1,10 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { fetchApi } from '../api'
 
 export const useHealthStore = defineStore('health', () => {
-  const status = ref<'unknown' | 'ok' | 'error'>('unknown')
-
   async function check() {
-    try {
-      const response = await fetch('/api/v1/health')
-      status.value = response.ok ? 'ok' : 'error'
-    } catch {
-      status.value = 'error'
-    }
+    await fetchApi('/health')
   }
 
-  return { status, check }
+  return { check }
 })
