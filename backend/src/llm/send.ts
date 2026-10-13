@@ -1,11 +1,17 @@
 import Anthropic, { APIUserAbortError } from '@anthropic-ai/sdk'
-import type { ContentBlock, MessageCreateParamsBase } from '@anthropic-ai/sdk/resources/messages'
+import type {
+  ContentBlock,
+  MessageCreateParamsBase,
+  RefusalStopDetails,
+  StopReason,
+} from '@anthropic-ai/sdk/resources/messages'
 
 export type StreamHandlers = { onText: (text: string) => void; signal: AbortSignal }
 
 export type StreamResult = {
   content: ContentBlock[]
-  stopReason: string
+  stopReason: StopReason | 'stopped'
+  stopDetails: RefusalStopDetails | null
   inputTokens: number
   outputTokens: number
 }
@@ -18,9 +24,11 @@ export function createSendStream(client: Anthropic): SendStream {
     stream.on('text', (delta) => onText(delta))
     try {
       const message = await stream.finalMessage()
+      if (!message.stop_reason) throw new Error('The stream ended without a stop reason')
       return {
         content: message.content,
-        stopReason: message.stop_reason ?? 'end_turn',
+        stopReason: message.stop_reason,
+        stopDetails: message.stop_details,
         inputTokens: message.usage.input_tokens,
         outputTokens: message.usage.output_tokens,
       }
@@ -33,6 +41,7 @@ export function createSendStream(client: Anthropic): SendStream {
       return {
         content: text ? [{ type: 'text', text, citations: null }] : [],
         stopReason: 'stopped',
+        stopDetails: null,
         inputTokens: partial?.usage.input_tokens ?? 0,
         outputTokens: partial?.usage.output_tokens ?? 0,
       }

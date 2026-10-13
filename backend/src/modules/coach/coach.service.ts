@@ -1,12 +1,14 @@
 import type { ContentBlockParam, MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import type { Conversation, Message, Prisma, PrismaClient } from '../../generated/prisma/client.js'
-import type { SendStream, StreamHandlers } from '../../llm/send.js'
+import type { SendStream, StreamHandlers, StreamResult } from '../../llm/send.js'
 import { COACH_CHAT_EFFORT, COACH_CHAT_MODEL, coachChatRequest } from '../../prompts/coach_chat.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
 
 export type ConversationWithMessages = Conversation & { messages: Message[] }
 
-export type Reply = { message: Message | null; stopReason: string }
+export type Reply = { message: Message | null; stopReason: StreamResult['stopReason'] }
+
+const STORED_STOP_REASONS = new Set(['end_turn', 'max_tokens', 'model_context_window_exceeded', 'stopped'])
 
 export class CoachService {
   constructor(
@@ -47,8 +49,15 @@ export class CoachService {
       content: message.content as unknown as ContentBlockParam[],
     }))
     const result = await this.send(coachChatRequest(messages), handlers)
+    if (result.stopReason === 'refusal') {
+      console.warn(`Coach refusal in conversation ${conversationId}: ${result.stopDetails?.category ?? 'no category'}`)
+      return { message: null, stopReason: result.stopReason }
+    }
+    if (!STORED_STOP_REASONS.has(result.stopReason)) {
+      throw new Error(`Unexpected stop reason ${result.stopReason} in conversation ${conversationId}`)
+    }
     const hasText = result.content.some((block) => block.type === 'text' && block.text.length > 0)
-    if (!hasText || result.stopReason === 'refusal') return { message: null, stopReason: result.stopReason }
+    if (!hasText) return { message: null, stopReason: result.stopReason }
     const message = await this.prisma.message.create({
       data: {
         conversationId,
