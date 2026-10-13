@@ -27,6 +27,11 @@ test('a short German answer passes every check', () => {
   expect(failed('Nenne im Gespräch eine echte Schwäche und sag, was du schon dagegen tust.')).toEqual([])
 })
 
+test('up to ten percent over max_words is a benign divergence', () => {
+  expect(failed('Nenne im Gespräch eine echte Schwäche und sag dann ruhig, was du schon dagegen tust, zum Beispiel einen kleinen Kurs mit Prüfung.')).toEqual([])
+  expect(failed('Nenne im Gespräch eine echte Schwäche und sag dann ruhig, was du schon dagegen tust, zum Beispiel einen kleinen neuen Kurs mit Prüfung.')).toEqual(['max_words'])
+})
+
 test('each failure is reported by its own check', () => {
   expect(failed('Laut deinem Lebenslauf bist du sehr erfahren im Lager.')).toEqual(['forbidden'])
   expect(failed('Name a real weakness in the interview and say what you already do about it.')).toEqual(['language'])
