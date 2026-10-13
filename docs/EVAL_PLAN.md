@@ -12,12 +12,12 @@ Four roles, kept apart so no model generates, takes, or grades its own test (EV-
 
 | Role | Model | Why |
 | --- | --- | --- |
-| **Model under test** (the app) | per prompt unit (§6); default Haiku 5.5, Sonnet 5.5 only where it measurably wins | Haiku is about 20 times cheaper than Sonnet; the whole API budget is 100 $ |
+| **Model under test** (the app) | per prompt unit (§6); default Haiku 5.5, Sonnet 5.5 only where it measurably wins, Opus 5.5 only for `coach_agent` and `match_analysis` after Sonnet | Haiku is about 20 times cheaper than Sonnet, Opus twice as expensive as Sonnet; the whole API budget is 100 $ |
 | **Judge** (LLM assessment) | glm-5.3, effort `max`, via z.ai (judge client in `backend/src/llm/clients.ts`, configured by `EVAL_JUDGE_*` in `config/env.ts`) | runs on the flat-rate subscription; is not the model under test; text only, so it gets the CV analysis, the ad and the answer as text |
-| **Generator** of synthetic samples | Claude Code (Opus 5.5, on the subscription) | neither Haiku nor Sonnet (EV-25); knows CVs, job ads and interviews well enough to write plausible ones (EV-24); costs no API budget |
+| **Generator** of synthetic samples | Claude Code on the subscription: Fable 5.1 for `cv_analysis`, `job_extract`, `match_analysis`, `coach_agent` and the corpus; Opus 5.5 for the other units | never a model under test of the unit (EV-25); Fable never runs in the app; knows CVs, job ads and interviews well enough to write plausible ones (EV-24); costs no API budget |
 | **Reviewer** of synthetic samples | glm-5.3 `max` for text; glm-5.3-flash `high` for units whose input is a PDF or a screenshot | never the generator and never a model under test (EV-24); glm-5.3 silently drops `document` and `image` blocks, so only the flash model can read a sample PDF; findings go into `review.md` per unit |
 
-- **Opus 5.5 does not go into the app.** It writes the samples, so a comparison run with Opus would be biased (EV-25); `APP_IDEA.md` lists only Haiku and Sonnet.
+- **Opus 5.5 only for long-running agentic and knowledge work (October 13, 2026).** It is a candidate in `coach_agent` and `match_analysis` only, after Sonnet. Because Opus writes the other samples, the samples of these two units, and of `cv_analysis` and `job_extract` whose CV and ad corpus `match_analysis` reads, are written by Fable 5.1 (EV-25).
 - **App and eval use the same request.** Model and effort are constants of the prompt unit (`backend/src/prompts/<unit>.ts`, read from `config/env.ts`); the eval builds the request with the same `request()` function the API uses. The app sends through `backend/src/llm/`; the eval sends through Message Batches, except where the loop is sequential (§4, stage 4 and 5). Only the model choice (§6) overrides model and effort.
 - **z.ai limits shape the judge and the reviewer:** z.ai ignores `output_config` (Structured Outputs) and `input_examples`, so judge and reviewer answer in plain text and the code reads the fixed score or verdict line (EV-48). Structured Outputs stay on the Claude side, in the app.
 - **The judge prompt names a third party:** "the job-match coach". The judge never sees which model produced the answer.
@@ -37,7 +37,7 @@ Four roles, kept apart so no model generates, takes, or grades its own test (EV-
 - **Runs by hand, never in CI.** Evaluations call real APIs and cost money. Before every paid run the cost is estimated and written in `meta.json`. Vitest covers the deterministic parts (the checks, the parsers, the cost table) with no model call.
 - **Every eval as a Message Batch with prompt caching** where the calls are independent. Batches need the Anthropic API; the runner refuses a non-Anthropic base URL.
 - **One change per version.** A `fassung` directory holds one prompt, one model, one effort; a second change gets a new version, so its effect is attributable.
-- **Budget rule.** Haiku variants first; Sonnet variants only for units where Haiku misses the threshold. A spend limit of 25 $ for evals is set in the Anthropic Console before the first run.
+- **Budget rule.** Haiku variants first; Sonnet variants only for units where Haiku misses the threshold; Opus variants only for `coach_agent` and `match_analysis` where Sonnet misses it. A spend limit of 25 $ for evals is set in the Anthropic Console before the first run.
 
 ## 3. Use Case Map
 
@@ -70,7 +70,7 @@ The evaluation artifacts grow with the stages of `APP_IDEA.md`; each artifact is
 
 Every unit gets its samples the same way, with the skill `/eval-samples <unit> <count>` (`.claude/skills/eval-samples/SKILL.md`, copied from TeamBrain). The main agent only coordinates; it neither writes nor reviews.
 
-1. **Write:** the main agent starts the subagent `sample-writer` (`.claude/agents/sample-writer.md`, Opus 5.5, may only read and write files in `samples/` and `corpus/`). It reads the unit's `review.md`, this plan and, where needed, the CV corpus, and writes each case from the solution backwards.
+1. **Write:** the main agent starts the subagent `sample-writer` (`.claude/agents/sample-writer.md`, Opus 5.5, started with Fable 5.1 for the units named in §1, may only read and write files in `samples/` and `corpus/`). It reads the unit's `review.md`, this plan and, where needed, the CV corpus, and writes each case from the solution backwards.
 2. **Review:** the main agent runs `pnpm evals review <unit> <cases>`. The command sends each case to the reviewer (glm-5.3 for text, glm-5.3-flash with the PDF or PNG for `cv_analysis` and `job_extract`), asks the questions F1 to F10 from `review.md`, appends the answer as `### <case> (round N)` and prints the verdict per case.
 3. **Sort:** `keep` is done; `remove` is deleted; `change` (or an unreadable verdict) goes back to `sample-writer` with the reviewer's remarks, then to step 2.
 4. **Limit:** at most three rounds per case; the command refuses a fourth. A case without `keep` after round 3 is deleted.
@@ -245,7 +245,7 @@ Open: who grades besides the maintainer (one or two further people).
 Every prompt unit gets its model as soon as its suite exists, not at the end. Prompt improvements do not transfer reliably to another model, so the model is fixed first, then the prompt is improved. Models are mixed per pass (EV-06).
 
 1. **Set the threshold first**, in gold-standard and functional numbers, before the first run.
-2. **Measure the variants in order** (prompt v1, all cases × 3 runs, batch): Haiku 5.5 `low`, `medium`, `high`. The **cheapest variant above the threshold** is chosen. Only when Haiku `high` misses it, Sonnet 5.5 `low` follows, then `medium`; if that fails as well, the prompt is the problem, not the model. Close to the threshold: a second run before choosing.
+2. **Measure the variants in order** (prompt v1, all cases × 3 runs, batch): Haiku 5.5 `low`, `medium`, `high`. The **cheapest variant above the threshold** is chosen. Only when Haiku `high` misses it, Sonnet 5.5 `low` follows, then `medium`; for `coach_agent` and `match_analysis` only, Opus 5.5 `low` and `medium` follow after that. If the last variant fails as well, the prompt is the problem, not the model. Close to the threshold: a second run before choosing.
 3. **Fix it:** model and effort become constants of the unit; the prompt is improved only with this setting (one change per version).
 4. **Check downwards once:** with the improved prompt the next cheaper variant runs again; if it is above the threshold, it is chosen.
 5. **Record** in the sheet under "Chosen": variant, gold numbers and cost per case, plus the rejected variants.
@@ -264,7 +264,7 @@ Gold standard and functional tests decide the choice; judge scores only after ca
 | `job_recommendation` | Haiku `low` |
 | `cover_letter` | Haiku `medium` |
 
-Budget per round (all cases × 3 runs, batch, cached system prompt), estimated before the first run and written in `meta.json`: `cv_analysis` with PDFs about 30 cases × 3 × 4k tokens, under 0.50 $ with Haiku; text units under 0.20 $ with Haiku; Sonnet about 20 times that. The whole plan fits in the 25 $ eval limit if Sonnet runs only where Haiku fails.
+Budget per round (all cases × 3 runs, batch, cached system prompt), estimated before the first run and written in `meta.json`: `cv_analysis` with PDFs about 30 cases × 3 × 4k tokens, under 0.50 $ with Haiku; text units under 0.20 $ with Haiku; Sonnet about 20 times that, Opus about 40 times. The whole plan fits in the 25 $ eval limit if Sonnet runs only where Haiku fails.
 
 ## 7. Test Level by Change (EV-06)
 
@@ -294,7 +294,7 @@ Budget per round (all cases × 3 runs, batch, cached system prompt), estimated b
 - First decision with a real chance of error: answering in the wrong language, or claiming CV facts it does not have
 - Judge: glm-5.3 `max`, third-party framing ("the job-match coach") · one prompt per aspect · scale 1–5, every level described · score line `Truth: X` etc.
 - Calibration: after `match_analysis` (§5); until then judge scores are read only and the model choice rests on the functional checks
-- Model choice (§6): threshold functional 100 %, `expected_mentions` all CV cases · variants Haiku `low`, `medium` · Chosen: ⬜
+- Model choice (§6): threshold functional 100 %, `expected_mentions` all CV cases · variants Haiku `low`, `medium`, `high`, Sonnet `low`, `medium` · Chosen: Sonnet `medium` (October 13, 2026; prompt v1, 12/13 cases, the only miss 207 of 200 words, $0.0056 per case in a batch); threshold not reached yet, so the length check (EV-32) and the prompt come next · rejected: Haiku `low` 3/13 (wrong language), Haiku `medium` 7/13 and `high` 7/13 (too long, v2 with a paragraph limit had no effect), Sonnet `low` 11/13
 - Recorded in every test: model, effort, quality, latency (per batch), tokens incl. cache, cost
 
 ### Evaluation sheet — job-match CV analysis (UC-04)
@@ -304,7 +304,7 @@ Budget per round (all cases × 3 runs, batch, cached system prompt), estimated b
 - Example suite: 20–30 synthetic CVs in `backend/evals/corpus/cvs/` with `gold.json` in `backend/evals/cv_analysis/samples/` · script: `pnpm evals run cv_analysis <fassung>` · diff: git on `runs/`, `check.txt` per version
 - Sample source: synthetic — critical question answered yes because the gold standard is known by construction (gold first, CV written to match)
 - Known deviations of a proxy source: synthetic CVs are cleaner and more consistent than real ones (no photos, odd section orders, marketing phrases, mixed languages); real uploads with status `failed` become candidate cases without gold standard
-- Synthetic samples generated by: Claude Code (Opus 5.5) (≠ Haiku, ≠ Sonnet) · reviewed by glm-5.3-flash with the PDF, per `review.md`
+- Synthetic samples generated by: Claude Code (Fable 5.1) (≠ Haiku, ≠ Sonnet, ≠ Opus) · reviewed by glm-5.3-flash with the PDF, per `review.md`
 - Conversations: none
 - Test: gold standard: classification on `is_cv` and role (within `accepted_roles`) · partial match on positions (employer, count), `must_skills` with synonyms, `absent_skills`, languages, `highest_degree` · functional: schema valid, `end_turn`, list limits, no `forbidden` phrase · LLM assessment: Truth and Relevance of strengths, weaknesses, tips
 - First decision with a real chance of error: `is_cv`; second: the role
@@ -320,7 +320,7 @@ Budget per round (all cases × 3 runs, batch, cached system prompt), estimated b
 - Example suite: 15–20 cases, half text, half PNG from `backend/evals/corpus/ads/` · script: `pnpm evals run job_extract <fassung>` · diff: git on `runs/`
 - Sample source: synthetic — critical question answered yes because ads are short and the gold fields are fixed before the ad is written
 - Known deviations of a proxy source: rendered screenshots are sharper and better aligned than phone photos of a screen
-- Synthetic samples generated by: Claude Code (Opus 5.5) (≠ Haiku, ≠ Sonnet) · reviewed by glm-5.3-flash with the PNG
+- Synthetic samples generated by: Claude Code (Fable 5.1) (≠ Haiku, ≠ Sonnet, ≠ Opus) · reviewed by glm-5.3-flash with the PNG
 - Conversations: none
 - Test: gold standard: classification on `is_job` · exact match on company and city after normalisation · partial match on title (`title_accepted`) and `must_contain` · functional: schema valid, `end_turn` · LLM assessment: none
 - First decision with a real chance of error: is it a job ad at all; second: the title
@@ -336,13 +336,13 @@ Budget per round (all cases × 3 runs, batch, cached system prompt), estimated b
 - Example suite: 30–40 CV-ad pairs in `backend/evals/match_analysis/samples/`, every CV with at least two ads of different fit · script: `pnpm evals run match_analysis <fassung>` · diff: git on `runs/`, `check.txt` per version
 - Sample source: synthetic — critical question answered yes because the ad is written against a known CV with planned overlaps and gaps, so gap, band and order are known by construction
 - Known deviations of a proxy source: synthetic ads state requirements more explicitly than real ads, which bury them in prose and wish lists; real ads from the pool are added as judge-only cases without gold standard
-- Synthetic samples generated by: Claude Code (Opus 5.5) (≠ Haiku, ≠ Sonnet) · reviewed by glm-5.3 only
+- Synthetic samples generated by: Claude Code (Fable 5.1) (≠ Haiku, ≠ Sonnet, ≠ Opus) · reviewed by glm-5.3 only
 - Conversations: none
 - Test: gold standard: partial match on ranking within a `rank_group`, on the `hard` gap, on `score_band`, on `absent` terms · functional: schema valid, every `quote` is a substring of analysis or ad · LLM assessment: Truth, Relevance, Completeness of strengths, gaps, tips
 - First decision with a real chance of error: the hard gap is named; second: the order of the ads
 - Judge: glm-5.3 `max`, third-party framing · aspects: Truth, Relevance, Completeness · scale 1–5, every level described · score line `Truth: X` etc., one prompt per aspect
 - Calibration: first calibration of the project, 2–3 graders on 15 cases of the chosen version · Kendall's Tau per aspect
-- Model choice (§6): threshold functional 100 %, ranking all groups, hard gap all, score band ≥ 90 %, absent 0, all 3 runs · variants Haiku `low`, `medium`, `high`, then Sonnet `low` · Chosen: ⬜
+- Model choice (§6): threshold functional 100 %, ranking all groups, hard gap all, score band ≥ 90 %, absent 0, all 3 runs · variants Haiku `low`, `medium`, `high`, then Sonnet `low`, then Opus `low`, `medium` · Chosen: ⬜
 - Recorded in every test: model, effort, latency, tokens incl. cache, cost, score, number of gaps
 
 ### Evaluation sheet — job-match coach agent (UC-11)
@@ -352,13 +352,13 @@ Budget per round (all cases × 3 runs, batch, cached system prompt), estimated b
 - Example suite: 20–25 canned conversations with fixtures and canned tool results in `backend/evals/coach_agent/samples/` · script: `pnpm evals run coach_agent <fassung>` · diff: git on `runs/`; tool trace stored per run
 - Sample source: synthetic — critical question answered yes because the expected tool call is fixed first and the conversation written to lead there
 - Known deviations of a proxy source: scripted requests are more explicit than real ones ("I applied at Acme yesterday" versus "ok sent it"); thumbs-down or retried turns from app usage are added later as judge-only cases
-- Synthetic samples generated by: Claude Code (Opus 5.5) (≠ Haiku, ≠ Sonnet) · reviewed by glm-5.3 only
+- Synthetic samples generated by: Claude Code (Fable 5.1) (≠ Haiku, ≠ Sonnet, ≠ Opus) · reviewed by glm-5.3 only
 - Conversations: canned tool results for unit tests of the tool pass (batch); whole loop sequentially against `jobmatch_test` for regression
 - Test: gold standard, partial match on the tool trace (any call → right tool → valid arguments → right target → right value → within budget, asks back where expected) · functional: tool names and arguments valid, `end_turn`, no `forbidden` action after an injected ad · LLM assessment: Intent, Execution of the final answer
 - First decision with a real chance of error: calling a tool at all when one is needed, and not calling one on a plain question
 - Judge: glm-5.3 `max`, third-party framing · aspects: Intent, Execution · scale 1–5 · score line `Intent: X`, `Execution: X`
 - Calibration: same procedure as `match_analysis`, 10 agent cases added to the pool
-- Model choice (§6): threshold ladder steps 1–6 on all cases, all 3 runs · variants Haiku `medium`, `high`, then Sonnet `low`, `medium` · Chosen: ⬜
+- Model choice (§6): threshold ladder steps 1–6 on all cases, all 3 runs · variants Haiku `medium`, `high`, then Sonnet `low`, `medium`, then Opus `low`, `medium` · Chosen: ⬜
 - Recorded in every test: model, effort, latency, tokens incl. cache, cost, number of tool calls, iterations, web-search cost
 
 ### Evaluation sheet — job-match interview training (UC-12)

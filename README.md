@@ -13,7 +13,7 @@ Stufe neu gebaut.
 ## Dokumentation
 
 - [docs/APP_IDEA.md](docs/APP_IDEA.md) – App-Idee: Problem, Rollen, Domänenmodell, Use Cases je
-  Stufe, Kernablauf, Claude-Themen, Entscheidungen.
+  Stufe, Kernablauf, Claude-Themen.
 - [docs/app-prompting-anchor.md](docs/app-prompting-anchor.md) – wie Prompts geschrieben werden.
   Verbindlich für jeden Prompt der App.
 - [docs/app-evaluation-anchor.md](docs/app-evaluation-anchor.md) – wie bewertet wird. Verbindlich

@@ -35,5 +35,6 @@ It sends each case to glm-5.3, appends the answer to `backend/evals/<unit>/revie
 
 ## Rules
 
+- For `cv_analysis`, `job_extract`, `match_analysis` and `coach_agent`, and for any file in `backend/evals/corpus/`, start `sample-writer` with the model `fable`: Opus 5.5 is a model under test there or reads that corpus (EVAL_PLAN §1, EV-25). For every other unit it runs on its own model.
 - Never edit `review.md` or a `gold.json` yourself.
 - If the command fails, show the error and stop.

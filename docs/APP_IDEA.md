@@ -101,18 +101,6 @@ Every stage introduces one topic; the table shows where each one naturally appea
 | Agent Skills, Files API, MCP | Cover letter as Word file; calendar via MCP | UC-15 |
 | Eval | Example suite per prompt unit from the first prompt on; Haiku 5.5 by default, model chosen per unit by measurement; glm-5.3 as independent judge | all AI features |
 
-## Decisions
-
-- **Backend with Express and TypeScript (October 12, 2026).** The backend is Express 5 with TypeScript, Prisma 7 for the database and Zod 4 for request, environment and model-output validation, organised as modules per domain in class style (service, controller, routes, schemas, module); the frontend stays Vue 3 with Tailwind CSS. The repository is built stage by stage from the foundation.
-- **Vector search with ChromaDB behind `VectorStore` (October 12, 2026).** PostgreSQL 17 is the only source of truth for all domain data; Chroma is a search index only and stores per job the `id`, the embedding and the filter fields (`role`). Access goes only through the `VectorStore` interface (`upsert`, `search`, `delete`) with a Chroma implementation for the app and an in-memory one for tests. Three sync rules: (1) every write runs through `JobsService`, first Postgres, then `vectors.upsert` or `vectors.delete`, and `upsert` is idempotent; (2) the search tolerates ids that no longer exist in Postgres and filters them out; (3) `Job` carries `embedded_at`, and after every Bundesagentur import a reconciliation re-embeds jobs whose `embedded_at` is empty or older than `updated_at` and deletes ids from Chroma that have no job in Postgres. The Chroma container joins `docker-compose.yml` with stage 7. Open: the embedding provider (the Claude API has no embedding endpoint; candidate: Voyage AI), decided in stage 7.
-- **Analyse the CV once and store the result.** Every feature reads the stored analysis; the PDF is never sent again.
-- **One active CV version** decides the role; everything runs only with jobs of that role. A new upload, also with the same role, replaces the active version; old versions can be reactivated.
-- **Roles come from a fixed list** so they match the job pool. The model suggests one; the applicant confirms.
-- **Job pool covers Germany only**, imported from the Bundesagentur in a scheduled run; own jobs can be added.
-- **Interview training is written only**, no voice.
-- **Haiku 5.5 is the default model**; per prompt unit the cheapest variant above a quality bar set in advance is chosen by measurement. Opus 5.5 never runs in the app. glm-5.3 over z.ai is the judge of the evals and the model of the integration tests.
-- **Free with a usage limit per account** during development; the app goes public only after the go-live items are done.
-
 ## Out of Scope
 
 job-match stays a focused learning and portfolio project; these points are deliberately not part of the scope.

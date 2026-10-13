@@ -2,7 +2,7 @@
 
 Neustart (11.10.2026): Die App wird von null mit **Express + TypeScript** (Backend, Entscheidung vom
 12.10.2026) und **Vue 3 + Tailwind** (Frontend) gebaut, Stufe für Stufe. Fachliche Idee, Domänenmodell,
-Use Cases je Stufe und Entscheidungen: [docs/APP_IDEA.md](docs/APP_IDEA.md). Nur die aktuelle Stufe
+Use Cases je Stufe: [docs/APP_IDEA.md](docs/APP_IDEA.md). Nur die aktuelle Stufe
 umsetzen.
 
 Jeder Prompt folgt [docs/app-prompting-anchor.md](docs/app-prompting-anchor.md), jede Eval
