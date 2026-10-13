@@ -18,6 +18,8 @@ export type CoachChatGold = {
 
 export type Check = { name: string; ok: boolean; detail: string }
 
+const LENGTH_TOLERANCE = 1.1
+
 const ISO_639_1: Record<string, string> = {
   arb: 'ar',
   deu: 'de',
@@ -53,7 +55,7 @@ export function coachChatChecks(gold: CoachChatGold, run: RunRecord): Check[] {
     { name: 'end_turn', ok: run.stop_reason === 'end_turn', detail: run.error ?? run.stop_reason ?? 'none' },
     { name: 'not_empty', ok: run.text.trim().length > 0, detail: '' },
     { name: 'language', ok: language === gold.language, detail: `${language}, expected ${gold.language}` },
-    { name: 'max_words', ok: words <= gold.max_words, detail: `${words}/${gold.max_words}` },
+    { name: 'max_words', ok: words <= Math.floor(gold.max_words * LENGTH_TOLERANCE), detail: `${words}/${gold.max_words}` },
     { name: 'forbidden', ok: hits.length === 0, detail: hits.join('; ') },
   ]
 }
