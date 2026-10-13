@@ -6,8 +6,9 @@ Vorstellungsgespräch schriftlich üben. Zugleich ein Lernprojekt für LLM-Anwen
 Claude API.
 
 **Stand:** Neustart am 11.10.2026; seit dem 12.10.2026 wird das Backend mit Express und TypeScript
-gebaut. Das Repo enthält nur das Fundament (Login, Logout, Health); die App wird Stufe für Stufe neu
-gebaut.
+gebaut. Vorhanden sind das Fundament (Login, Logout, Health) und aus Stufe 1 der Chat mit dem Coach
+(UC-02: gestreamte Antwort, Anhalten, erneut versuchen, Verlauf gespeichert); die App wird Stufe für
+Stufe neu gebaut.
 
 ## Dokumentation
 
