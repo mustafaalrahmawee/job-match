@@ -26,7 +26,7 @@ export async function review(unit: string, cases: string[], allCases: boolean): 
 
   if (allCases) {
     const files = [fileTag(PLAN), ...existing.map((c) => textFiles(join(samples, c)))].join('\n\n')
-    const answer = await ask(systemPrompt(reviewText, 'About all cases', false), files)
+    const answer = await ask(systemPrompt(unit, reviewText, 'About all cases', false), files)
     append(reviewPath, 'About all cases', answer)
     console.log(answer)
     return
@@ -49,7 +49,7 @@ export async function review(unit: string, cases: string[], allCases: boolean): 
     }
     console.log(`Reviewing ${name}, round ${round} ...`)
     const answer = await ask(
-      systemPrompt(reviewText, 'Questions', true),
+      systemPrompt(unit, reviewText, 'Questions', true),
       `${corpus}Case: ${name}\n\n${textFiles(join(samples, name))}`,
     )
     append(reviewPath, `${name} (round ${round})`, answer)
@@ -67,20 +67,35 @@ function fail(message: string): never {
   process.exit(1)
 }
 
-function systemPrompt(reviewText: string, questionsSection: string, withVerdict: boolean): string {
+/**
+ * Prompt unit review: analytic report, single call.
+ * Profile: text, medium abstraction, context from review.md and the case files, stateless.
+ * Surface: lines appended to review.md, verdict word read by verdict(). Urgency: low (nobody waits).
+ * Model: EVAL_JUDGE_MODEL at EVAL_JUDGE_EFFORT.
+ * Slots: unit and today (boilerplate), rules and questions (static per unit, from review.md),
+ * case files and corpus (direct, user turn).
+ * Stop: one line per question, stop reason end_turn. Enforced in code: verdict parsed from the
+ * F10 line, unreadable verdict counts as unclear, at most three rounds per case.
+ */
+function systemPrompt(
+  unit: string,
+  reviewText: string,
+  questionsSection: string,
+  withVerdict: boolean,
+): string {
   const verdictRule = withVerdict
-    ? ' For the verdict question, start the line with exactly one of the words keep, change or remove.'
+    ? ' The F10 line starts with "F10:" followed by exactly one of the words keep, change or remove, because the review command reads the verdict from that word.'
     : ''
   const today = new Date().toLocaleDateString('en-US', {
     month: 'long',
     day: '2-digit',
     year: 'numeric',
   })
-  return `You are checking made-up examples from a test collection for an AI feature. Another model wrote the examples and their gold solutions (gold.json). You check independently: is the case fair, is the gold solution right, does it read as real? Check strictly, but name only what you can back up with the files.
+  return `This is the review log of the ${unit} test collection for an AI feature: another model wrote each made-up case and its gold solution (gold.json), and an independent reviewer checks whether the case is fair, whether the gold solution is right and whether the case reads as real.
 
 Today is ${today}.
 
-Answer in English, one line per question, starting with the question number (e.g. "F1: ..."), with no introduction and no closing words.${verdictRule}
+For each finding the reviewer names where in the files it is visible, so that every line can be checked again. The reviewer writes in English, one line per question starting with its number (e.g. "F1: ..."), with no introduction and no closing words, because the lines are appended to the log as they are.${verdictRule}
 
 Rules of the test collection:
 ${section(reviewText, 'Rules')}
@@ -94,14 +109,19 @@ async function ask(system: string, content: string): Promise<string> {
   const response = await createJudgeClient().messages.create(
     {
       model,
-      max_tokens: 16000,
+      max_tokens: 32000,
       output_config: { effort: env.EVAL_JUDGE_EFFORT },
       system,
       messages: [{ role: 'user', content }],
     },
-    { timeout: 600_000 },
+    { timeout: 1_200_000 },
   )
   const text = response.content.map((block) => (block.type === 'text' ? block.text : '')).join('')
+  if (response.stop_reason !== 'end_turn' || !text.trim()) {
+    fail(
+      `${model} stopped with ${response.stop_reason} after ${response.usage.output_tokens} tokens; nothing written`,
+    )
+  }
   const lines = text
     .split('\n')
     .map((line) => line.trim())

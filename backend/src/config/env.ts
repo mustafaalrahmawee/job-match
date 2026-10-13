@@ -13,7 +13,7 @@ const schema = z.object({
   TEST_ANTHROPIC_API_KEY: z.string().default(''),
   EVAL_JUDGE_BASE_URL: z.string().default('https://api.z.ai/api/anthropic'),
   EVAL_JUDGE_MODEL: z.string().default('glm-5.3'),
-  EVAL_JUDGE_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).default('high'),
+  EVAL_JUDGE_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).default('max'),
 })
 
 export type Env = z.infer<typeof schema>
