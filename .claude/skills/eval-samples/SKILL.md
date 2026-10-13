@@ -29,8 +29,9 @@ It sends each case to glm-5.3, appends the answer to `backend/evals/<unit>/revie
    - `change` or `unclear`: the case goes into the next round.
 5. **Next round.** If cases are left and the last round was 1 or 2, start `sample-writer`: "Revise these cases of unit <unit>: <ids>. The reviewer's remarks are in review.md." Then go back to step 3 with these ids.
 6. **Limit.** After round 3, delete every case whose last verdict is not `keep`.
-7. **Whole set.** Run `pnpm evals review <unit> --all` once.
-8. **Report** to the user: one line per case with its final state (kept or removed) and the reason, then the answer about all cases.
+7. **Whole set.** Run `pnpm evals review <unit> --all`.
+8. **Act on the whole set, once.** If the answer names a missing scenario (G1), a too-weak case (G2), cases built the same way (G3) or an imbalance (G4), start `sample-writer`: "Act on the latest 'About all cases' entry in review.md for unit <unit>: revise <ids> and write new cases for <gaps>." Name only cases with fewer than three rounds; the others stay as they are. Then take the ids it reports through steps 3 to 6 (revised cases continue their round count, new cases start at round 1), run step 7 again, and do not repeat this step.
+9. **Report** to the user: one line per case with its final state (kept or removed) and the reason, then the last answer about all cases.
 
 ## Rules
 

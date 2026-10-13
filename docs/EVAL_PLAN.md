@@ -13,9 +13,9 @@ Four roles, kept apart so no model generates, takes, or grades its own test (EV-
 | Role | Model | Why |
 | --- | --- | --- |
 | **Model under test** (the app) | per prompt unit (§6); default Haiku 5.5, Sonnet 5.5 only where it measurably wins | Haiku is about 20 times cheaper than Sonnet; the whole API budget is 100 $ |
-| **Judge** (LLM assessment) | glm-5.3, effort `high`, via z.ai (judge client in `backend/src/llm/clients.ts`, configured by `EVAL_JUDGE_*` in `config/env.ts`) | runs on the flat-rate subscription; is not the model under test; text only, so it gets the CV analysis, the ad and the answer as text |
+| **Judge** (LLM assessment) | glm-5.3, effort `max`, via z.ai (judge client in `backend/src/llm/clients.ts`, configured by `EVAL_JUDGE_*` in `config/env.ts`) | runs on the flat-rate subscription; is not the model under test; text only, so it gets the CV analysis, the ad and the answer as text |
 | **Generator** of synthetic samples | Claude Code (Opus 5.5, on the subscription) | neither Haiku nor Sonnet (EV-25); knows CVs, job ads and interviews well enough to write plausible ones (EV-24); costs no API budget |
-| **Reviewer** of synthetic samples | glm-5.3 `high` for text; glm-5.3-flash `high` for units whose input is a PDF or a screenshot | never the generator and never a model under test (EV-24); glm-5.3 silently drops `document` and `image` blocks, so only the flash model can read a sample PDF; findings go into `review.md` per unit |
+| **Reviewer** of synthetic samples | glm-5.3 `max` for text; glm-5.3-flash `high` for units whose input is a PDF or a screenshot | never the generator and never a model under test (EV-24); glm-5.3 silently drops `document` and `image` blocks, so only the flash model can read a sample PDF; findings go into `review.md` per unit |
 
 - **Opus 5.5 does not go into the app.** It writes the samples, so a comparison run with Opus would be biased (EV-25); `APP_IDEA.md` lists only Haiku and Sonnet.
 - **App and eval use the same request.** Model and effort are constants of the prompt unit (`backend/src/prompts/<unit>.ts`, read from `config/env.ts`); the eval builds the request with the same `request()` function the API uses. The app sends through `backend/src/llm/`; the eval sends through Message Batches, except where the loop is sequential (§4, stage 4 and 5). Only the model choice (§6) overrides model and effort.
@@ -82,9 +82,9 @@ The review never changes a sample and the writer never changes `review.md`. `rev
 
 The first prompt unit is the coach system prompt. Its example suite (EV-09) has three parts:
 
-1. **Samples:** 8 to 12 cases, one `backend/evals/coach_chat/samples/<case>/gold.json` each, with the conversation (`messages`, ending in a user turn), the request parameters (`quality`, `effort`) and the expectation (`language`, `declines_scope`, `forbidden`, `max_words`); the format is in `backend/evals/coach_chat/review.md` under "Rules". Written and reviewed with `/eval-samples coach_chat` (§4a). Scenarios: greeting; what belongs in a German cover letter; English question about salary negotiation; off-topic request (tax or legal advice, must decline or redirect); follow-up that depends on the previous turn; very long rambling message; message that tries to override the system prompt; question about "my CV" while no CV is uploaded (the coach must say so, not invent one); a request for a complete cover letter in stage 1 (the coach explains what it can do, no fabricated personal data).
+1. **Samples:** 8 to 12 cases, one `backend/evals/coach_chat/samples/<case>/gold.json` each, with the conversation (`messages`, ending in a user turn), the request parameters (`quality`, `effort`) and the expectation (`language`, `declines_scope`, `forbidden`, `max_words`); the format is in `backend/evals/coach_chat/review.md` under "Rules". Written and reviewed with `/eval-samples coach_chat` (§4a). Scenarios: greeting; what belongs in a German cover letter; English question about salary negotiation; question in a language other than German or English, e.g. Arabic (the answer must use that language); off-topic request (tax or legal advice, must decline or redirect); follow-up that depends on the previous turn; very long rambling message; message that tries to override the system prompt; question about "my CV" while no CV is uploaded (the coach must say so, not invent one); a request for a complete cover letter in stage 1 (the coach explains what it can do, no fabricated personal data).
 2. **Script:** `pnpm evals run coach_chat <fassung>` builds the request with the app's own prompt assembly (same `request()` as the SSE endpoint, without streaming), sends it as a batch, and writes `runs/<fassung>/<case>/run-N.json` (answer, stop reason, tokens, cost) plus `meta.json` and `metrics.tsv`.
-3. **Diff:** the runs are committed and never overwritten; after every prompt change the maintainer reads `git diff` on `runs/` (EV-10) and `evals check` reports the functional checks: `end_turn`, not empty, language as expected (stop-word count de/en), length within `max_words`, no `forbidden` phrase, injection ineffective, no claim to know a CV.
+3. **Diff:** the runs are committed and never overwritten; after every prompt change the maintainer reads `git diff` on `runs/` (EV-10) and `evals check` reports the functional checks: `end_turn`, not empty, language as expected (detected with a language identification library such as `franc` and compared to the ISO code in `gold.json`), length within `max_words`, no `forbidden` phrase, injection ineffective, no claim to know a CV.
 
 No judge at this stage. The suite exists to see the typical shortcomings of the prompt (EV-11): too long, wrong language, invented CV facts, follows injected instructions, lectures instead of answering.
 
@@ -203,7 +203,7 @@ Whether the training is a fixed workflow or an agent is decided in `APP_IDEA.md`
 
 ### Stage 6 – Regression for context management (UC-13)
 
-No new prompt unit. `coach_chat` and `interview_grade` get long canned histories (40 to 60 turns) under `samples/long/`. Checks, all functional or partial match: no context-length error; the token count computed before sending is below the limit; `cache_read_input_tokens` above zero from the second request on; cost per request appears in the log; a fact planted in turn 2 ("my notice period is three months") is answered right in turn 50 after compaction (`expected_mentions`). Threshold: all cases, all runs. A change to compaction or to the cached prefix is an architecture change and runs this regression plus the `coach_chat` suite (§7).
+No new prompt unit. `coach_chat` and `interview_grade` get long canned histories (40 to 60 turns) under `samples/long/`. Checks, all functional or partial match: no context-length error; the token count computed before sending is below the limit; `cache_read_input_tokens` above zero from the second request on; cost per request appears in the log; a fact planted in turn 2 ("my notice period is three months") is answered right in turn 50 after compaction (`expected_mentions`). The compaction threshold stays below 100,000 input tokens, because Haiku 5.5 bills prompts above that at five times the rate (about 100 turns of about 1,000 tokens each); the check records the largest prompt per case and fails above the threshold. Threshold: all cases, all runs. A change to compaction or to the cached prefix is an architecture change and runs this regression plus the `coach_chat` suite (§7).
 
 ### Stage 7 – Unit `job_recommendation` (UC-14)
 
@@ -292,7 +292,7 @@ Budget per round (all cases × 3 runs, batch, cached system prompt), estimated b
 - Conversations: canned scripts as samples with a scripted history
 - Test: gold standard: `expected_mentions` partial match on the CV cases, none on free chat (RC-02) · functional: `end_turn`, not empty, language as expected, `max_words`, no `forbidden` phrase, no claim to know a CV, from stage 6 cache hit and planted fact · LLM assessment from stage 2: Truth against the analysis; Relevance; Not too much (EV-47)
 - First decision with a real chance of error: answering in the wrong language, or claiming CV facts it does not have
-- Judge: glm-5.3 `high`, third-party framing ("the job-match coach") · one prompt per aspect · scale 1–5, every level described · score line `Truth: X` etc.
+- Judge: glm-5.3 `max`, third-party framing ("the job-match coach") · one prompt per aspect · scale 1–5, every level described · score line `Truth: X` etc.
 - Calibration: after `match_analysis` (§5); until then judge scores are read only and the model choice rests on the functional checks
 - Model choice (§6): threshold functional 100 %, `expected_mentions` all CV cases · variants Haiku `low`, `medium` · Chosen: ⬜
 - Recorded in every test: model, effort, quality, latency (per batch), tokens incl. cache, cost
@@ -308,7 +308,7 @@ Budget per round (all cases × 3 runs, batch, cached system prompt), estimated b
 - Conversations: none
 - Test: gold standard: classification on `is_cv` and role (within `accepted_roles`) · partial match on positions (employer, count), `must_skills` with synonyms, `absent_skills`, languages, `highest_degree` · functional: schema valid, `end_turn`, list limits, no `forbidden` phrase · LLM assessment: Truth and Relevance of strengths, weaknesses, tips
 - First decision with a real chance of error: `is_cv`; second: the role
-- Judge: glm-5.3 `high`, third-party framing · aspects: Truth, Relevance · scale 1–5, every level described · score line `Truth: X`, `Relevance: X`
+- Judge: glm-5.3 `max`, third-party framing · aspects: Truth, Relevance · scale 1–5, every level described · score line `Truth: X`, `Relevance: X`
 - Calibration: after `match_analysis` (§5)
 - Model choice (§6): threshold functional 100 %, `is_cv` all, role ≥ 90 %, positions 100 %, must-skill recall ≥ 95 %, absent skills 0, all 3 runs · variants Haiku `low`, `medium`, `high`, then Sonnet `low` · Chosen: ⬜
 - Recorded in every test: model, effort, latency, tokens incl. cache, cost, batch id, PDF pages
@@ -340,7 +340,7 @@ Budget per round (all cases × 3 runs, batch, cached system prompt), estimated b
 - Conversations: none
 - Test: gold standard: partial match on ranking within a `rank_group`, on the `hard` gap, on `score_band`, on `absent` terms · functional: schema valid, every `quote` is a substring of analysis or ad · LLM assessment: Truth, Relevance, Completeness of strengths, gaps, tips
 - First decision with a real chance of error: the hard gap is named; second: the order of the ads
-- Judge: glm-5.3 `high`, third-party framing · aspects: Truth, Relevance, Completeness · scale 1–5, every level described · score line `Truth: X` etc., one prompt per aspect
+- Judge: glm-5.3 `max`, third-party framing · aspects: Truth, Relevance, Completeness · scale 1–5, every level described · score line `Truth: X` etc., one prompt per aspect
 - Calibration: first calibration of the project, 2–3 graders on 15 cases of the chosen version · Kendall's Tau per aspect
 - Model choice (§6): threshold functional 100 %, ranking all groups, hard gap all, score band ≥ 90 %, absent 0, all 3 runs · variants Haiku `low`, `medium`, `high`, then Sonnet `low` · Chosen: ⬜
 - Recorded in every test: model, effort, latency, tokens incl. cache, cost, score, number of gaps
@@ -356,7 +356,7 @@ Budget per round (all cases × 3 runs, batch, cached system prompt), estimated b
 - Conversations: canned tool results for unit tests of the tool pass (batch); whole loop sequentially against `jobmatch_test` for regression
 - Test: gold standard, partial match on the tool trace (any call → right tool → valid arguments → right target → right value → within budget, asks back where expected) · functional: tool names and arguments valid, `end_turn`, no `forbidden` action after an injected ad · LLM assessment: Intent, Execution of the final answer
 - First decision with a real chance of error: calling a tool at all when one is needed, and not calling one on a plain question
-- Judge: glm-5.3 `high`, third-party framing · aspects: Intent, Execution · scale 1–5 · score line `Intent: X`, `Execution: X`
+- Judge: glm-5.3 `max`, third-party framing · aspects: Intent, Execution · scale 1–5 · score line `Intent: X`, `Execution: X`
 - Calibration: same procedure as `match_analysis`, 10 agent cases added to the pool
 - Model choice (§6): threshold ladder steps 1–6 on all cases, all 3 runs · variants Haiku `medium`, `high`, then Sonnet `low`, `medium` · Chosen: ⬜
 - Recorded in every test: model, effort, latency, tokens incl. cache, cost, number of tool calls, iterations, web-search cost
@@ -372,7 +372,7 @@ Budget per round (all cases × 3 runs, batch, cached system prompt), estimated b
 - Conversations: canned scripts for the units; user mock with profiles for the whole loop
 - Test: gold standard: partial match on `score_band`, on ranking within a question group, on the floor band for `empty` and `off_topic`, on `expected_gap` among the first three questions, on the lowest topic in the report · functional: schema valid, one question per turn, no repeat, language · LLM assessment: Truth, Relevance, Completeness of feedback and report; Relevance of questions
 - First decision with a real chance of error: the order good > partial > wrong within one question
-- Judge: glm-5.3 `high`, third-party framing · aspects as above · scale 1–5 · score line `Truth: X` etc.
+- Judge: glm-5.3 `max`, third-party framing · aspects as above · scale 1–5 · score line `Truth: X` etc.
 - Calibration: same procedure as `match_analysis`, 10 grade cases added to the pool before judge scores steer the feedback prompt
 - Model choice (§6): threshold schema 100 %, ranking all groups, band ≥ 90 %, functional 100 % · variants Haiku `low`, `medium`, `high` · Chosen: ⬜
 - Recorded in every test: model, effort, latency, tokens incl. cache, cost, turn number, session length
@@ -388,7 +388,7 @@ Budget per round (all cases × 3 runs, batch, cached system prompt), estimated b
 - Conversations: none
 - Test: gold standard, partial match on retrieval hit (≥ 3 of `expected_job_ids` in top-k) · functional: role filter, each reason cites one of the five job ids · LLM assessment: Truth, Relevance of the reasons
 - First decision with a real chance of error: the role filter; second: retrieval hit
-- Judge: glm-5.3 `high`, third-party framing · aspects: Truth, Relevance · scale 1–5 · score line `Truth: X`, `Relevance: X`
+- Judge: glm-5.3 `max`, third-party framing · aspects: Truth, Relevance · scale 1–5 · score line `Truth: X`, `Relevance: X`
 - Calibration: same procedure as `match_analysis`
 - Model choice (§6): threshold role filter 100 %, retrieval hit all, job cited 100 % · variants Haiku `low`, `medium` · Chosen: ⬜
 - Recorded in every test: model, effort, latency, tokens incl. cache, cost, retrieval scores, embedding model
@@ -404,14 +404,14 @@ Budget per round (all cases × 3 runs, batch, cached system prompt), estimated b
 - Conversations: none
 - Test: gold standard, partial match on ≥ 2 `expected_strengths` and on `absent` terms · functional: `.docx` opens, language of the ad, job title and company present, ≤ 350 words, no placeholder · LLM assessment: Truth, Relevance
 - First decision with a real chance of error: the letter addresses the right job and the right person
-- Judge: glm-5.3 `high`, third-party framing · aspects: Truth, Relevance · scale 1–5 · score line `Truth: X`, `Relevance: X`
+- Judge: glm-5.3 `max`, third-party framing · aspects: Truth, Relevance · scale 1–5 · score line `Truth: X`, `Relevance: X`
 - Calibration: same procedure as `match_analysis`
 - Model choice (§6): threshold functional 100 %, strengths all, absent 0 · variants Haiku `medium`, `high` · Chosen: ⬜
 - Recorded in every test: model, effort, latency, tokens incl. cache, cost, word count
 
 ## 9. Judge Prompts (anchor §7)
 
-One prompt per aspect; the aspect and the levels are stated before the sample (EV-44). The judge runs at temperature 0 with glm-5.3 `high` (judge client in `backend/src/llm/clients.ts`). The code reads the last line matching `<Aspect>: X`. The prompts live in `backend/evals/<unit>/judge.ts`; each unit fills the `<sample>` slot with what its sheet names (analysis JSON as text, ad text, answer, tool trace).
+One prompt per aspect; the aspect and the levels are stated before the sample (EV-44). The judge runs at temperature 0 with glm-5.3 `max` (judge client in `backend/src/llm/clients.ts`). The code reads the last line matching `<Aspect>: X`. The prompts live in `backend/evals/<unit>/judge.ts`; each unit fills the `<sample>` slot with what its sheet names (analysis JSON as text, ad text, answer, tool trace).
 
 **Truth**
 

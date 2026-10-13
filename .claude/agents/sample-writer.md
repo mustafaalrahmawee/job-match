@@ -26,6 +26,8 @@ You write example cases for one eval unit of job-match. Another model (glm-5.3) 
 
 The task names the cases. For each one, read its latest `### <case> (round N)` entry in `review.md` and fix exactly what the reviewer raised. If the reviewer is wrong, leave the case unchanged and say why.
 
+When the task points to the whole-set review, read the latest `### About all cases` entry instead: revise the named cases for what it says about them, and write the new cases for the gaps it names as under "Writing new cases".
+
 ## Limits
 
 Write only in `backend/evals/<unit>/samples/` and `backend/evals/corpus/`. Never change `review.md`, code, or anything else.
