@@ -11,9 +11,10 @@ export function check(unit: string, fassung: string): void {
   const dir = join(EVALS, unit, 'runs', fassung)
   const metaPath = join(dir, 'meta.json')
   if (!existsSync(metaPath)) throw new Error(`${metaPath} is missing; run evals run first`)
-  const meta = readJson<{ model: string; effort: string; cost_usd?: number }>(metaPath)
+  const meta = readJson<{ model: string; effort: string; quality?: string; cost_usd?: number }>(metaPath)
 
-  const lines = [`${unit} ${fassung}: ${meta.model}, effort ${meta.effort}`, '']
+  const quality = meta.quality ? `, quality ${meta.quality}` : ''
+  const lines = [`${unit} ${fassung}: ${meta.model}, effort ${meta.effort}${quality}`, '']
   let passed = 0
   const names = sampleNames(unit)
   for (const name of names) {
