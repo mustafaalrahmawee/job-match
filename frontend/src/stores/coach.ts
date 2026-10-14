@@ -2,10 +2,12 @@ import { defineStore } from 'pinia'
 import { computed, ref, shallowRef, watch } from 'vue'
 import { ApiError, fetchApi } from '../api'
 import { readEvents } from '../sse'
-import type { ChatMessage, Conversation, Delta, Done, Role } from '../types'
+import type { ChatMessage, Conversation, ConversationSummary, Delta, Done, Effort, Quality, Role } from '../types'
 
 const BASE = '/coach/conversations'
 const LAST_KEY = 'coach_conversation'
+const QUALITY_KEY = 'coach_quality'
+const EFFORT_KEY = 'coach_effort'
 const TITLE_LENGTH = 60
 
 let nextKey = 0
@@ -16,14 +18,19 @@ function chatMessage(role: Role, text: string, stopReason: string | null = null)
 }
 
 export const useCoachStore = defineStore('coach', () => {
+  const conversations = ref<ConversationSummary[]>([])
   const conversationId = ref<number | null>(null)
   const messages = ref<ChatMessage[]>([])
+  const quality = ref<Quality>(localStorage.getItem(QUALITY_KEY) === 'extended' ? 'extended' : 'normal')
+  const effort = ref<Effort>(localStorage.getItem(EFFORT_KEY) === 'high' ? 'high' : 'low')
   const streaming = ref(false)
   const controller = shallowRef<AbortController | null>(null)
 
   watch(conversationId, (id) => {
     if (id !== null) localStorage.setItem(LAST_KEY, String(id))
   })
+  watch(quality, (value) => localStorage.setItem(QUALITY_KEY, value))
+  watch(effort, (value) => localStorage.setItem(EFFORT_KEY, value))
 
   const canRetry = computed(() => !streaming.value && messages.value.at(-1)?.role === 'user')
 
@@ -40,6 +47,23 @@ export const useCoachStore = defineStore('coach', () => {
     localStorage.removeItem(LAST_KEY)
   }
 
+  async function loadList() {
+    const response = await fetchApi(BASE)
+    conversations.value = (await response.json()) as ConversationSummary[]
+  }
+
+  async function rename(id: number, title: string) {
+    const response = await fetchApi(`${BASE}/${id}`, { method: 'PATCH', body: { title } })
+    const renamed = (await response.json()) as ConversationSummary
+    conversations.value = conversations.value.map((c) => (c.id === id ? renamed : c))
+  }
+
+  async function remove(id: number) {
+    await fetchApi(`${BASE}/${id}`, { method: 'DELETE' })
+    conversations.value = conversations.value.filter((c) => c.id !== id)
+    if (lastId() === id) startNew()
+  }
+
   async function load(id: number) {
     if (conversationId.value === id) return
     startNew()
@@ -53,6 +77,7 @@ export const useCoachStore = defineStore('coach', () => {
     const response = await fetchApi(BASE, { method: 'POST', body: { title } })
     const body = (await response.json()) as Conversation
     conversationId.value = body.id
+    conversations.value.unshift({ id: body.id, title: body.title })
     return body.id
   }
 
@@ -60,6 +85,8 @@ export const useCoachStore = defineStore('coach', () => {
     if (streaming.value) return null
     const title = text.replace(/\s+/g, ' ').trim().slice(0, TITLE_LENGTH)
     const id = conversationId.value ?? (await create(title))
+    const current = conversations.value.find((c) => c.id === id)
+    if (current) conversations.value = [current, ...conversations.value.filter((c) => c !== current)]
     messages.value.push(chatMessage('user', text))
     return stream(`${BASE}/${id}/messages`, { content: text })
   }
@@ -69,14 +96,18 @@ export const useCoachStore = defineStore('coach', () => {
     return stream(`${BASE}/${conversationId.value}/retry`)
   }
 
-  async function stream(path: string, body?: unknown): Promise<string | null> {
+  async function stream(path: string, body: object = {}): Promise<string | null> {
     streaming.value = true
     const abort = new AbortController()
     controller.value = abort
     messages.value.push(chatMessage('assistant', ''))
     const answer = messages.value.at(-1)!
     try {
-      const response = await fetchApi(path, { method: 'POST', body, signal: abort.signal })
+      const response = await fetchApi(path, {
+        method: 'POST',
+        body: { ...body, quality: quality.value, effort: effort.value },
+        signal: abort.signal,
+      })
       await readEvents(response.body!, (event, data) => {
         if (event === 'delta') answer.text += (data as Delta).text
         if (event === 'error') throw new ApiError(500)
@@ -99,13 +130,19 @@ export const useCoachStore = defineStore('coach', () => {
   }
 
   return {
+    conversations,
     conversationId,
     messages,
+    quality,
+    effort,
     streaming,
     controller,
     canRetry,
     lastId,
     startNew,
+    loadList,
+    rename,
+    remove,
     load,
     send,
     retry,

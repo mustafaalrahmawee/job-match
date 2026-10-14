@@ -1,5 +1,5 @@
 <template>
-  <PageHeader title="Coach">
+  <PageHeader :title="title">
     <button
       type="button"
       class="flex h-8 items-center gap-2 rounded-md px-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -26,12 +26,16 @@
       </div>
 
       <template v-for="message in coach.messages" :key="message.key">
-        <div v-if="message.role === 'user'" class="flex justify-end">
+        <div v-if="message.role === 'user'" class="group flex flex-col items-end gap-1">
           <p
             class="max-w-[85%] rounded-2xl bg-secondary px-4 py-2.5 text-sm whitespace-pre-wrap text-secondary-foreground"
           >
             {{ message.text }}
           </p>
+          <CopyButton
+            :text="message.text"
+            class="md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
+          />
         </div>
         <div v-else class="flex gap-3">
           <div
@@ -49,6 +53,11 @@
             <p v-if="message.stopReason && NOTES[message.stopReason]" class="mt-1 text-xs text-muted-foreground">
               {{ NOTES[message.stopReason] }}
             </p>
+            <CopyButton
+              v-if="message.text && !(coach.streaming && message === coach.messages.at(-1))"
+              :text="message.text"
+              class="mt-1 -ml-1.5"
+            />
           </div>
         </div>
       </template>
@@ -73,50 +82,25 @@
     </div>
   </div>
 
-  <form class="shrink-0 px-4 pb-4" @submit.prevent="submit">
-    <div
-      class="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border bg-card p-2 shadow-sm focus-within:ring-2 focus-within:ring-ring/40"
-    >
-      <textarea
-        ref="input"
-        v-model="draft"
-        rows="1"
-        maxlength="10000"
-        placeholder="Nachricht an den Coach"
-        aria-label="Nachricht an den Coach"
-        class="max-h-40 min-h-9 flex-1 resize-none bg-transparent px-2 py-2 text-sm outline-none placeholder:text-muted-foreground"
-        @input="resize"
-        @keydown="onKeydown"
-      />
-      <button
-        v-if="coach.streaming"
-        type="button"
-        class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-        aria-label="Antwort anhalten"
-        title="Antwort anhalten"
-        @click="coach.controller?.abort()"
-      >
-        <Square class="size-3.5 fill-current" />
-      </button>
-      <button
-        v-else
-        type="submit"
-        :disabled="!draft.trim()"
-        class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
-        aria-label="Senden"
-        title="Senden"
-      >
-        <ArrowUp class="size-4" />
-      </button>
-    </div>
-  </form>
+  <div class="mx-auto w-full max-w-3xl shrink-0 px-4 pb-4">
+    <ChatInput
+      ref="input"
+      v-model:quality="coach.quality"
+      v-model:effort="coach.effort"
+      :streaming="coach.streaming"
+      @send="(text) => talk(() => coach.send(text))"
+      @stop="coach.controller?.abort()"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ArrowUp, RotateCcw, Sparkles, Square, SquarePen } from '@lucide/vue'
-import { nextTick, ref, useTemplateRef, watch } from 'vue'
+import { RotateCcw, Sparkles, SquarePen } from '@lucide/vue'
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiError, isAbort } from '../api'
+import ChatInput from '../components/ChatInput.vue'
+import CopyButton from '../components/CopyButton.vue'
 import MarkdownText from '../components/MarkdownText.vue'
 import PageHeader from '../components/PageHeader.vue'
 import { useCoachStore } from '../stores/coach'
@@ -124,10 +108,10 @@ import { useCoachStore } from '../stores/coach'
 const coach = useCoachStore()
 const route = useRoute()
 const router = useRouter()
-const draft = ref('')
 const error = ref<string | null>(null)
 const scroller = useTemplateRef('scroller')
 const input = useTemplateRef('input')
+const title = computed(() => coach.conversations.find((c) => c.id === coach.conversationId)?.title ?? 'Coach')
 
 const NOTES: Record<string, string> = {
   stopped: 'Angehalten',
@@ -182,28 +166,6 @@ async function talk(action: () => Promise<string | null>) {
     else if (e.status === 401) error.value = 'Bitte melde dich neu an.'
     else error.value = 'Der Coach konnte nicht antworten.'
   }
-}
-
-async function submit() {
-  const text = draft.value.trim()
-  if (!text || coach.streaming) return
-  draft.value = ''
-  resize()
-  await talk(() => coach.send(text))
-}
-
-function onKeydown(event: KeyboardEvent) {
-  if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
-    event.preventDefault()
-    void submit()
-  }
-}
-
-function resize() {
-  const el = input.value
-  if (!el) return
-  el.style.height = 'auto'
-  el.style.height = `${Math.min(el.scrollHeight, 160)}px`
 }
 
 async function newConversation() {
