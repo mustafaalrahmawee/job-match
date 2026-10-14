@@ -13,14 +13,15 @@ test('a model without a price fails loudly', () => {
   expect(() => costUsd('claude-fable-5-1', USAGE)).toThrow('No price')
 })
 
-test('the eval variant overrides model and effort of the coach request', () => {
+test('the eval variant overrides model, effort and quality of the coach request', () => {
   const messages = [{ role: 'user' as const, content: 'Hallo' }]
   const settings = { quality: 'normal', effort: 'high' } as const
-  const request = coachChatRequest(messages, settings, { model: 'claude-haiku-5-5', effort: 'low' })
+  const request = coachChatRequest(messages, settings, { model: 'claude-haiku-5-5', effort: 'low', quality: 'extended' })
   expect(request.model).toBe('claude-haiku-5-5')
-  expect(request.output_config).toEqual({ effort: 'low' })
+  expect(request).toMatchObject({ thinking: { type: 'adaptive' }, output_config: { effort: 'low' } })
   expect(coachChatRequest(messages, settings)).toMatchObject({
     model: 'claude-sonnet-5-5',
+    thinking: { type: 'between_tools' },
     output_config: { effort: 'high' },
   })
 })

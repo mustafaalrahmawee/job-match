@@ -6,7 +6,7 @@ import { run } from './run.js'
 
 const usage = `usage:
   pnpm evals review <unit> [cases...] [--all]
-  pnpm evals run <unit> <fassung> [model] [effort] [--yes]
+  pnpm evals run <unit> <fassung> [model] [effort] [--quality normal|extended] [--yes]
   pnpm evals check <unit> <fassung>`
 
 const { values, positionals } = parseArgs({
@@ -14,6 +14,7 @@ const { values, positionals } = parseArgs({
   options: {
     all: { type: 'boolean', default: false },
     yes: { type: 'boolean', default: false },
+    quality: { type: 'string' },
   },
 })
 const [command, unit, ...rest] = positionals
@@ -30,7 +31,11 @@ if (command === 'review') {
   await run(
     unit,
     fassung,
-    { model, effort: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).optional().parse(effort) },
+    {
+      model,
+      effort: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).optional().parse(effort),
+      quality: z.enum(['normal', 'extended']).optional().parse(values.quality),
+    },
     values.yes,
   )
 } else if (command === 'check' && rest[0]) {

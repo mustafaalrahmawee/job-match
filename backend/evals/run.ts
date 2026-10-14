@@ -44,9 +44,10 @@ export async function run(unit: string, fassung: string, variant: Variant, confi
     )
     const first = requests[0].params
     const effort = variant.effort ?? 'per case'
+    const quality = variant.quality ?? 'per case'
     const estimate = await estimateUsd(requests)
     console.log(
-      `${unit} ${fassung}: ${requests.length} requests, ${first.model} effort ${effort}\n` +
+      `${unit} ${fassung}: ${requests.length} requests, ${first.model} effort ${effort}, quality ${quality}\n` +
         `Estimated cost (batch): ${usd(estimate.expected)}, at most ${usd(estimate.ceiling)} if every answer hits max_tokens`,
     )
     if (!confirmed) {
@@ -60,6 +61,7 @@ export async function run(unit: string, fassung: string, variant: Variant, confi
       fassung,
       model: first.model,
       effort,
+      quality,
       max_tokens: first.max_tokens,
       system: first.system,
       requests: Object.fromEntries(
