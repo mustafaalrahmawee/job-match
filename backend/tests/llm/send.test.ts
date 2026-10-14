@@ -43,7 +43,7 @@ function client(events: object[], hangAfter = events.length): Anthropic {
   return new Anthropic({ apiKey: 'test', fetch, maxRetries: 0 })
 }
 
-const params = coachChatRequest([{ role: 'user', content: 'Hallo' }], { quality: 'normal', effort: 'low' })
+const params = coachChatRequest([{ role: 'user', content: 'Hallo' }], { quality: 'normal', effort: 'medium' })
 
 test('a finished stream returns content, stop reason and tokens', async () => {
   const texts: string[] = []

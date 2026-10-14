@@ -7,8 +7,9 @@ Claude API.
 
 **Stand:** Neustart am 11.10.2026; seit dem 12.10.2026 wird das Backend mit Express und TypeScript
 gebaut. Vorhanden sind das Fundament (Login, Logout, Health) und aus Stufe 1 der Chat mit dem Coach
-(UC-02: gestreamte Antwort, Anhalten, erneut versuchen, Verlauf gespeichert); die App wird Stufe für
-Stufe neu gebaut.
+(UC-02: gestreamte Antwort, Anhalten, erneut versuchen, Verlauf gespeichert) und die Verwaltung der
+Gespräche (UC-03: auflisten, umbenennen, löschen; Qualität Normal/Erweitert und Aufwand
+Mittel/Hoch bei jeder Nachricht); die App wird Stufe für Stufe neu gebaut.
 
 ## Dokumentation
 

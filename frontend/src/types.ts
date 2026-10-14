@@ -16,7 +16,7 @@ export type ConversationSummary = { id: number; title: string }
 
 export type Quality = 'normal' | 'extended'
 
-export type Effort = 'low' | 'high'
+export type Effort = 'medium' | 'high'
 
 export type Delta = { text: string }
 

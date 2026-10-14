@@ -10,7 +10,7 @@ export type ConversationTitleInput = z.infer<typeof conversationTitleSchema>
 
 export const chatSettingsSchema = z.object({
   quality: z.enum(['normal', 'extended']),
-  effort: z.enum(['low', 'high']),
+  effort: z.enum(['medium', 'high']),
 })
 
 export type ChatSettingsInput = z.infer<typeof chatSettingsSchema>
