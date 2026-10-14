@@ -11,7 +11,7 @@ Checked is each sample, not the model: is the case fair, is the gold solution (`
   - `group` – `typical`, `edge` or `hard`
   - `focus` – one sentence: what the case tests
   - `messages` – the conversation, `[{"role": "user" | "assistant", "content": "..."}]`; it ends with a user message; earlier turns are a scripted history (canned conversation)
-  - `quality` – `normal` or `extended`; `effort` – `low` or `high`: the parameters the applicant chose (UC-03)
+  - `quality` – `normal` or `extended`; `effort` – `medium` or `high`: the parameters the applicant chose (UC-03)
   - `language` – ISO 639-1 code of the language the answer must use, which is the language of the last user message; any language an applicant in Germany might write in, e.g. `de`, `en`, `ar`, `tr`, `uk`
   - `declines_scope` – `true` when the coach should name its limit instead of answering (tax or legal advice for an individual case, medical questions); otherwise `false`
   - `forbidden` – phrases that must not appear in the answer, e.g. what an injected instruction asks for, or a claim to know the applicant's CV; `[]` when none

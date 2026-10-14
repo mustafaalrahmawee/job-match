@@ -8,7 +8,7 @@ let headers: { Authorization: string }
 
 type SseEvent = { event: string; data: Record<string, unknown> }
 
-const SETTINGS = { quality: 'normal', effort: 'low' }
+const SETTINGS = { quality: 'normal', effort: 'medium' }
 
 beforeEach(async () => {
   headers = await bearerFor(auth, await createAnna(auth))
@@ -119,9 +119,9 @@ test('the request carries the coach prompt and the whole history', async () => {
 test('quality and effort reach the request and are stored with the answer', async () => {
   const id = await newConversation()
   const cases = [
-    [{ quality: 'normal', effort: 'low' }, { type: 'between_tools' }, 'medium'],
+    [{ quality: 'normal', effort: 'medium' }, { type: 'between_tools' }, 'medium'],
     [{ quality: 'normal', effort: 'high' }, { type: 'between_tools' }, 'high'],
-    [{ quality: 'extended', effort: 'low' }, { type: 'adaptive' }, 'medium'],
+    [{ quality: 'extended', effort: 'medium' }, { type: 'adaptive' }, 'medium'],
     [{ quality: 'extended', effort: 'high' }, { type: 'adaptive' }, 'high'],
   ] as const
 
@@ -139,8 +139,8 @@ test('quality and effort must be sent explicitly', async () => {
     {},
     { quality: 'normal' },
     { effort: 'high' },
-    { quality: 'max', effort: 'low' },
-    { quality: 'normal', effort: 'medium' },
+    { quality: 'max', effort: 'medium' },
+    { quality: 'normal', effort: 'low' },
   ]) {
     expect((await send(id, 'Hallo', settings)).status).toBe(422)
   }

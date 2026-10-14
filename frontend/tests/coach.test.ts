@@ -175,17 +175,17 @@ test('quality and effort go with every message and are remembered', async () => 
   vi.stubGlobal('fetch', fetch)
   const coach = useCoachStore()
   coach.conversationId = 7
-  expect([coach.quality, coach.effort]).toEqual(['normal', 'low'])
+  expect([coach.quality, coach.effort]).toEqual(['extended', 'medium'])
 
   await expect(coach.send('Hallo')).rejects.toBeInstanceOf(ApiError)
-  coach.quality = 'extended'
+  coach.quality = 'normal'
   coach.effort = 'high'
   await coach.retry()
 
-  expect(JSON.parse(fetch.mock.calls[0]![1].body as string)).toEqual({ content: 'Hallo', quality: 'normal', effort: 'low' })
-  expect(JSON.parse(fetch.mock.calls[1]![1].body as string)).toEqual({ quality: 'extended', effort: 'high' })
+  expect(JSON.parse(fetch.mock.calls[0]![1].body as string)).toEqual({ content: 'Hallo', quality: 'extended', effort: 'medium' })
+  expect(JSON.parse(fetch.mock.calls[1]![1].body as string)).toEqual({ quality: 'normal', effort: 'high' })
   setActivePinia(createPinia())
-  expect([useCoachStore().quality, useCoachStore().effort]).toEqual(['extended', 'high'])
+  expect([useCoachStore().quality, useCoachStore().effort]).toEqual(['normal', 'high'])
 })
 
 test('conversations are listed, renamed and deleted', async () => {

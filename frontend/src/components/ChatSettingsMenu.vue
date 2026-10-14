@@ -71,7 +71,7 @@ const QUALITIES = [
 ] as const
 
 const EFFORTS = [
-  { value: 'low', label: 'Niedrig', hint: 'Knapp und schnell' },
+  { value: 'medium', label: 'Mittel', hint: 'Schneller, reicht für die meisten Fragen' },
   { value: 'high', label: 'Hoch', hint: 'Gründlicher, dauert länger' },
 ] as const
 

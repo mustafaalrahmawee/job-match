@@ -21,8 +21,8 @@ export const useCoachStore = defineStore('coach', () => {
   const conversations = ref<ConversationSummary[]>([])
   const conversationId = ref<number | null>(null)
   const messages = ref<ChatMessage[]>([])
-  const quality = ref<Quality>(localStorage.getItem(QUALITY_KEY) === 'extended' ? 'extended' : 'normal')
-  const effort = ref<Effort>(localStorage.getItem(EFFORT_KEY) === 'high' ? 'high' : 'low')
+  const quality = ref<Quality>(localStorage.getItem(QUALITY_KEY) === 'normal' ? 'normal' : 'extended')
+  const effort = ref<Effort>(localStorage.getItem(EFFORT_KEY) === 'high' ? 'high' : 'medium')
   const streaming = ref(false)
   const controller = shallowRef<AbortController | null>(null)
 

@@ -54,7 +54,7 @@ Sixteen use cases, ordered by stage; after stage 3 (UC-01 to UC-09) the app is a
 | --- | --- | --- | --- | --- |
 | UC-01 | Applicant | Log in and log out | Bearer token; logout revokes it; wrong email and wrong password give the same answer | 1 |
 | UC-02 | Applicant | Chat with the career coach | Streamed answer, stop at any time, retry on error, history saved | 1 |
-| UC-03 | Applicant | Manage conversations and choose quality and effort | List, rename, delete; Normal/Extended, Low/High sent explicitly | 1 |
+| UC-03 | Applicant | Manage conversations and choose quality and effort | List, rename, delete; Normal/Extended, Medium/High sent explicitly | 1 |
 | UC-04 | Applicant | Upload a CV as PDF (German or English) | Analysed once; status changes from "processing" to "ready"; role suggested from the fixed list, confirmed or changed | 2 |
 | UC-05 | Applicant | Upload a new version, reactivate or delete an old one | New version becomes active, old one is archived; reactivation reuses the stored analysis; deletion removes analysis and match results, keeps applications, chats and trainings | 2 |
 | UC-06 | Applicant | Ask the coach about the own CV | Coach knows the analysis of the active version without attachments | 2 |
