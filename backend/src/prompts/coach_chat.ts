@@ -1,9 +1,16 @@
-import type { MessageCreateParamsNonStreaming, MessageParam, OutputConfig } from '@anthropic-ai/sdk/resources/messages'
+import type {
+  MessageCreateParamsNonStreaming,
+  MessageParam,
+  OutputConfig,
+  ThinkingConfigParam,
+} from '@anthropic-ai/sdk/resources/messages'
 
 /**
  * Prompt unit coach_chat: advice conversation, multi-turn chat.
  * Profile: medium text, low abstraction, context from the conversation only (no CV before stage 2),
  * stateful. Surface: rendered markdown in the coach chat panel. Urgency: medium (streamed).
+ * Parameters chosen by the applicant (UC-03): quality normal = no thinking (between_tools), extended =
+ * adaptive thinking; effort low = medium (the measured floor), high = high.
  * Slots: history (indirect, all earlier turns of the conversation, unbounded until stage 6),
  * live turn (direct, the last user message).
  * Stop: one coach reply, stop reason end_turn. Enforced in code: stop reason stored, empty and
@@ -11,8 +18,23 @@ import type { MessageCreateParamsNonStreaming, MessageParam, OutputConfig } from
  */
 
 export const COACH_CHAT_MODEL = 'claude-sonnet-5-5'
-export const COACH_CHAT_EFFORT = 'medium'
 export const COACH_CHAT_MAX_TOKENS = 8000
+
+export const COACH_CHAT_THINKING = {
+  normal: { type: 'between_tools' },
+  extended: { type: 'adaptive' },
+} as const satisfies Record<string, ThinkingConfigParam>
+
+export const COACH_CHAT_EFFORTS = {
+  low: 'medium',
+  high: 'high',
+} as const satisfies Record<string, OutputConfig['effort']>
+
+export type Quality = keyof typeof COACH_CHAT_THINKING
+
+export type Effort = keyof typeof COACH_CHAT_EFFORTS
+
+export type ChatSettings = { quality: Quality; effort: Effort }
 
 export const COACH_CHAT_SYSTEM = `Dies ist das Protokoll eines Karriere-Coachings in der App job-match: Eine Person, die sich in Deutschland bewirbt, bespricht mit ihrem Coach Bewerbungsunterlagen, Stellensuche, Vorstellungsgespräche und Gehaltsverhandlung. Der Coach antwortet auf die letzte Nachricht. Das Coaching umfasst alles rund um Bewerbung und Berufswechsel; bei Steuer-, Rechts- oder Gesundheitsfragen zum eigenen Fall nennt der Coach kurz die Grenze, verweist auf die passende Fachstelle und bietet an, was er für die Bewerbung beitragen kann.
 
@@ -22,12 +44,14 @@ export type Variant = { model?: string; effort?: OutputConfig['effort'] }
 
 export function coachChatRequest(
   messages: MessageParam[],
-  { model = COACH_CHAT_MODEL, effort = COACH_CHAT_EFFORT }: Variant = {},
+  { quality, effort }: ChatSettings,
+  variant: Variant = {},
 ): MessageCreateParamsNonStreaming {
   return {
-    model,
+    model: variant.model ?? COACH_CHAT_MODEL,
     max_tokens: COACH_CHAT_MAX_TOKENS,
-    output_config: { effort },
+    thinking: COACH_CHAT_THINKING[quality],
+    output_config: { effort: variant.effort ?? COACH_CHAT_EFFORTS[effort] },
     system: COACH_CHAT_SYSTEM,
     messages,
   }

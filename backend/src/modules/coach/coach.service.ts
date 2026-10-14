@@ -1,7 +1,7 @@
 import type { ContentBlockParam, MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import type { Conversation, Message, Prisma, PrismaClient } from '../../generated/prisma/client.js'
 import type { SendStream, StreamHandlers, StreamResult } from '../../llm/send.js'
-import { COACH_CHAT_EFFORT, COACH_CHAT_MODEL, coachChatRequest } from '../../prompts/coach_chat.js'
+import { type ChatSettings, coachChatRequest } from '../../prompts/coach_chat.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
 
 export type ConversationWithMessages = Conversation & { messages: Message[] }
@@ -20,6 +20,21 @@ export class CoachService {
     return this.prisma.conversation.create({ data: { userId, title } })
   }
 
+  listConversations(userId: number): Promise<Conversation[]> {
+    return this.prisma.conversation.findMany({ where: { userId }, orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }] })
+  }
+
+  async renameConversation(userId: number, id: number, title: string): Promise<Conversation> {
+    const { count } = await this.prisma.conversation.updateMany({ where: { id, userId }, data: { title } })
+    if (!count) throw new NotFoundError('Conversation not found')
+    return this.prisma.conversation.findUniqueOrThrow({ where: { id } })
+  }
+
+  async deleteConversation(userId: number, id: number): Promise<void> {
+    const { count } = await this.prisma.conversation.deleteMany({ where: { id, userId } })
+    if (!count) throw new NotFoundError('Conversation not found')
+  }
+
   async getConversation(userId: number, id: number): Promise<ConversationWithMessages> {
     const conversation = await this.prisma.conversation.findFirst({
       where: { id, userId },
@@ -34,6 +49,7 @@ export class CoachService {
     const message = await this.prisma.message.create({
       data: { conversationId: id, role: 'user', content: [{ type: 'text', text }] },
     })
+    await this.prisma.conversation.update({ where: { id }, data: { updatedAt: message.createdAt } })
     return [...conversation.messages, message]
   }
 
@@ -43,12 +59,18 @@ export class CoachService {
     return messages
   }
 
-  async reply(conversationId: number, history: Message[], handlers: StreamHandlers): Promise<Reply> {
+  async reply(
+    conversationId: number,
+    history: Message[],
+    settings: ChatSettings,
+    handlers: StreamHandlers,
+  ): Promise<Reply> {
     const messages: MessageParam[] = history.map((message) => ({
       role: message.role,
       content: message.content as unknown as ContentBlockParam[],
     }))
-    const result = await this.send(coachChatRequest(messages), handlers)
+    const params = coachChatRequest(messages, settings)
+    const result = await this.send(params, handlers)
     if (result.stopReason === 'refusal') {
       console.warn(`Coach refusal in conversation ${conversationId}: ${result.stopDetails?.category ?? 'no category'}`)
       return { message: null, stopReason: result.stopReason }
@@ -63,8 +85,9 @@ export class CoachService {
         conversationId,
         role: 'assistant',
         content: result.content as unknown as Prisma.InputJsonArray,
-        model: COACH_CHAT_MODEL,
-        effort: COACH_CHAT_EFFORT,
+        model: params.model,
+        effort: params.output_config?.effort,
+        quality: settings.quality,
         stopReason: result.stopReason,
         inputTokens: result.inputTokens,
         outputTokens: result.outputTokens,

@@ -2,13 +2,20 @@ import { z } from 'zod'
 
 export const conversationIdSchema = z.coerce.number().int().positive()
 
-export const createConversationSchema = z.object({
+export const conversationTitleSchema = z.object({
   title: z.string().trim().min(1).max(200),
 })
 
-export type CreateConversationInput = z.infer<typeof createConversationSchema>
+export type ConversationTitleInput = z.infer<typeof conversationTitleSchema>
 
-export const sendMessageSchema = z.object({
+export const chatSettingsSchema = z.object({
+  quality: z.enum(['normal', 'extended']),
+  effort: z.enum(['low', 'high']),
+})
+
+export type ChatSettingsInput = z.infer<typeof chatSettingsSchema>
+
+export const sendMessageSchema = chatSettingsSchema.extend({
   content: z.string().trim().min(1).max(10000),
 })
 
@@ -23,6 +30,14 @@ export const messageSchema = z.object({
 })
 
 export type MessageOutput = z.infer<typeof messageSchema>
+
+export const conversationSummarySchema = z.object({
+  id: z.int(),
+  title: z.string(),
+  updated_at: z.date(),
+})
+
+export type ConversationSummaryOutput = z.infer<typeof conversationSummarySchema>
 
 export const conversationSchema = z.object({
   id: z.int(),

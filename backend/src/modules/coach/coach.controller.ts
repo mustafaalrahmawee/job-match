@@ -3,10 +3,12 @@ import type { RequestHandler, Response } from 'express'
 import type { StreamHandlers } from '../../llm/send.js'
 import { authOf } from '../../shared/auth.middleware.js'
 import {
+  chatSettingsSchema,
   conversationIdSchema,
-  createConversationSchema,
+  conversationTitleSchema,
   sendMessageSchema,
   type ConversationOutput,
+  type ConversationSummaryOutput,
   type MessageOutput,
 } from './coach.schemas.js'
 import type { CoachService, Reply } from './coach.service.js'
@@ -14,8 +16,19 @@ import type { CoachService, Reply } from './coach.service.js'
 export class CoachController {
   constructor(private readonly coach: CoachService) { }
 
+  list: RequestHandler = async (req, res) => {
+    const conversations = await this.coach.listConversations(authOf(req).user.id)
+    res.json(
+      conversations.map((conversation) => ({
+        id: conversation.id,
+        title: conversation.title,
+        updated_at: conversation.updatedAt,
+      })) satisfies ConversationSummaryOutput[],
+    )
+  }
+
   create: RequestHandler = async (req, res) => {
-    const { title } = createConversationSchema.parse(req.body)
+    const { title } = conversationTitleSchema.parse(req.body)
     const conversation = await this.coach.createConversation(authOf(req).user.id, title)
     res.status(201).json({
       id: conversation.id,
@@ -39,17 +52,35 @@ export class CoachController {
     res.json({ id: conversation.id, title: conversation.title, messages } satisfies ConversationOutput)
   }
 
+  rename: RequestHandler = async (req, res) => {
+    const id = conversationIdSchema.parse(req.params.id)
+    const { title } = conversationTitleSchema.parse(req.body)
+    const conversation = await this.coach.renameConversation(authOf(req).user.id, id, title)
+    res.json({
+      id: conversation.id,
+      title: conversation.title,
+      updated_at: conversation.updatedAt,
+    } satisfies ConversationSummaryOutput)
+  }
+
+  remove: RequestHandler = async (req, res) => {
+    const id = conversationIdSchema.parse(req.params.id)
+    await this.coach.deleteConversation(authOf(req).user.id, id)
+    res.status(204).end()
+  }
+
   sendMessage: RequestHandler = async (req, res) => {
     const id = conversationIdSchema.parse(req.params.id)
-    const { content } = sendMessageSchema.parse(req.body)
+    const { content, ...settings } = sendMessageSchema.parse(req.body)
     const history = await this.coach.addUserMessage(authOf(req).user.id, id, content)
-    await streamReply(res, (handlers) => this.coach.reply(id, history, handlers))
+    await streamReply(res, (handlers) => this.coach.reply(id, history, settings, handlers))
   }
 
   retry: RequestHandler = async (req, res) => {
     const id = conversationIdSchema.parse(req.params.id)
+    const settings = chatSettingsSchema.parse(req.body)
     const history = await this.coach.unansweredHistory(authOf(req).user.id, id)
-    await streamReply(res, (handlers) => this.coach.reply(id, history, handlers))
+    await streamReply(res, (handlers) => this.coach.reply(id, history, settings, handlers))
   }
 }
 

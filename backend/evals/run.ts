@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { MessageCreateParamsNonStreaming, MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import { costUsd } from '../src/llm/costs.js'
-import { coachChatRequest, type Variant } from '../src/prompts/coach_chat.js'
+import { type ChatSettings, coachChatRequest, type Variant } from '../src/prompts/coach_chat.js'
 import { type BatchRequest, claudeForBatches, collectBatch, createBatch } from './batch.js'
 import { countWords, type RunRecord } from './checks.js'
 
@@ -13,7 +13,8 @@ export const RUNS = [1, 2, 3]
 const OUTPUT_GUESS = 1500
 
 const REQUESTS: Record<string, (gold: Record<string, unknown>, variant: Variant) => MessageCreateParamsNonStreaming> = {
-  coach_chat: (gold, variant) => coachChatRequest(gold.messages as MessageParam[], variant),
+  coach_chat: (gold, variant) =>
+    coachChatRequest(gold.messages as MessageParam[], { quality: gold.quality, effort: gold.effort } as ChatSettings, variant),
 }
 
 export function sampleNames(unit: string): string[] {
@@ -34,14 +35,18 @@ export async function run(unit: string, fassung: string, variant: Variant, confi
   const metaPath = join(dir, 'meta.json')
 
   if (!existsSync(metaPath)) {
-    const requests = sampleNames(unit).flatMap((name) => {
-      const params = build(readJson(join(EVALS, unit, 'samples', name, 'gold.json')), variant)
-      return RUNS.map((n): BatchRequest => ({ custom_id: `${name}--${n}`, params }))
-    })
+    const cases = sampleNames(unit).map((name) => ({
+      name,
+      params: build(readJson(join(EVALS, unit, 'samples', name, 'gold.json')), variant),
+    }))
+    const requests = cases.flatMap(({ name, params }) =>
+      RUNS.map((n): BatchRequest => ({ custom_id: `${name}--${n}`, params })),
+    )
     const first = requests[0].params
+    const effort = variant.effort ?? 'per case'
     const estimate = await estimateUsd(requests)
     console.log(
-      `${unit} ${fassung}: ${requests.length} requests, ${first.model} effort ${first.output_config?.effort}\n` +
+      `${unit} ${fassung}: ${requests.length} requests, ${first.model} effort ${effort}\n` +
         `Estimated cost (batch): ${usd(estimate.expected)}, at most ${usd(estimate.ceiling)} if every answer hits max_tokens`,
     )
     if (!confirmed) {
@@ -54,9 +59,15 @@ export async function run(unit: string, fassung: string, variant: Variant, confi
       unit,
       fassung,
       model: first.model,
-      effort: first.output_config?.effort ?? null,
+      effort,
       max_tokens: first.max_tokens,
       system: first.system,
+      requests: Object.fromEntries(
+        cases.map(({ name, params }) => [
+          name,
+          { thinking: params.thinking?.type ?? null, effort: params.output_config?.effort ?? null },
+        ]),
+      ),
       runs: RUNS.length,
       batch_id: batchId,
       created_at: new Date().toISOString(),
@@ -109,6 +120,7 @@ async function estimateUsd(requests: BatchRequest[]): Promise<{ expected: number
       model: params.model,
       system: params.system,
       messages: params.messages,
+      thinking: params.thinking,
       output_config: params.output_config,
     })
     const usage = { input_tokens, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
