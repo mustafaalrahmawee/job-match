@@ -42,7 +42,7 @@ The core of the domain is the chain CV version → analysis (once, stored) → a
 | InterviewSession | A written interview training for a job | question_count, difficulty, status, report | belongs to a user and a job; has many turns |
 | InterviewTurn | One question, answer and grade | question, answer, score, feedback | belongs to an interview session |
 | Conversation | A chat with the coach | title, user_id | has many messages |
-| Message | One turn in a chat | role, content (content blocks), model, effort, stop_reason, input_tokens, output_tokens | belongs to a conversation |
+| Message | One turn in a chat | role, content (content blocks), model, effort, quality, stop_reason, input_tokens, output_tokens | belongs to a conversation |
 | Document | Generated file, e.g. a cover letter | kind, file_id, file_name | belongs to an application |
 | Appointment | An interview date | starts_at, calendar_event_id | belongs to an application |
 

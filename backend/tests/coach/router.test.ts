@@ -1,12 +1,14 @@
 import request from 'supertest'
 import { beforeEach, expect, test } from 'vitest'
-import { COACH_CHAT_EFFORT, COACH_CHAT_MODEL, COACH_CHAT_SYSTEM } from '../../src/prompts/coach_chat.js'
+import { COACH_CHAT_MODEL, COACH_CHAT_SYSTEM } from '../../src/prompts/coach_chat.js'
 import { bearerFor, createAnna, streamedText, useTestDatabase } from '../helpers.js'
 
 const { app, auth, prisma, model } = useTestDatabase()
 let headers: { Authorization: string }
 
 type SseEvent = { event: string; data: Record<string, unknown> }
+
+const SETTINGS = { quality: 'normal', effort: 'low' }
 
 beforeEach(async () => {
   headers = await bearerFor(auth, await createAnna(auth))
@@ -34,8 +36,15 @@ async function newConversation(): Promise<number> {
   return (response.body as { id: number }).id
 }
 
-function send(id: number, content: string) {
-  return request(app).post(`/api/v1/coach/conversations/${id}/messages`).set(headers).send({ content })
+function send(id: number, content: string, settings: object = SETTINGS) {
+  return request(app)
+    .post(`/api/v1/coach/conversations/${id}/messages`)
+    .set(headers)
+    .send({ content, ...settings })
+}
+
+function retry(id: number, settings: object = SETTINGS) {
+  return request(app).post(`/api/v1/coach/conversations/${id}/retry`).set(headers).send(settings)
 }
 
 test('a new conversation has its title and no messages', async () => {
@@ -84,7 +93,8 @@ test('a message streams the answer and saves both turns', async () => {
   const stored = await prisma.message.findFirstOrThrow({ where: { role: 'assistant' } })
   expect(stored).toMatchObject({
     model: COACH_CHAT_MODEL,
-    effort: COACH_CHAT_EFFORT,
+    effort: 'medium',
+    quality: 'normal',
     inputTokens: 120,
     outputTokens: 30,
   })
@@ -98,13 +108,83 @@ test('the request carries the coach prompt and the whole history', async () => {
   const last = model.requests.at(-1)!
   expect(last).toMatchObject({
     model: COACH_CHAT_MODEL,
-    output_config: { effort: COACH_CHAT_EFFORT },
     system: COACH_CHAT_SYSTEM,
   })
   expect(last.messages.map((m) => m.role)).toEqual(['user', 'assistant', 'user'])
   expect(last.messages.at(-1)!.content).toEqual([
     { type: 'text', text: 'Und wie lang soll ein Anschreiben sein?' },
   ])
+})
+
+test('quality and effort reach the request and are stored with the answer', async () => {
+  const id = await newConversation()
+  const cases = [
+    [{ quality: 'normal', effort: 'low' }, { type: 'between_tools' }, 'medium'],
+    [{ quality: 'normal', effort: 'high' }, { type: 'between_tools' }, 'high'],
+    [{ quality: 'extended', effort: 'low' }, { type: 'adaptive' }, 'medium'],
+    [{ quality: 'extended', effort: 'high' }, { type: 'adaptive' }, 'high'],
+  ] as const
+
+  for (const [settings, thinking, effort] of cases) {
+    await send(id, 'Wie lang soll ein Anschreiben sein?', settings)
+    expect(model.requests.at(-1)).toMatchObject({ thinking, output_config: { effort } })
+    const stored = await prisma.message.findFirstOrThrow({ where: { role: 'assistant' }, orderBy: { id: 'desc' } })
+    expect(stored).toMatchObject({ quality: settings.quality, effort })
+  }
+})
+
+test('quality and effort must be sent explicitly', async () => {
+  const id = await newConversation()
+  for (const settings of [
+    {},
+    { quality: 'normal' },
+    { effort: 'high' },
+    { quality: 'max', effort: 'low' },
+    { quality: 'normal', effort: 'medium' },
+  ]) {
+    expect((await send(id, 'Hallo', settings)).status).toBe(422)
+  }
+  expect((await retry(id, {})).status).toBe(422)
+  expect(model.requests).toHaveLength(0)
+})
+
+test('the list shows only own conversations, last used first', async () => {
+  const first = await newConversation()
+  const second = ((await create({ title: 'Gehalt' })).body as { id: number }).id
+  await send(first, 'Hallo')
+  const ben = await auth.createUser('ben@example.com', 'auch-geheim')
+  await request(app).post('/api/v1/coach/conversations').set(await bearerFor(auth, ben)).send({ title: 'Bens Gespräch' })
+
+  const response = await request(app).get('/api/v1/coach/conversations').set(headers)
+
+  const list = response.body as { id: number }[]
+  expect(response.status).toBe(200)
+  expect(list.map((c) => c.id)).toEqual([first, second])
+  expect(list[0]).toEqual({ id: first, title: 'Anschreiben', updated_at: expect.any(String) as unknown })
+})
+
+test('a conversation can be renamed', async () => {
+  const id = await newConversation()
+  const rename = (title: string) =>
+    request(app).patch(`/api/v1/coach/conversations/${id}`).set(headers).send({ title })
+
+  const renamed = await rename('  Anschreiben für Acme ')
+  expect(renamed.status).toBe(200)
+  expect(renamed.body).toMatchObject({ id, title: 'Anschreiben für Acme' })
+  expect((await rename('   ')).status).toBe(422)
+  expect((await prisma.conversation.findUniqueOrThrow({ where: { id } })).title).toBe('Anschreiben für Acme')
+})
+
+test('a deleted conversation is gone with its messages', async () => {
+  const id = await newConversation()
+  await send(id, 'Hallo')
+
+  const deleted = await request(app).delete(`/api/v1/coach/conversations/${id}`).set(headers)
+
+  expect(deleted.status).toBe(204)
+  expect(await prisma.message.count()).toBe(0)
+  expect((await request(app).get(`/api/v1/coach/conversations/${id}`).set(headers)).status).toBe(404)
+  expect((await request(app).delete(`/api/v1/coach/conversations/${id}`).set(headers)).status).toBe(404)
 })
 
 test('a failed answer keeps the question and can be retried', async () => {
@@ -119,12 +199,12 @@ test('a failed answer keeps the question and can be retried', async () => {
   expect(await prisma.message.count({ where: { role: 'assistant' } })).toBe(0)
 
   model.answer(streamedText('Nenne eine Spanne.'))
-  const retry = await request(app).post(`/api/v1/coach/conversations/${id}/retry`).set(headers)
-  expect(events(retry.text).at(-1)!.data).toMatchObject({ message: { text: 'Nenne eine Spanne.' } })
+  const retried = await retry(id, { quality: 'extended', effort: 'high' })
+  expect(events(retried.text).at(-1)!.data).toMatchObject({ message: { text: 'Nenne eine Spanne.' } })
+  expect(model.requests.at(-1)).toMatchObject({ thinking: { type: 'adaptive' }, output_config: { effort: 'high' } })
   expect(model.requests.at(-1)!.messages).toHaveLength(1)
 
-  const again = await request(app).post(`/api/v1/coach/conversations/${id}/retry`).set(headers)
-  expect(again.status).toBe(409)
+  expect((await retry(id)).status).toBe(409)
 })
 
 test('a stopped answer is saved as far as it got', async () => {
@@ -190,12 +270,17 @@ test("another user's conversation behaves as if it did not exist", async () => {
   const write = await request(app)
     .post(`/api/v1/coach/conversations/${id}/messages`)
     .set(benHeaders)
-    .send({ content: 'Hallo' })
-  const retry = await request(app).post(`/api/v1/coach/conversations/${id}/retry`).set(benHeaders)
+    .send({ content: 'Hallo', ...SETTINGS })
+  const retried = await request(app).post(`/api/v1/coach/conversations/${id}/retry`).set(benHeaders).send(SETTINGS)
+  const rename = await request(app).patch(`/api/v1/coach/conversations/${id}`).set(benHeaders).send({ title: 'Meins' })
+  const remove = await request(app).delete(`/api/v1/coach/conversations/${id}`).set(benHeaders)
   const missing = await request(app).get('/api/v1/coach/conversations/999999').set(headers)
 
-  expect([show.status, write.status, retry.status, missing.status]).toEqual([404, 404, 404, 404])
+  expect([show.status, write.status, retried.status, rename.status, remove.status, missing.status]).toEqual([
+    404, 404, 404, 404, 404, 404,
+  ])
   expect(model.requests).toHaveLength(0)
+  expect(await prisma.conversation.findUniqueOrThrow({ where: { id } })).toMatchObject({ title: 'Anschreiben' })
 })
 
 test('the coach needs a login', async () => {
