@@ -12,6 +12,12 @@ export type ApiMessage = { id: number; role: Role; text: string; stop_reason: st
 
 export type Conversation = { id: number; title: string; messages: ApiMessage[] }
 
+export type ConversationSummary = { id: number; title: string }
+
+export type Quality = 'normal' | 'extended'
+
+export type Effort = 'low' | 'high'
+
 export type Delta = { text: string }
 
 export type Done = { message: ApiMessage | null; stop_reason: string }

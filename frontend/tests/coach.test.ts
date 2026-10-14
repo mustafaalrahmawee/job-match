@@ -166,3 +166,49 @@ test('a remembered conversation that is gone is forgotten', async () => {
 
   expect(coach.lastId()).toBeNull()
 })
+
+test('quality and effort go with every message and are remembered', async () => {
+  const fetch = vi
+    .fn()
+    .mockResolvedValueOnce(sseResponse(sse(['error', { detail: 'x' }])))
+    .mockResolvedValueOnce(sseResponse(sse(['done', DONE])))
+  vi.stubGlobal('fetch', fetch)
+  const coach = useCoachStore()
+  coach.conversationId = 7
+  expect([coach.quality, coach.effort]).toEqual(['normal', 'low'])
+
+  await expect(coach.send('Hallo')).rejects.toBeInstanceOf(ApiError)
+  coach.quality = 'extended'
+  coach.effort = 'high'
+  await coach.retry()
+
+  expect(JSON.parse(fetch.mock.calls[0]![1].body as string)).toEqual({ content: 'Hallo', quality: 'normal', effort: 'low' })
+  expect(JSON.parse(fetch.mock.calls[1]![1].body as string)).toEqual({ quality: 'extended', effort: 'high' })
+  setActivePinia(createPinia())
+  expect([useCoachStore().quality, useCoachStore().effort]).toEqual(['extended', 'high'])
+})
+
+test('conversations are listed, renamed and deleted', async () => {
+  const fetch = vi
+    .fn()
+    .mockResolvedValueOnce(new Response(JSON.stringify([{ id: 3, title: 'Gehalt' }, { id: 7, title: 'Hallo' }])))
+    .mockResolvedValueOnce(new Response(JSON.stringify({ id: 7, title: 'Anschreiben' })))
+    .mockResolvedValueOnce(new Response(null, { status: 204 }))
+  vi.stubGlobal('fetch', fetch)
+  const coach = useCoachStore()
+  coach.conversationId = 7
+
+  await coach.loadList()
+  await coach.rename(7, 'Anschreiben')
+  expect(coach.conversations.map((c) => c.title)).toEqual(['Gehalt', 'Anschreiben'])
+  expect(fetch.mock.calls[1]).toEqual([
+    '/api/v1/coach/conversations/7',
+    expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ title: 'Anschreiben' }) }),
+  ])
+
+  await coach.remove(7)
+  expect(fetch.mock.calls[2]![1]).toMatchObject({ method: 'DELETE' })
+  expect(coach.conversations.map((c) => c.id)).toEqual([3])
+  expect(coach.conversationId).toBeNull()
+  expect(coach.lastId()).toBeNull()
+})
