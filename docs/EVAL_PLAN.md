@@ -45,7 +45,7 @@ Four roles, kept apart so no model generates, takes, or grades its own test (EV-
 | --- | --- | --- | --- | --- |
 | UC-01 | Log in and log out | No | No | Vitest feature tests |
 | UC-02 | Chat with the career coach | Yes, chat turn | **Yes** – unit `coach_chat` | `evals run coach_chat`, `evals check`; git diff of `runs/` read by the maintainer |
-| UC-03 | Manage conversations, choose quality and effort | No (parameters only) | No, but **part of `coach_chat` runs** | Vitest: Normal/Extended and Low/High reach the request; `meta.json` records them |
+| UC-03 | Manage conversations, choose quality and effort | No (parameters only) | No, but **part of `coach_chat` runs** | Vitest: Normal/Extended and Medium/High reach the request; `meta.json` records them |
 | UC-04 | Upload a CV as PDF | Yes, analysis as batch | **Yes** – unit `cv_analysis`, gold standard | `evals run cv_analysis`, `evals check`: is-CV, role, positions, skills; `evals judge` for strengths, weaknesses, tips |
 | UC-05 | New version, reactivate, delete | No | No | Vitest: one active version, analysis reused, deletion keeps applications |
 | UC-06 | Ask the coach about the own CV | Yes, chat turn with analysis slot | **Yes** – `coach_chat` cases with CV | canned conversations with a gold analysis; `evals check`: expected mentions, forbidden claims; judge Truth |
@@ -294,7 +294,7 @@ Budget per round (all cases × 3 runs, batch, cached system prompt), estimated b
 - First decision with a real chance of error: answering in the wrong language, or claiming CV facts it does not have
 - Judge: glm-5.3 `max`, third-party framing ("the job-match coach") · one prompt per aspect · scale 1–5, every level described · score line `Truth: X` etc.
 - Calibration: after `match_analysis` (§5); until then judge scores are read only and the model choice rests on the functional checks
-- Model choice (§6): threshold functional 100 %, `expected_mentions` all CV cases · variants Haiku `low`, `medium`, `high`, Sonnet `low`, `medium` · Chosen: Sonnet `medium` (October 13, 2026; prompt v1, 13/13 cases with the 10 % length tolerance, closest answer 207 of 200 words, $0.0056 per case in a batch) · rejected: Sonnet `low` (13/13, but the second run close to the threshold gave 11/13: a German reply to an Arabic message and 167 of 150 words), Haiku `low` 4/13 (wrong language), Haiku `medium` 11/13 and `high` 7/13 (too long; v2 with a paragraph limit had no effect)
+- Model choice (§6): threshold functional 100 %, `expected_mentions` all CV cases · variants Haiku `low`, `medium`, `high`, Sonnet `low`, `medium` · Chosen: Sonnet `medium` (October 13, 2026; prompt v1, 13/13 cases with the 10 % length tolerance, closest answer 207 of 200 words, $0.0056 per case in a batch) · rejected: Sonnet `low` (13/13, but the second run close to the threshold gave 11/13: a German reply to an Arabic message and 167 of 150 words), Haiku `low` 4/13 (wrong language), Haiku `medium` 11/13 and `high` 7/13 (too long; v2 with a paragraph limit had no effect) · Default in the app (UC-03): Extended · Medium, i.e. adaptive thinking with `medium`, the chosen setting · Normal · Medium (`between_tools` with `medium`, run `v1-sonnet-normal-medium`, October 14, 2026) 11/13, length only (178 of 150 and 222 of 200 words), about 17 % longer and 20 % cheaper per answer than with thinking; offered as an opt-in without a prompt change, because a stricter length rule would be an absolute (AP-08)
 - Recorded in every test: model, effort, quality, latency (per batch), tokens incl. cache, cost
 
 ### Evaluation sheet — job-match CV analysis (UC-04)
@@ -553,7 +553,7 @@ backend/tests/evals/                  Vitest: checks, score-line parser, cost ta
 | Command | Stage | Does |
 | --- | --- | --- |
 | `pnpm evals review <unit> [cases...] [--all]` | 1 | Reviewer reads samples (flash with PDF or PNG where the unit needs it), appends to `review.md`, at most 3 rounds per case |
-| `pnpm evals run <unit> <fassung> [model] [effort]` | 1 | Estimates the cost, batch run 1 (writes the cache), then runs 2 and 3; missing runs are fetched on the next call; `coach_agent` and `mock` run sequentially |
+| `pnpm evals run <unit> <fassung> [model] [effort] [--quality normal\|extended]` | 1 | Estimates the cost, batch run 1 (writes the cache), then runs 2 and 3; missing runs are fetched on the next call; `coach_agent` and `mock` run sequentially |
 | `pnpm evals check <unit> <fassung>` | 1 | Functional and gold-standard checks of the unit, threshold verdict, writes `check.txt` |
 | `bash backend/evals/corpus/cvs/build.sh` | 2 | Renders the CV PDFs |
 | `bash backend/evals/corpus/ads/build.sh` | 3 | Renders the ad screenshots |
