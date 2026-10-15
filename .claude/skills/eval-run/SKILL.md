@@ -27,7 +27,7 @@ Without `--yes` the run command only counts tokens and prints the estimated cost
 3. **Ask.** Ask the user whether to start the batch for this cost. The estimate assumes a fixed number of output tokens per answer; if the unit has earlier runs, also say what the closest one really cost (`cost_usd` in its `meta.json`). Stop if the user says no.
 4. **Run.** Run the same command with `--yes` and wait until it reports the answers written and the cost.
 5. **Check.** Run the check command.
-6. **Compare.** Pick the reference run: the one named under "Chosen" in the unit's sheet in `docs/EVAL_PLAN.md` §8, otherwise the newest earlier run in `runs/`. Compare average words and output tokens from both `metrics.tsv`. Skip this step if there is no earlier run.
+6. **Compare.** Pick the reference run: the one named under "Chosen" in the unit's section in `docs/EVAL_PLAN.md` §4, otherwise the newest earlier run in `runs/`. Compare average words and output tokens from both `metrics.tsv`. Skip this step if there is no earlier run.
 7. **Report** to the user:
    - cases right in all three runs, threshold, verdict, cost
    - every failing case with its check and value as `check.txt` shows it
