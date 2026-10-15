@@ -1,6 +1,6 @@
 # job-match – App Idea
 
-As of: October 12, 2026
+As of: October 15, 2026
 
 job-match accompanies applicants from the job ad to the offer: it analyses the CV once, shows how well they fit a job, keeps every application in view and trains the interview in writing.
 
@@ -16,35 +16,31 @@ Demo scenario: a frontend developer in Germany with three years of experience up
 
 ## Roles
 
-One role is enough; everything in the app belongs to the account that created it, and a foreign record behaves as if it did not exist.
-
-| Role | Can | Cannot |
-| --- | --- | --- |
-| Applicant | Upload CVs, see jobs of their role, run matches, manage applications, train interviews, chat with the coach | See or touch another account's data |
+One role is enough: the applicant. Everything in the app belongs to the account that created it; a record of another account behaves as if it did not exist.
 
 Until go-live, accounts are created by a script; registration opens with go-live. Evals, costs and model choice are developer tools on the command line, not an admin role in the app.
 
 ## Domain Model
 
-The core of the domain is the chain CV version → analysis (once, stored) → active version with role; every other feature builds on that stored analysis instead of sending the PDF again.
+The core of the domain is the chain CV version → analysis (once, stored) → active version with role; every other feature builds on that stored analysis instead of sending the PDF again. The exact fields live in `backend/prisma/schema.prisma`.
 
 | Entity | Meaning | Key fields | Relationships |
 | --- | --- | --- | --- |
-| User | Person with a login | email, password_hash | has many CV versions, jobs, applications, conversations, interviews |
-| AuthToken | Opaque bearer token | token_hash, expires_at | belongs to a user |
-| CvVersion | Uploaded CV with its stored analysis | pdf, file_name, role, is_active, analysis (JSON), analysis_status (`none`, `running`, `ready`, `failed`), tokens | belongs to a user; has many match results; at most one active per user |
+| User | Person with a login | email, password | has many CV versions, jobs, applications, conversations, interviews |
+| AuthToken | Login token | expires_at | belongs to a user |
+| CvVersion | Uploaded CV with its stored analysis | pdf, role, is_active, analysis, analysis_status (`none`, `running`, `ready`, `failed`) | belongs to a user; has many match results; at most one active per user |
 | Role | Target role from a fixed list, e.g. "Frontend" | name | value on a CV version, not a table |
-| Job | A job ad, from the pool or saved by the user | source (`ba`, `own`), external_id, title, company, city, description, offer_type, salary, url, published_at, raw, embedded_at (when the job was last written to the vector index) | pool jobs belong to nobody; own jobs belong to a user |
-| MatchResult | How well the active version fits a job | score 0–100, strengths, gaps, tips, is_archived | belongs to a CV version and a job |
-| Application | An application for a job | status (`saved`, `applied`, `interview`, `offer`, `rejected`, `withdrawn`), cv_version_id (nullable) | belongs to a user and a job; has many status changes, notes, documents, appointments |
+| Job | A job ad, from the pool or saved by the user | source (`ba`, `own`), title, company, city, description | pool jobs belong to nobody; own jobs belong to a user |
+| MatchResult | How well the active version fits a job | score 0–100, strengths, gaps, tips | belongs to a CV version and a job |
+| Application | An application for a job | status (`saved`, `applied`, `interview`, `offer`, `rejected`, `withdrawn`) | belongs to a user and a job; has many status changes, notes, documents, appointments |
 | StatusChange | One step in the application history | status, changed_at | belongs to an application |
-| Note | Free entry on an application | content, created_at | belongs to an application |
-| InterviewSession | A written interview training for a job | question_count, difficulty, status, report | belongs to a user and a job; has many turns |
+| Note | Free entry on an application | content | belongs to an application |
+| InterviewSession | A written interview training for a job | difficulty, status, report | belongs to a user and a job; has many turns |
 | InterviewTurn | One question, answer and grade | question, answer, score, feedback | belongs to an interview session |
-| Conversation | A chat with the coach | title, user_id | has many messages |
-| Message | One turn in a chat | role, content (content blocks), model, effort, quality, stop_reason, input_tokens, output_tokens | belongs to a conversation |
-| Document | Generated file, e.g. a cover letter | kind, file_id, file_name | belongs to an application |
-| Appointment | An interview date | starts_at, calendar_event_id | belongs to an application |
+| Conversation | A chat with the coach | title | belongs to a user; has many messages |
+| Message | One turn in a chat | role, content, model, effort | belongs to a conversation |
+| Document | Generated file, e.g. a cover letter | kind, file_name | belongs to an application |
+| Appointment | An interview date | starts_at | belongs to an application |
 
 ## Use Cases
 
@@ -73,15 +69,14 @@ Sixteen use cases, ordered by stage; after stage 3 (UC-01 to UC-09) the app is a
 
 UC-04 is the most important flow; the role, the match, the recommendations, the training and the coach all depend on the stored analysis.
 
-1. The applicant drops the PDF on the Vue page; the SPA sends it via `fetch` with the bearer token to `POST /api/v1/cvs`.
-2. Express checks the token, the size (at most 5 MB) and the type (only PDF) and stores the file as the new active version; the previous version becomes archived.
-3. Express sends the PDF to Claude as a `document` block, with a cached system prompt and a JSON schema derived from the Zod schema (Structured Outputs), as a Message Batch to halve the cost.
-4. The version shows status "processing"; the SPA polls `GET /api/v1/cvs/{id}` until the batch result is in.
-5. Express validates the result against the same Zod schema, trims lists, rejects non-CVs, stores the analysis with its tokens and sets the status to "ready".
-6. The SPA shows positions, skills, education, languages, strengths, weaknesses and tips, and suggests a role from the fixed list.
-7. The applicant confirms the role or picks another one; from now on jobs, matches and the coach work only with this version and this role.
+1. The applicant uploads the PDF.
+2. The app checks size and type and stores it as the new active version; the previous version is archived.
+3. The app sends the PDF to the model for analysis; the version shows "processing".
+4. The app validates the answer, rejects non-CVs and stores the analysis; the version shows "ready".
+5. The applicant sees positions, skills, education, languages, strengths, weaknesses and tips, and a suggested role from the fixed list.
+6. The applicant confirms the role or picks another one; from now on jobs, matches and the coach work only with this version and this role.
 
-If the model stops at `max_tokens` or refuses, nothing is stored and the version shows "failed" with a reason; the applicant can retry. From stage 4 on, the coach reads the stored analysis as context in every chat and acts through tools.
+If the analysis fails, nothing is stored and the version shows "failed" with a reason; the applicant can retry.
 
 ## Coverage of Claude Topics
 
@@ -99,7 +94,7 @@ Every stage introduces one topic; the table shows where each one naturally appea
 | Context management | Compaction for long sessions, token counting before sending | UC-13 |
 | RAG | Embeddings in ChromaDB behind the `VectorStore` interface, Postgres stays the source of truth, "top 5 jobs" with reasons | UC-14 |
 | Agent Skills, Files API, MCP | Cover letter as Word file; calendar via MCP | UC-15 |
-| Eval | Example suite per prompt unit from the first prompt on; Haiku 5.5 by default, model chosen per unit by measurement; glm-5.3 as independent judge | all AI features |
+| Eval | Example suite per prompt unit from the first prompt on; model chosen per unit by measurement; glm-5.3 as independent judge | all AI features |
 
 ## Out of Scope
 
