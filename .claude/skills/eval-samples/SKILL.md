@@ -20,7 +20,7 @@ It sends each case to glm-5.3, appends the answer to `backend/evals/<unit>/revie
 
 ## Steps
 
-1. Check that `backend/evals/<unit>/review.md` exists. For `cv_analysis`, `job_extract` and `match_analysis`, check that `backend/evals/corpus/` holds the CVs or ads the unit needs; if not, stop and say so.
+1. Check that `backend/evals/<unit>/review.md` exists. For `cv_analysis` and `job_extract`, check that the corpus folder exists (`backend/evals/corpus/cvs/` or `backend/evals/corpus/ads/`); the writer fills it, so it may be empty. For `match_analysis`, check that `backend/evals/corpus/cvs/` holds CVs; if not, stop and say so.
 2. **Write.** Start the `sample-writer` subagent: "Write <n> new cases for unit <unit>." Note the case ids it reports.
 3. **Review.** Run the review command with these ids.
 4. **Sort by verdict:**
