@@ -238,6 +238,7 @@ async function logout() {
   coach.startNew()
   coach.conversations = []
   cv.version = null
+  cv.versions = []
   try {
     await auth.logout()
   } catch {

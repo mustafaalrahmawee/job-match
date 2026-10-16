@@ -35,3 +35,7 @@ export const cvVersionSchema = z.object({
 })
 
 export type CvVersionOutput = z.infer<typeof cvVersionSchema>
+
+export const cvVersionSummarySchema = cvVersionSchema.omit({ analysis: true }).extend({ active: z.boolean() })
+
+export type CvVersionSummary = z.infer<typeof cvVersionSummarySchema>

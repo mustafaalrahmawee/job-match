@@ -60,3 +60,12 @@ export type CvVersion = {
   analysis: CvAnalysis | null
   created_at: string
 }
+
+export type CvVersionSummary = {
+  id: number
+  status: AnalysisStatus
+  error: string | null
+  role: CvRole | null
+  active: boolean
+  created_at: string
+}

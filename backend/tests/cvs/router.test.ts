@@ -223,6 +223,93 @@ test('the role of an archived version cannot be changed', async () => {
   expect((await prisma.cvVersion.findUniqueOrThrow({ where: { id: first } })).role).toBeNull()
 })
 
+test('the list shows the own versions, newest first, without PDF and analysis', async () => {
+  const first = await uploadedId()
+  finish(succeeded(JSON.stringify(ANALYSIS)))
+  await active()
+  const second = await uploadedId()
+
+  const response = await request(app).get('/api/v1/cvs').set(headers)
+
+  expect(response.status).toBe(200)
+  expect(response.body).toMatchObject([
+    { id: second, status: 'running', error: null, role: null, active: true },
+    { id: first, status: 'ready', error: null, role: null, active: false },
+  ])
+  expect(Object.keys((response.body as object[])[0]).sort()).toEqual(
+    ['active', 'created_at', 'error', 'id', 'role', 'status'],
+  )
+})
+
+test('reactivating an old version reuses its stored analysis', async () => {
+  const first = await uploadedId()
+  finish(succeeded(JSON.stringify(ANALYSIS)))
+  await active()
+  await request(app).patch(`/api/v1/cvs/${first}`).set(headers).send({ role: 'Fullstack' })
+  const second = await uploadedId()
+
+  const response = await request(app).post(`/api/v1/cvs/${first}/activation`).set(headers)
+
+  expect(response.status).toBe(200)
+  expect(response.body).toMatchObject({ id: first, status: 'ready', role: 'Fullstack' })
+  expect((response.body as { analysis: CvAnalysis }).analysis.suggested_role).toBe('Frontend')
+  expect(batches.requests).toHaveLength(2)
+  expect((await prisma.cvVersion.findUniqueOrThrow({ where: { id: second } })).isActive).toBe(false)
+  expect(((await active()).body as { id: number }).id).toBe(first)
+})
+
+test('a reactivated version that is still running gets its batch result', async () => {
+  const first = await uploadedId()
+  const firstBatch = batches.requests[0].batchId
+  await upload()
+
+  await request(app).post(`/api/v1/cvs/${first}/activation`).set(headers)
+  batches.results.set(firstBatch, succeeded(JSON.stringify(ANALYSIS)))
+
+  expect((await active()).body).toMatchObject({ id: first, status: 'ready' })
+  expect(batches.requests).toHaveLength(2)
+})
+
+test('deleting an old version removes it with its analysis and keeps chats', async () => {
+  const first = await uploadedId()
+  finish(succeeded(JSON.stringify(ANALYSIS)))
+  await active()
+  const second = await uploadedId()
+  const user = await prisma.user.findFirstOrThrow()
+  await prisma.conversation.create({ data: { userId: user.id, title: 'Gehalt' } })
+
+  const response = await request(app).delete(`/api/v1/cvs/${first}`).set(headers)
+
+  expect(response.status).toBe(204)
+  expect((await prisma.cvVersion.findMany()).map((v) => v.id)).toEqual([second])
+  expect(await prisma.conversation.count()).toBe(1)
+})
+
+test('the active version cannot be deleted', async () => {
+  const id = await uploadedId()
+
+  const response = await request(app).delete(`/api/v1/cvs/${id}`).set(headers)
+
+  expect(response.status).toBe(409)
+  expect(await prisma.cvVersion.count()).toBe(1)
+})
+
+test('activating and deleting the same version at once never fails with 500', async () => {
+  const first = await uploadedId()
+  await upload()
+
+  const [activation, deletion] = await Promise.all([
+    request(app).post(`/api/v1/cvs/${first}/activation`).set(headers),
+    request(app).delete(`/api/v1/cvs/${first}`).set(headers),
+  ])
+
+  expect([
+    [200, 409],
+    [404, 204],
+  ]).toContainEqual([activation.status, deletion.status])
+  expect(await prisma.cvVersion.count({ where: { isActive: true } })).toBe(1)
+})
+
 test('only PDF files are accepted', async () => {
   expect((await upload(Buffer.from('Hallo'), 'application/pdf')).status).toBe(422)
   expect((await upload(PDF, 'text/plain')).status).toBe(422)
@@ -256,5 +343,11 @@ test('the CV of another account behaves as if it did not exist', async () => {
   expect((await request(app).get('/api/v1/cvs/active').set(benHeaders)).status).toBe(404)
   expect((await request(app).post(`/api/v1/cvs/${id}/analysis`).set(benHeaders)).status).toBe(404)
   expect((await request(app).patch(`/api/v1/cvs/${id}`).set(benHeaders).send({ role: 'Data' })).status).toBe(404)
-  expect(batches.requests).toHaveLength(1)
+  expect((await request(app).get('/api/v1/cvs').set(benHeaders)).body).toEqual([])
+  expect((await request(app).post(`/api/v1/cvs/${id}/activation`).set(benHeaders)).status).toBe(404)
+  expect((await request(app).delete(`/api/v1/cvs/${id}`).set(benHeaders)).status).toBe(404)
+  await upload()
+  expect((await request(app).delete(`/api/v1/cvs/${id}`).set(benHeaders)).status).toBe(404)
+  expect((await prisma.cvVersion.findUniqueOrThrow({ where: { id } })).isActive).toBe(false)
+  expect(batches.requests).toHaveLength(2)
 })
