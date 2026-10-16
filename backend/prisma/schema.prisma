@@ -17,6 +17,7 @@ model User {
   createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz
   tokens        AuthToken[]
   conversations Conversation[]
+  cvVersions    CvVersion[]
 
   @@map("users")
 }
@@ -67,4 +68,34 @@ model Message {
 
   @@index([conversationId])
   @@map("messages")
+}
+
+enum AnalysisStatus {
+  none
+  running
+  ready
+  failed
+}
+
+model CvVersion {
+  id               Int            @id @default(autoincrement())
+  userId           Int            @map("user_id")
+  pdf              Bytes
+  role             String?        @db.VarChar(32)
+  isActive         Boolean        @default(true) @map("is_active")
+  analysis         Json?
+  analysisStatus   AnalysisStatus @default(none) @map("analysis_status")
+  analysisError    String?        @map("analysis_error") @db.VarChar(32)
+  batchId          String?        @map("batch_id") @db.VarChar(64)
+  model            String?        @db.VarChar(64)
+  effort           String?        @db.VarChar(16)
+  inputTokens      Int?           @map("input_tokens")
+  outputTokens     Int?           @map("output_tokens")
+  cacheReadTokens  Int?           @map("cache_read_tokens")
+  cacheWriteTokens Int?           @map("cache_write_tokens")
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("cv_versions")
 }

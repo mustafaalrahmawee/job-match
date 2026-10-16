@@ -31,6 +31,10 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, _ne
     res.status(422).json({ detail: 'Invalid JSON body' })
     return
   }
+  if (error instanceof Error && 'type' in error && error.type === 'entity.too.large') {
+    res.status(413).json({ detail: 'The request body is too large' })
+    return
+  }
   if (error instanceof UnauthorizedError) {
     res.status(401).set('WWW-Authenticate', 'Bearer').json({ detail: error.message })
     return
