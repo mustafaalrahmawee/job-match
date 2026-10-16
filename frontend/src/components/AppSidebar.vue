@@ -134,11 +134,12 @@
 </template>
 
 <script setup lang="ts">
-import { House, LogOut, MessageSquare, PanelLeft, Pencil, Trash2 } from '@lucide/vue'
+import { FileText, House, LogOut, MessageSquare, PanelLeft, Pencil, Trash2 } from '@lucide/vue'
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useCoachStore } from '../stores/coach'
+import { useCvStore } from '../stores/cv'
 import { useLayoutStore } from '../stores/layout'
 import type { ConversationSummary } from '../types'
 import AppDialog from './AppDialog.vue'
@@ -147,10 +148,12 @@ import AppLogo from './AppLogo.vue'
 const NAV = [
   { to: '/', label: 'Start', icon: House, exact: true },
   { to: '/coach', label: 'Coach', icon: MessageSquare, exact: false },
+  { to: '/cv', label: 'Lebenslauf', icon: FileText, exact: false },
 ]
 
 const auth = useAuthStore()
 const coach = useCoachStore()
+const cv = useCvStore()
 const layout = useLayoutStore()
 const route = useRoute()
 const router = useRouter()
@@ -234,6 +237,7 @@ async function confirmDelete() {
 async function logout() {
   coach.startNew()
   coach.conversations = []
+  cv.version = null
   try {
     await auth.logout()
   } catch {

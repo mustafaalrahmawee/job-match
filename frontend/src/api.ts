@@ -15,11 +15,12 @@ export async function fetchApi(path: string, { method = 'GET', body, signal }: A
   const auth = useAuthStore()
   const headers: Record<string, string> = {}
   if (auth.token) headers.Authorization = `Bearer ${auth.token}`
-  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  const isFile = body instanceof Blob
+  if (body !== undefined) headers['Content-Type'] = isFile ? body.type : 'application/json'
   const response = await fetch(`/api/v1${path}`, {
     method,
     headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: body === undefined || isFile ? body : JSON.stringify(body),
     signal,
   })
   if (!response.ok) throw new ApiError(response.status)
