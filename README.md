@@ -59,6 +59,8 @@ Evals (nie in CI): `pnpm evals <befehl> …`, siehe [docs/EVAL_PLAN.md](docs/EVA
 
 Wiederkehrende Abläufe liegen als Skills in `.claude/skills/`; Aufruf im Chat mit `/<name>`.
 
+- `/eval-setup <unit>` – baut die Eval-Grundlage einer Prompt-Unit aus ihrem Abschnitt im Eval-Plan:
+  `review.md`, Korpus-Ordner falls nötig, die Unit in `pnpm evals review`, `run` und `check`, Tests.
 - `/eval-samples <unit> <anzahl>` – schreibt Beispielfälle einer Eval-Unit mit dem Subagenten
   `sample-writer` (`.claude/agents/`) und lässt glm-5.3 sie mit `pnpm evals review` prüfen, höchstens
   drei Runden.
