@@ -14,6 +14,8 @@ import type { AnalysisError } from './cvs.schemas.js'
 
 export type CvVersionInfo = Omit<CvVersion, 'pdf'>
 
+export type CvVersionSummaryInfo = Omit<CvVersion, 'pdf' | 'analysis'>
+
 type Outcome = { analysis: CvAnalysis } | { error: AnalysisError }
 
 const CV_LANGUAGES = new Set(['de', 'en'])
@@ -31,6 +33,34 @@ export class CvsService {
       return tx.cvVersion.create({ data: { userId, pdf: new Uint8Array(pdf), analysisStatus: 'running' } })
     })
     return this.submit(version.id, version.pdf)
+  }
+
+  list(userId: number): Promise<CvVersionSummaryInfo[]> {
+    return this.prisma.cvVersion.findMany({
+      where: { userId },
+      omit: { pdf: true, analysis: true },
+      orderBy: { id: 'desc' },
+    })
+  }
+
+  activate(userId: number, id: number): Promise<CvVersionInfo> {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`
+      const exists = await tx.cvVersion.count({ where: { id, userId } })
+      if (!exists) throw new NotFoundError('CV not found')
+      await tx.cvVersion.updateMany({ where: { userId, isActive: true }, data: { isActive: false } })
+      return tx.cvVersion.update({ where: { id }, data: { isActive: true }, omit: { pdf: true } })
+    })
+  }
+
+  async remove(userId: number, id: number): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`
+      const version = await tx.cvVersion.findFirst({ where: { id, userId }, select: { isActive: true } })
+      if (!version) throw new NotFoundError('CV not found')
+      if (version.isActive) throw new AppError(409, 'The active CV cannot be deleted')
+      await tx.cvVersion.delete({ where: { id } })
+    })
   }
 
   async active(userId: number): Promise<CvVersionInfo> {
