@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import type { MessageCreateParamsNonStreaming, MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import { costUsd } from '../src/llm/costs.js'
 import { type ChatSettings, coachChatRequest, type Variant } from '../src/prompts/coach_chat.js'
+import { cvAnalysisRequest } from '../src/prompts/cv_analysis.js'
 import { type BatchRequest, claudeForBatches, collectBatch, createBatch } from './batch.js'
 import { countWords, type RunRecord } from './checks.js'
 
@@ -15,6 +16,8 @@ const OUTPUT_GUESS = 1500
 const REQUESTS: Record<string, (gold: Record<string, unknown>, variant: Variant) => MessageCreateParamsNonStreaming> = {
   coach_chat: (gold, variant) =>
     coachChatRequest(gold.messages as MessageParam[], { quality: gold.quality, effort: gold.effort } as ChatSettings, variant),
+  cv_analysis: (gold, variant) =>
+    cvAnalysisRequest(readFileSync(join(EVALS, 'corpus', 'cvs', gold.id as string, 'cv.pdf')).toString('base64'), variant),
 }
 
 export function sampleNames(unit: string): string[] {

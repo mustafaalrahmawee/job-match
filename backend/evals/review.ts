@@ -34,7 +34,6 @@ export async function review(unit: string, cases: string[], allCases: boolean): 
 
   const selected = cases.length ? cases : existing.filter((c) => rounds(reviewText, c) === 0)
   const corpusDir = join(EVALS, CORPUS[unit] ?? '')
-  const corpus = unit in CORPUS && existsSync(corpusDir) ? `${textFiles(corpusDir)}\n\n` : ''
 
   const rows: [string, string, string][] = []
   for (const name of selected) {
@@ -50,7 +49,7 @@ export async function review(unit: string, cases: string[], allCases: boolean): 
     console.log(`Reviewing ${name}, round ${round} ...`)
     const answer = await ask(
       systemPrompt(unit, reviewText, 'Questions', true),
-      `${corpus}Case: ${name}\n\n${textFiles(join(samples, name))}`,
+      `${corpus(corpusDir, name)}Case: ${name}\n\n${textFiles(join(samples, name))}`,
     )
     append(reviewPath, `${name} (round ${round})`, answer)
     rows.push([name, String(round), verdict(answer)])
@@ -129,6 +128,13 @@ async function ask(system: string, content: string): Promise<string> {
     .map((line) => (line.startsWith('- ') ? line : `- ${line}`))
   const { usage } = response
   return `${lines.join('\n')}\n\n(${model}, ${usage.input_tokens} → ${usage.output_tokens} tokens, ${response.stop_reason})`
+}
+
+function corpus(corpusDir: string, name: string): string {
+  const own = join(corpusDir, name)
+  if (existsSync(own)) return `${textFiles(own)}\n\n`
+  if (existsSync(corpusDir)) return `${textFiles(corpusDir)}\n\n`
+  return ''
 }
 
 function directories(directory: string): string[] {
