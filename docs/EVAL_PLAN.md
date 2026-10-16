@@ -80,7 +80,7 @@ Samples are written and reviewed with `/eval-samples <unit> <count>`: the `sampl
 - **Judge:** Truth and Relevance of strengths, weaknesses and tips.
 - **Threshold:** functional 100 %; `is_cv` all; role ≥ 90 %; positions 100 %; must-skill recall ≥ 95 %; absent skills 0 hits; all three runs.
 - **Deviation:** synthetic CVs are cleaner than real ones (no photos, odd section orders, marketing phrases). Real uploads with status `failed` become candidate cases without gold standard.
-- **Chosen:** ⬜
+- **Chosen (October 16, 2026, until the judge runs):** Haiku `medium`, prompt v2, 35/37, about 0.0008 $ per CV. The two misses are single runs: 31 skills (the app trims to 30) and language names in German for an English CV. Rejected: prompt v1 25/37 (skill limit, injection echoed in tips, certificates, freelance clients as positions), Haiku `high` 35/37 at 30 % more cost. Sonnet `low` not run.
 
 **UC-06:** 6–8 canned conversations in `coach_chat/samples/` with a gold analysis from the corpus in the `analysis` slot: "Which of my skills fit a Frontend role?", "Do I have Kubernetes experience?" (gold no; `forbidden` any yes), "How many years have I worked?" (number in `expected_mentions`), "What should I learn next?". Checks: one `expected_mentions` term appears, no `forbidden` phrase, language. Judge Truth against the analysis.
 
