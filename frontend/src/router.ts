@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import AppLayout from './components/AppLayout.vue'
 import { useAuthStore } from './stores/auth'
 import CoachView from './views/CoachView.vue'
+import CvView from './views/CvView.vue'
 import HomeView from './views/HomeView.vue'
 import LoginView from './views/LoginView.vue'
 
@@ -15,6 +16,7 @@ export const router = createRouter({
       children: [
         { path: '', component: HomeView },
         { path: 'coach/:id(\\d+)?', component: CoachView },
+        { path: 'cv', component: CvView },
       ],
     },
   ],
