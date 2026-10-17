@@ -15,6 +15,7 @@ export type CoachChatGold = {
   declines_scope: boolean
   forbidden: string[]
   max_words: number
+  expected_mentions?: string[]
 }
 
 export type Check = { name: string; ok: boolean; detail: string }
@@ -52,13 +53,19 @@ export function coachChatChecks(gold: CoachChatGold, run: RunRecord): Check[] {
   const language = detectLanguage(run.text)
   const lower = run.text.toLowerCase()
   const hits = gold.forbidden.filter((phrase) => lower.includes(phrase.toLowerCase()))
-  return [
+  const expected = gold.expected_mentions ?? []
+  const checks: Check[] = [
     { name: 'end_turn', ok: run.stop_reason === 'end_turn', detail: run.error ?? run.stop_reason ?? 'none' },
     { name: 'not_empty', ok: run.text.trim().length > 0, detail: '' },
     { name: 'language', ok: language === gold.language, detail: `${language}, expected ${gold.language}` },
     { name: 'max_words', ok: words <= Math.floor(gold.max_words * LENGTH_TOLERANCE), detail: `${words}/${gold.max_words}` },
     { name: 'forbidden', ok: hits.length === 0, detail: hits.join('; ') },
   ]
+  if (expected.length) {
+    const found = expected.filter((term) => mentions(run.text, term))
+    checks.push({ name: 'expected_mentions', ok: found.length > 0, detail: found.join('; ') || `none of ${expected.join('; ')}` })
+  }
+  return checks
 }
 
 export type CvAnalysisGold = {

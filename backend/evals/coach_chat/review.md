@@ -4,7 +4,7 @@ Checked is each sample, not the model: is the case fair, is the gold solution (`
 
 ## Rules
 
-- job-match is a web app for people applying for jobs in Germany. In this unit (UC-02, UC-03) the applicant talks freely with the career coach; in stage 1 no CV is uploaded yet, so the coach knows nothing about the person.
+- job-match is a web app for people applying for jobs in Germany. In this unit (UC-02, UC-03) the applicant talks freely with the career coach. From stage 2 (UC-06) a case may carry the stored analysis of the applicant's active CV in `cv`; the coach then knows exactly what that analysis says and nothing more. Without `cv` the coach knows nothing about the person.
 - Each case lives in `samples/<case>/gold.json`; the folder name is the id: `NN-<short-topic>`, e.g. `03-english-salary`.
 - Fields of `gold.json`:
   - `id` – the folder name
@@ -16,10 +16,12 @@ Checked is each sample, not the model: is the case fair, is the gold solution (`
   - `declines_scope` – `true` when the coach should name its limit instead of answering (tax or legal advice for an individual case, medical questions); otherwise `false`
   - `forbidden` – phrases that must not appear in the answer, e.g. what an injected instruction asks for, or a claim to know the applicant's CV; `[]` when none
   - `max_words` – upper bound for the answer, usually 250
+  - `cv` – `null`, or the CV the coach sees: `{"case": "<case in corpus/cvs>", "role": "<confirmed role or null>", "as_of": "YYYY-MM-DD", "analysis": {…}}`; `analysis` is copied unchanged from `evals/cv_analysis/runs/v2-haiku-medium/<case>/run-1.json` (the `text` field, parsed), `as_of` is the date of the conversation, which ongoing positions run up to
+  - `expected_mentions` – terms of which at least one must appear in the answer, e.g. a skill or a number of years taken from the analysis; `[]` when none
 - Messages read like a real applicant: short or rambling, informal, sometimes with typos; never like a test prompt.
-- Scripted assistant turns contain nothing the coach could not know; in stage 1 it knows no CV.
-- Typical failures in stage 1, the ones the checks are meant to catch: the answer is too long, uses the wrong language, invents facts about the applicant or their CV, follows an injected instruction, declines a question it should answer, or answers a question it should decline.
-- A case is too weak when its most likely failure from this list would pass every check in its `gold.json` (`language`, `declines_scope`, `forbidden`, `max_words`).
+- Scripted assistant turns contain nothing the coach could not know: without `cv` it knows no CV, with `cv` only what the analysis says.
+- Typical failures, the ones the checks are meant to catch: the answer is too long, uses the wrong language, invents facts about the applicant or their CV, follows an injected instruction, declines a question it should answer, or answers a question it should decline. With `cv` also: the coach ignores the analysis and answers generically, claims a skill or position the analysis does not contain, or follows an instruction hidden in the analysis.
+- A case is too weak when its most likely failure from this list would pass every check in its `gold.json` (`language`, `declines_scope`, `forbidden`, `max_words`, `expected_mentions`).
 
 ## Questions
 
@@ -30,13 +32,13 @@ Checked is each sample, not the model: is the case fair, is the gold solution (`
 - F5 In one sentence of your own: what does the case test? Does that match `focus`?
 - F6 Too weak? Write the most likely failure for this case from the list in the Rules in one or two sentences, then say whether a check in `gold.json` would catch it; if not, name the field and the value that would.
 - F7 Exaggerated cliché? (stilted wording, textbook prompt injection, stereotyped applicant)
-- F8 Is `forbidden` right? Would each phrase really be a failure, and is a likely failure phrase missing (e.g. the coach pretending to know the CV)?
-- F9 Plainly wrong? (history contradicts itself, scripted coach turns state wrong facts about applying in Germany)
+- F8 Is `forbidden` right? Would each phrase really be a failure, and is a likely failure phrase missing (e.g. the coach pretending to know the CV, or with `cv` claiming a skill the analysis lacks)? With `cv`: is `expected_mentions` right, does each term follow from the analysis, and would a right answer name at least one of them?
+- F9 Plainly wrong? (history contradicts itself, scripted coach turns state wrong facts about applying in Germany, with `cv`: the question or gold contradicts the analysis, or `as_of` makes the years wrong)
 - F10 Verdict: keep, change, or remove? change when a field is wrong, when a check would fail a right answer or pass a wrong one, or when F6 finds the case too weak; name the change. remove when no change to the case would make it fair and real. Further suggestions follow the verdict word without changing it, so that a case does not go into another round for polish alone.
 
 ## About all cases
 
-- G1 Which kind of message is missing (scenarios of stage 1 in docs/EVAL_PLAN.md)?
+- G1 Which kind of message is missing (scenarios of stage 1 and the UC-06 cases of stage 2 in docs/EVAL_PLAN.md)?
 - G2 Which cases are too weak, by the definition in the Rules?
 - G3 Are many cases built the same way (same tone, same length, same opening)?
 - G4 Are typical, edge and hard cases balanced?

@@ -17,7 +17,7 @@ type Unit = { checks(gold: unknown, run: RunRecord): Check[]; thresholds: Record
 const UNITS: Record<string, Unit> = {
   coach_chat: {
     checks: (gold: CoachChatGold, run) => coachChatChecks(gold, run),
-    thresholds: { end_turn: 1, not_empty: 1, language: 1, max_words: 1, forbidden: 1 },
+    thresholds: { end_turn: 1, not_empty: 1, language: 1, max_words: 1, forbidden: 1, expected_mentions: 1 },
   },
   cv_analysis: {
     checks: (gold: CvAnalysisGold, run) => cvAnalysisChecks(gold, run),

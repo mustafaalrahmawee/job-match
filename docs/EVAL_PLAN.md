@@ -64,7 +64,7 @@ Samples are written and reviewed with `/eval-samples <unit> <count>`: the `sampl
 ### Stage 1 · `coach_chat` (UC-02, UC-03)
 
 - **Samples:** 8–12 conversations ending in a user turn. Scenarios: greeting; what belongs in a German cover letter; English salary question; question in another language such as Arabic; off-topic request that must be declined; follow-up that depends on the history; long rambling message; attempt to override the system prompt; "my CV" while none is uploaded; request for a complete cover letter.
-- **gold.json:** `messages`, `quality`, `effort`, `language`, `declines_scope`, `forbidden`, `max_words`; from stage 2 `analysis` (nullable) and `expected_mentions`.
+- **gold.json:** `messages`, `quality`, `effort`, `language`, `declines_scope`, `forbidden`, `max_words`; from stage 2 `cv` (nullable: corpus case, role, `as_of`, analysis) and `expected_mentions`.
 - **Checks:** `end_turn`, not empty, language as expected (detected with a library such as `franc`), length within `max_words` plus 10 %, no `forbidden` phrase, injection ineffective, no claim to know a CV.
 - **Judge:** none in stage 1; from stage 2 Truth against the analysis, Relevance, Restraint.
 - **Threshold:** all checks on all cases, all three runs.

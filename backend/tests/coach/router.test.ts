@@ -1,6 +1,6 @@
 import request from 'supertest'
 import { beforeEach, expect, test } from 'vitest'
-import { COACH_CHAT_MODEL, COACH_CHAT_SYSTEM } from '../../src/prompts/coach_chat.js'
+import { COACH_CHAT_MODEL, COACH_CHAT_NO_CV, COACH_CHAT_SYSTEM } from '../../src/prompts/coach_chat.js'
 import { bearerFor, createAnna, streamedText, useTestDatabase } from '../helpers.js'
 
 const { app, auth, prisma, model } = useTestDatabase()
@@ -108,7 +108,10 @@ test('the request carries the coach prompt and the whole history', async () => {
   const last = model.requests.at(-1)!
   expect(last).toMatchObject({
     model: COACH_CHAT_MODEL,
-    system: COACH_CHAT_SYSTEM,
+    system: [
+      { type: 'text', text: COACH_CHAT_SYSTEM },
+      { type: 'text', text: COACH_CHAT_NO_CV },
+    ],
   })
   expect(last.messages.map((m) => m.role)).toEqual(['user', 'assistant', 'user'])
   expect(last.messages.at(-1)!.content).toEqual([
