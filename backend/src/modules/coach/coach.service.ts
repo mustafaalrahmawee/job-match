@@ -69,7 +69,7 @@ export class CoachService {
       role: message.role,
       content: message.content as unknown as ContentBlockParam[],
     }))
-    const params = coachChatRequest(messages, settings)
+    const params = coachChatRequest(messages, settings, null)
     const result = await this.send(params, handlers)
     if (result.stopReason === 'refusal') {
       console.warn(`Coach refusal in conversation ${conversationId}: ${result.stopDetails?.category ?? 'no category'}`)

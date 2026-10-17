@@ -39,3 +39,11 @@ test('each failure is reported by its own check', () => {
   expect(failed('')).toEqual(['not_empty', 'language'])
   expect(failed('Nenne im Gespräch eine echte Schwäche. '.repeat(5))).toEqual(['max_words'])
 })
+
+test('expected mentions pass when one term appears as a whole word', () => {
+  const gold = { ...GOLD, expected_mentions: ['drei Jahre', '3 Jahre'] }
+  const names = (text: string) => coachChatChecks(gold, answer(text)).filter((r) => !r.ok).map((r) => r.name)
+  expect(names('Du arbeitest seit gut 3 Jahren als Entwicklerin.')).toEqual(['expected_mentions'])
+  expect(names('Du hast rund drei Jahre Berufserfahrung im Frontend.')).toEqual([])
+  expect(coachChatChecks(GOLD, answer('Hallo')).map((r) => r.name)).not.toContain('expected_mentions')
+})
