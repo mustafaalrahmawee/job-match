@@ -46,6 +46,8 @@ The core of the domain is the chain CV version → analysis (once, stored) → a
 
 Sixteen use cases, ordered by stage; after stage 3 (UC-01 to UC-09) the app is already presentable.
 
+Work happens in two phases. **Phase A** builds every use case, stage by stage, without evals: each prompt unit gets a model and an effort from the estimate table in `EVAL_PLAN.md` §5, written as constants. **Phase B** starts once the app is complete and online: one eval per prompt unit, which may change model, effort and prompt. The two suites that already exist (`coach_chat`, `cv_analysis`) wait for phase B.
+
 | ID | Actor | Use case | Outcome | Stage |
 | --- | --- | --- | --- | --- |
 | UC-01 | Applicant | Log in and log out | Bearer token; logout revokes it; wrong email and wrong password give the same answer | 1 |
@@ -94,7 +96,7 @@ Every stage introduces one topic; the table shows where each one naturally appea
 | Context management | Compaction for long sessions, token counting before sending | UC-13 |
 | RAG | Embeddings in ChromaDB behind the `VectorStore` interface, Postgres stays the source of truth, "top 5 jobs" with reasons | UC-14 |
 | Agent Skills, Files API, MCP | Cover letter as Word file; calendar via MCP | UC-15 |
-| Eval | Example suite per prompt unit from the first prompt on; model chosen per unit by measurement; glm-5.3 as independent judge | all AI features |
+| Eval | Phase B: example suite per prompt unit; model and effort first estimated (phase A), then confirmed or changed by measurement; glm-5.3 as independent judge | all AI features |
 
 ## Out of Scope
 

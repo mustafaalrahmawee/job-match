@@ -1,8 +1,13 @@
 # job-match – Evaluation Plan
 
-As of: October 15, 2026
+As of: October 17, 2026
 
 This plan applies `app-evaluation-anchor.md` to job-match: per use case, is an evaluation needed, what is tested, where the samples come from, how answers are graded, and what must pass before a change is kept. Use cases without a model call are covered by Vitest only.
+
+## 0. Two Phases
+
+- **Phase A, build the app.** Every use case of `APP_IDEA.md`, stage by stage, up to go-live. Each prompt unit gets model and effort from the estimate table in §5 as constants; no suite, no `pnpm evals` run, nothing under `backend/evals/` changes. The prompt is written once, by hand, against the prompting anchor and a handful of manual tries in the app.
+- **Phase B, measure.** Starts when the app is complete and online. Unit by unit in the order of §4: write the suite, run, check, judge; confirm the estimate or change model, effort and prompt. Everything from §1 on describes phase B. The suites of `coach_chat` and `cv_analysis` already exist from stages 1 and 2 and are the first to run.
 
 ## 1. Models
 
@@ -10,7 +15,7 @@ Four roles, kept apart so no model writes, takes or grades its own test.
 
 | Role | Model | Why |
 | --- | --- | --- |
-| Model under test | per prompt unit (§5): Haiku 5.5 first, Sonnet 5.5 where Haiku misses the threshold, Opus 5.5 only for `coach_agent` and `match_analysis` | the whole API budget is 100 $ |
+| Model under test | per prompt unit: the phase-A estimate of §5 first, then one step cheaper and one step better; Opus 5.5 only for `coach_agent` and `match_analysis` | the whole API budget is 100 $ |
 | Judge | glm-5.3 `max` via z.ai | flat rate; not under test; text only |
 | Sample writer | Claude Code: Fable 5.1 for `cv_analysis`, `job_extract`, `match_analysis`, `coach_agent` and the corpus; Opus 5.5 for the other units | never a model under test of the unit; costs no API budget |
 | Sample reviewer | glm-5.3 `max` for text; glm-5.3-flash `high` for PDF and screenshot | never the writer; only flash reads `document` and `image` blocks |
@@ -22,7 +27,7 @@ Four roles, kept apart so no model writes, takes or grades its own test.
 
 ## 2. Principles
 
-- **Evaluation starts with the first prompt.** No prompt unit is merged without its example suite.
+- **Evaluation follows the app.** In phase A a prompt unit is merged with its estimated model and effort; in phase B no change to a unit is kept without its suite.
 - **Easiest grading first.** Structured answers (JSON, score, status, tool call) are gold-standard and functional checks. The judge grades only prose: strengths, gaps, tips, feedback, coach answers.
 - **Gold first, then the sample.** The writer fixes `gold.json`, then writes the message, CV or ad that leads there.
 - **First decision with a real chance of error first.** Is the PDF a CV; is the text an ad; is the main gap named; is a tool called. Later values count only when it is right.
@@ -55,7 +60,7 @@ Four roles, kept apart so no model writes, takes or grades its own test.
 | UC-15 | Cover letter and calendar | `cover_letter` | `evals check` on the Word file; judge; Vitest with a fake MCP server |
 | UC-16 | Register, delete, export | – | Vitest |
 
-A use case with a unit is finished only when the suite exists, ran once on the merged state, and the run is committed under `runs/<fassung>/`.
+In phase A a use case with a unit is finished when the app works with the estimated model and the Vitest column passes. In phase B it is finished only when the suite exists, ran once on the merged state, and the run is committed under `runs/<fassung>/`.
 
 ## 4. Units per Stage
 
@@ -149,11 +154,32 @@ The calendar entry is Vitest with a fake MCP server. Before go-live all suites r
 
 ## 5. Model Choice per Unit
 
+### Phase A: the estimate
+
+Prices per million tokens (Claude API, October 2026): Haiku 5.5 0.10 $ in / 0.50 $ out, Sonnet 5.5 2 $ / 10 $, Opus 5.5 4 $ / 20 $. Rule of thumb: Haiku for extraction into a schema and short single outputs; Sonnet for prose the applicant reads, grading, and tool use; Opus for nothing until a measurement asks for it. Effort `medium` everywhere, because Sonnet 5.5 and Haiku 5.5 are tuned for it on chat and tool use and `high` costs 20 to 30 % more for the same answer in the two units already measured.
+
+| Unit | Stage | Model | Effort | Why | Cost per call, rough |
+| --- | --- | --- | --- | --- | --- |
+| `coach_chat` | 1 | Sonnet 5.5 | `medium` | measured on October 13: Haiku answers in the wrong language or too long | 0.006 $ |
+| `cv_analysis` | 2 | Haiku 5.5 | `medium` | measured on October 16: 35/37 with the PDF, schema output | 0.001 $ |
+| `job_extract` | 3 | Haiku 5.5 | `medium` | extraction into a schema from text or screenshot, like `cv_analysis` | 0.001 $ |
+| `match_analysis` | 3 | Sonnet 5.5 | `medium` | reasons over two documents, every claim quoted; the score drives the product | 0.02 $ |
+| `coach_agent` | 4 | Sonnet 5.5 | `medium` | tool use over several turns plus web search; Sonnet's recommended starting effort for agents | 0.03 $ per turn |
+| `interview_question` | 5 | Haiku 5.5 | `medium` | one question from job, match and earlier questions | 0.001 $ |
+| `interview_grade` | 5 | Sonnet 5.5 | `medium` | a score and feedback the applicant learns from | 0.01 $ |
+| `interview_report` | 5 | Sonnet 5.5 | `medium` | summary over a whole session | 0.02 $ |
+| `job_recommendation` | 7 | Sonnet 5.5 | `low` | five short reasons over retrieved jobs; retrieval does the hard part | 0.01 $ |
+| `cover_letter` | 8 | Sonnet 5.5 | `medium` | a letter the applicant sends | 0.02 $ |
+
+The embedding model for UC-14 is not a Claude model and is picked in stage 7 when the vector store is built. A unit that turns out wrong in daily use during phase A may move one step up (Haiku to Sonnet) without a suite; the change is noted here with the reason.
+
+### Phase B: the measurement
+
 1. Set the threshold first, in gold-standard and functional numbers.
-2. Measure in order, prompt v1, all cases × 3 runs: Haiku `low`, `medium`, `high`; then Sonnet `low`, `medium`; for `coach_agent` and `match_analysis` only, Opus `low`, `medium`. The cheapest variant above the threshold is chosen. Close to the threshold: a second run.
-3. Model and effort become constants of the unit; the prompt is improved only with this setting.
+2. Measure, prompt as shipped, all cases × 3 runs: the estimate, then one step cheaper (`low`, or Haiku instead of Sonnet), then one step better (`high`, or Sonnet instead of Haiku); for `coach_agent` and `match_analysis` only, Opus `low`, `medium`. The cheapest variant above the threshold is chosen. Close to the threshold: a second run.
+3. Model and effort become the new constants of the unit; the prompt is improved only with this setting.
 4. Check downwards once: the improved prompt runs on the next cheaper variant; if it passes, it is chosen.
-5. Record under "Chosen" in §4: variant, numbers, cost per case, rejected variants.
+5. Record under "Chosen" in §4: variant, numbers, cost per case, rejected variants; update the table above.
 
 Cost per round is estimated before the run and written in `meta.json`: a text unit with Haiku stays under 0.20 $, `cv_analysis` with PDFs under 0.50 $; Sonnet about 20 times, Opus about 40 times that.
 
@@ -236,12 +262,17 @@ The runner refuses a base URL other than `api.anthropic.com`; judge, reviewer an
 
 ## 9. Definition of Done
 
-For every use case with a unit, the pull request contains:
+**Phase A**, for every use case with a unit:
 
-1. The prompt unit with model and effort as constants.
-2. The suite of its stage: samples with `gold.json`, a `review.md` in which every remaining case ends with `keep`, a committed `runs/<fassung>/`.
-3. The result: a diff the maintainer read (stage 1) or `check.txt` against the threshold (stage 2 onwards).
-4. For a judge-steered decision: the calibration Tau per aspect.
+1. The prompt unit with model and effort as constants, the values of the §5 estimate.
+2. Vitest for everything without a model call; the use case works in the app with the real model.
+
+**Phase B**, for every unit:
+
+1. The suite: samples with `gold.json`, a `review.md` in which every remaining case ends with `keep`, a committed `runs/<fassung>/`.
+2. The result: `check.txt` against the threshold; for `coach_chat` also the diff of `runs/` the maintainer read.
+3. For a judge-steered decision: the calibration Tau per aspect.
+4. The "Chosen" line in §4 and the row in the §5 table, confirmed or changed.
 
 ## 10. Open Points
 

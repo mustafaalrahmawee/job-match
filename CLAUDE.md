@@ -4,8 +4,15 @@ Die App wird Stufe für Stufe mit **Express + TypeScript** (Backend) und **Vue 3
 (Frontend) gebaut. Fachliche Idee, Domänenmodell, Use Cases je Stufe:
 [docs/APP_IDEA.md](docs/APP_IDEA.md). Nur die aktuelle Stufe umsetzen.
 
+Reihenfolge: **Phase A** baut alle Use Cases (Stufe 1 bis 8, Go-live) ohne Evals; Modell und Effort
+jeder Prompt-Unit kommen aus der Schätztabelle in [docs/EVAL_PLAN.md](docs/EVAL_PLAN.md) §5 und
+stehen als Konstanten in `src/prompts/<unit>.ts`. **Phase B** misst danach Unit für Unit und darf
+Modell, Effort und Prompt ändern. In Phase A wird nichts unter `backend/evals/` angefasst. Die
+Reihenfolge der Skill-Aufrufe steht in [docs/WORKPLAN.md](docs/WORKPLAN.md): je Use Case mit
+Modellaufruf erst `/prompt-unit <unit>`, dann `/review-loop UC-xx`.
+
 Jeder Prompt folgt [docs/app-prompting-anchor.md](docs/app-prompting-anchor.md), jede Eval
-[docs/app-evaluation-anchor.md](docs/app-evaluation-anchor.md); was je Stufe geprüft wird, steht in
+[docs/app-evaluation-anchor.md](docs/app-evaluation-anchor.md); was je Unit geprüft wird, steht in
 [docs/EVAL_PLAN.md](docs/EVAL_PLAN.md).
 
 Stack, Datenbank und Befehle stehen in der [README](README.md).
@@ -49,7 +56,8 @@ Regeln:
 - Fehler: `ZodError` → 422, `NotFoundError` → 404, `UnauthorizedError` → 401 mit
   `WWW-Authenticate: Bearer`, alles andere → 500 ohne Details.
 - `src/prompts/<unit>.ts` baut die vollständige Anfrage (System-Prompt, Modell, Effort, Tools bzw.
-  Schema); Domänen-Service und Eval rufen dieselbe Funktion. Das JSON-Schema für Structured Outputs
+  Schema); Domänen-Service und Eval rufen dieselbe Funktion. Modell und Effort sind Konstanten mit
+  dem Wert aus der Schätztabelle, bis eine Eval etwas anderes belegt. Das JSON-Schema für Structured Outputs
   kommt per `z.toJSONSchema()` aus demselben Zod-Schema, das die Antwort validiert.
 - Domänen (`auth`, `coach`, `cvs`, `jobs`, `matches`, `applications`, `interviews`, `documents`)
   und Prompt-Units entstehen erst in ihrer Stufe.
