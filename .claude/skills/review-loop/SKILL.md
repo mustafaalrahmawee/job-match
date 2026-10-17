@@ -36,10 +36,13 @@ Say in one line which step you do and in which role.
 
 1. **Use case.** Find it in `docs/APP_IDEA.md`: its row, its stage, the entities of the domain model it uses and every section that names it (e.g. a core flow). Note which other use cases it builds on.
 2. **Rules.** Read `CLAUDE.md` and the docs it points to for application code. Skip eval docs (`docs/EVAL_PLAN.md`, `docs/app-evaluation-anchor.md`).
-3. **Existing code.** Search `backend/` (without `evals/`) and `frontend/` for what already exists for this use case, committed or not (`git status`): Prisma models and migrations, module files, prompt units it calls, routes in `app.ts`, tests and test helpers, frontend routes, stores, views, components and `types.ts`.
-4. **Dependencies.** For each piece, what it uses (services of other domains, Prisma, `llm/`, `shared/`, API calls) and what uses it (`app.ts`, router, layout, other views).
-5. **Gap.** Compare the outcome of the use case with the existing code: what is done, what is missing, what is wrong.
-6. If a use case it builds on is missing, stop and tell the user which one comes first.
+3. **Design.** If the use case has a frontend part: read `docs/design/README.md` and the screen of
+   this use case in `docs/design/screens/` (the file name carries the UC). Note in `context.md` under
+   "Regeln" which screen applies and which building blocks it uses.
+4. **Existing code.** Search `backend/` (without `evals/`) and `frontend/` for what already exists for this use case, committed or not (`git status`): Prisma models and migrations, module files, prompt units it calls, routes in `app.ts`, tests and test helpers, frontend routes, stores, views, components and `types.ts`.
+5. **Dependencies.** For each piece, what it uses (services of other domains, Prisma, `llm/`, `shared/`, API calls) and what uses it (`app.ts`, router, layout, other views).
+6. **Gap.** Compare the outcome of the use case with the existing code: what is done, what is missing, what is wrong.
+7. If a use case it builds on is missing, stop and tell the user which one comes first.
 
 Write `.review/context.md`:
 
@@ -103,7 +106,7 @@ Schreiber: <your tool and model, e.g. Claude Code · Opus 5.5>
 
 1. Read `context.md`, `request.md` and the rule files named in `context.md`.
 2. Open the changed files themselves and the code around them: callers, tests, schemas, frontend calls of the API. The diff is the starting point, not the whole picture.
-3. Check that every part of "Anforderung" is met. Look for wrong behavior, missing edge cases, security gaps (authentication, access to other users' data), missing or weak tests and broken project rules. Report style only when it breaks a written rule. No praise, no retelling of the diff.
+3. Check that every part of "Anforderung" is met. Look for wrong behavior, missing edge cases, security gaps (authentication, access to other users' data), missing or weak tests and broken project rules, including the design in `docs/design/` for frontend changes. Report style only when it breaks a written rule. No praise, no retelling of the diff.
 4. Check every finding against the code before writing it down. Drop what you cannot back up.
 5. Never change code. Running tests is allowed.
 6. Write `.review/review.md`, most important first, at most 10 findings. Severity is `Fehler` (wrong behavior now), `Lücke` (part of the requirement missing), `Risiko` (breaks later or unsafe) or `Regel` (breaks a written rule). With no findings write `Keine Funde.`

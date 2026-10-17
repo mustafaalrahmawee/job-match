@@ -10,6 +10,10 @@ Jeder Prompt folgt [docs/app-prompting-anchor.md](docs/app-prompting-anchor.md),
 
 Stack, Datenbank und Befehle stehen in der [README](README.md).
 
+Design: Brand Book und Tokens in [docs/design/README.md](docs/design/README.md), ein Screen je Use Case
+in `docs/design/screens/`. Neue Seiten folgen dem Screen ihres Use Case; Farben, Abstände und
+Bausteine nur aus dem Brand Book.
+
 Backend-Struktur (Module nach Domäne, Klassen-Stil):
 
 ```
