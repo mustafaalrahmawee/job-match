@@ -8,6 +8,7 @@ import type { PrismaClient, User } from '../src/generated/prisma/client.js'
 import type { Batches } from '../src/llm/batch.js'
 import type { SendStream, StreamHandlers, StreamResult } from '../src/llm/send.js'
 import { AuthService } from '../src/modules/auth/auth.service.js'
+import { BaClient } from '../src/modules/jobs/jobs.ba.js'
 import { createPrisma } from '../src/shared/prisma.js'
 
 export const TOKEN_TTL_DAYS = 30
@@ -75,29 +76,66 @@ export function fakeBatches(): FakeBatches {
   return batches
 }
 
+export type FakeBa = {
+  client: BaClient
+  searches: Map<string, unknown>
+  details: Map<string, unknown>
+  requests: { url: URL; headers: RequestInit['headers'] }[]
+  down: boolean
+}
+
+export function fakeBa(): FakeBa {
+  const ba: FakeBa = {
+    searches: new Map(),
+    details: new Map(),
+    requests: [],
+    down: false,
+    client: new BaClient((input, init) => {
+      const url = new URL(input)
+      ba.requests.push({ url, headers: init.headers })
+      if (ba.down) return Promise.reject(new Error('Bundesagentur down'))
+      const [, id] = url.pathname.split('/jobdetails/')
+      const body = id
+        ? ba.details.get(Buffer.from(decodeURIComponent(id), 'base64').toString())
+        : (ba.searches.get(`${url.searchParams.get('was')}:${url.searchParams.get('page')}`) ?? { maxErgebnisse: 0 })
+      if (body === undefined) return Promise.resolve(new Response('{}', { status: 404 }))
+      return Promise.resolve(Response.json(body))
+    }),
+  }
+  return ba
+}
+
 export function useTestDatabase(): {
   prisma: PrismaClient
   app: Express
   auth: AuthService
   model: FakeModel
   batches: FakeBatches
+  ba: FakeBa
 } {
   const prisma = createPrisma(env.TEST_DATABASE_URL)
   const model = fakeModel()
   const batches = fakeBatches()
-  const app = createApp({ prisma, tokenTtlDays: TOKEN_TTL_DAYS, send: model.send, batches })
+  const ba = fakeBa()
+  const app = createApp({ prisma, tokenTtlDays: TOKEN_TTL_DAYS, send: model.send, batches, ba: ba.client })
   const auth = new AuthService(prisma, TOKEN_TTL_DAYS)
-  beforeEach(() => {
+  beforeEach(async () => {
+    ba.searches.clear()
+    ba.details.clear()
+    ba.requests.length = 0
+    ba.down = false
+    await prisma.job.deleteMany()
+    await prisma.jobImport.deleteMany()
     model.requests.length = 0
     model.answer(streamedText('Hallo, ich bin dein Coach.'))
     batches.requests.length = 0
     batches.results.clear()
     batches.lookups = 0
     batches.failSubmit = false
-    return prisma.user.deleteMany()
+    await prisma.user.deleteMany()
   })
   afterAll(() => prisma.$disconnect())
-  return { prisma, app, auth, model, batches }
+  return { prisma, app, auth, model, batches, ba }
 }
 
 export function createAnna(auth: AuthService): Promise<User> {

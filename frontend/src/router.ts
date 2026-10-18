@@ -4,6 +4,8 @@ import { useAuthStore } from './stores/auth'
 import CoachView from './views/CoachView.vue'
 import CvView from './views/CvView.vue'
 import HomeView from './views/HomeView.vue'
+import JobsView from './views/JobsView.vue'
+import JobView from './views/JobView.vue'
 import LoginView from './views/LoginView.vue'
 
 export const router = createRouter({
@@ -17,6 +19,8 @@ export const router = createRouter({
         { path: '', component: HomeView },
         { path: 'coach/:id(\\d+)?', component: CoachView },
         { path: 'cv', component: CvView },
+        { path: 'jobs', component: JobsView },
+        { path: 'jobs/:id(\\d+)', component: JobView },
       ],
     },
   ],
