@@ -62,7 +62,7 @@
                 aria-label="Zielrolle"
                 class="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
               >
-                <option v-for="option in ROLES" :key="option" :value="option">{{ option }}</option>
+                <option v-for="option in CV_ROLES" :key="option" :value="option">{{ option }}</option>
               </select>
               <button
                 type="button"
@@ -246,21 +246,7 @@ import { ApiError } from '../api'
 import AppDialog from '../components/AppDialog.vue'
 import PageHeader from '../components/PageHeader.vue'
 import { useCvStore } from '../stores/cv'
-import type { AnalysisStatus, CvRole, CvVersionSummary } from '../types'
-
-const ROLES: CvRole[] = [
-  'Frontend',
-  'Backend',
-  'Fullstack',
-  'Mobile',
-  'Data',
-  'DevOps',
-  'QA',
-  'UX/UI',
-  'IT-Support',
-  'IT-Projektmanagement',
-  'Andere',
-]
+import { CV_ROLES, type AnalysisStatus, type CvRole, type CvVersionSummary } from '../types'
 
 const LISTS = [
   { key: 'strengths', title: 'Stärken' },

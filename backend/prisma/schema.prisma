@@ -99,3 +99,47 @@ model CvVersion {
   @@index([userId])
   @@map("cv_versions")
 }
+
+enum JobSource {
+  ba
+  own
+}
+
+enum OfferType {
+  work
+  self_employment
+  apprenticeship
+  internship
+}
+
+model Job {
+  id          Int       @id @default(autoincrement())
+  source      JobSource
+  externalId  String    @map("external_id") @db.VarChar(64)
+  title       String    @db.VarChar(300)
+  company     String?   @db.VarChar(300)
+  city        String    @db.VarChar(200)
+  region      String?   @db.VarChar(32)
+  description String
+  offerType   OfferType @map("offer_type")
+  role        String    @db.VarChar(32)
+  fullTime    Boolean   @map("full_time")
+  partTime    Boolean   @map("part_time")
+  publishedAt DateTime  @map("published_at") @db.Date
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([source, externalId])
+  @@index([publishedAt])
+  @@map("jobs")
+}
+
+model JobImport {
+  id        Int      @id @default(autoincrement())
+  imported   Int
+  duplicates Int
+  filtered   Int
+  failed     Int
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("job_imports")
+}

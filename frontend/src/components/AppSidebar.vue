@@ -134,12 +134,13 @@
 </template>
 
 <script setup lang="ts">
-import { FileText, House, LogOut, MessageSquare, PanelLeft, Pencil, Trash2 } from '@lucide/vue'
+import { Briefcase, FileText, House, LogOut, MessageSquare, PanelLeft, Pencil, Trash2 } from '@lucide/vue'
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useCoachStore } from '../stores/coach'
 import { useCvStore } from '../stores/cv'
+import { useJobsStore } from '../stores/jobs'
 import { useLayoutStore } from '../stores/layout'
 import type { ConversationSummary } from '../types'
 import AppDialog from './AppDialog.vue'
@@ -149,11 +150,13 @@ const NAV = [
   { to: '/', label: 'Start', icon: House, exact: true },
   { to: '/coach', label: 'Coach', icon: MessageSquare, exact: false },
   { to: '/cv', label: 'Lebenslauf', icon: FileText, exact: false },
+  { to: '/jobs', label: 'Stellen', icon: Briefcase, exact: false },
 ]
 
 const auth = useAuthStore()
 const coach = useCoachStore()
 const cv = useCvStore()
+const jobs = useJobsStore()
 const layout = useLayoutStore()
 const route = useRoute()
 const router = useRouter()
@@ -239,6 +242,9 @@ async function logout() {
   coach.conversations = []
   cv.version = null
   cv.versions = []
+  jobs.loaded = false
+  jobs.page = 1
+  Object.assign(jobs.filter, { q: '', role: null, region: null, workTime: null, offerType: null })
   try {
     await auth.logout()
   } catch {

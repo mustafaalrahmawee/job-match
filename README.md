@@ -56,6 +56,8 @@ cd frontend && pnpm install && pnpm dev
 
 Der Backend-Dev-Server läuft auf Port 8000; Vite leitet `/api` dorthin weiter.
 Konto anlegen (bis zum Go-live gibt es keine Registrierung): `pnpm create-user <email>`.
+Stellen-Pool füllen (Jobsuche der Bundesagentur, nur Deutschland, letzte 30 Tage; später täglich per Cron):
+`pnpm import-jobs`.
 
 ## Prüfen
 

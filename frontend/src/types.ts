@@ -24,18 +24,21 @@ export type Done = { message: ApiMessage | null; stop_reason: string }
 
 export type ChatMessage = { key: string; role: Role; text: string; stopReason: string | null }
 
-export type CvRole =
-  | 'Frontend'
-  | 'Backend'
-  | 'Fullstack'
-  | 'Mobile'
-  | 'Data'
-  | 'DevOps'
-  | 'QA'
-  | 'UX/UI'
-  | 'IT-Support'
-  | 'IT-Projektmanagement'
-  | 'Andere'
+export const CV_ROLES = [
+  'Frontend',
+  'Backend',
+  'Fullstack',
+  'Mobile',
+  'Data',
+  'DevOps',
+  'QA',
+  'UX/UI',
+  'IT-Support',
+  'IT-Projektmanagement',
+  'Andere',
+] as const
+
+export type CvRole = (typeof CV_ROLES)[number]
 
 export type AnalysisStatus = 'none' | 'running' | 'ready' | 'failed'
 
@@ -69,3 +72,61 @@ export type CvVersionSummary = {
   active: boolean
   created_at: string
 }
+
+export type OfferType = 'work' | 'self_employment' | 'apprenticeship' | 'internship'
+
+export const OFFER_LABELS: Record<OfferType, string | null> = {
+  work: null,
+  self_employment: 'Selbstständigkeit',
+  apprenticeship: 'Ausbildung',
+  internship: 'Praktikum',
+}
+
+export const REGION_LABELS = {
+  BADEN_WUERTTEMBERG: 'Baden-Württemberg',
+  BAYERN: 'Bayern',
+  BERLIN: 'Berlin',
+  BRANDENBURG: 'Brandenburg',
+  BREMEN: 'Bremen',
+  HAMBURG: 'Hamburg',
+  HESSEN: 'Hessen',
+  MECKLENBURG_VORPOMMERN: 'Mecklenburg-Vorpommern',
+  NIEDERSACHSEN: 'Niedersachsen',
+  NORDRHEIN_WESTFALEN: 'Nordrhein-Westfalen',
+  RHEINLAND_PFALZ: 'Rheinland-Pfalz',
+  SAARLAND: 'Saarland',
+  SACHSEN: 'Sachsen',
+  SACHSEN_ANHALT: 'Sachsen-Anhalt',
+  SCHLESWIG_HOLSTEIN: 'Schleswig-Holstein',
+  THUERINGEN: 'Thüringen',
+} as const
+
+export type Region = keyof typeof REGION_LABELS
+
+export type WorkTime = 'full' | 'part'
+
+export type Job = {
+  id: number
+  source: 'ba' | 'own'
+  title: string
+  company: string | null
+  city: string
+  region: Region | null
+  offer_type: OfferType
+  role: CvRole
+  full_time: boolean
+  part_time: boolean
+  published_at: string
+}
+
+export type JobList = { total: number; pool_updated_at: string | null; jobs: Job[] }
+
+export type JobFilter = {
+  q: string
+  role: CvRole | null
+  region: Region | null
+  workTime: WorkTime | null
+  offerType: OfferType | null
+}
+
+export type JobDetail = Job & { description: string; url: string | null }

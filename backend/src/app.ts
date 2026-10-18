@@ -5,12 +5,14 @@ import type { SendStream } from './llm/send.js'
 import { createAuthModule } from './modules/auth/auth.module.js'
 import { createCoachModule } from './modules/coach/coach.module.js'
 import { createCvsModule } from './modules/cvs/cvs.module.js'
+import type { BaClient } from './modules/jobs/jobs.ba.js'
+import { createJobsModule } from './modules/jobs/jobs.module.js'
 import { requireAuth } from './shared/auth.middleware.js'
 import { errorHandler } from './shared/errors.js'
 
-export type AppDeps = { prisma: PrismaClient; tokenTtlDays: number; send: SendStream; batches: Batches }
+export type AppDeps = { prisma: PrismaClient; tokenTtlDays: number; send: SendStream; batches: Batches; ba: BaClient }
 
-export function createApp({ prisma, tokenTtlDays, send, batches }: AppDeps): Express {
+export function createApp({ prisma, tokenTtlDays, send, batches, ba }: AppDeps): Express {
   const app = express()
   app.use(express.json())
 
@@ -18,6 +20,7 @@ export function createApp({ prisma, tokenTtlDays, send, batches }: AppDeps): Exp
   const authenticate = requireAuth(auth.service)
   const coach = createCoachModule({ prisma, send, authenticate })
   const cvs = createCvsModule({ prisma, batches, authenticate })
+  const jobs = createJobsModule({ prisma, ba, authenticate })
 
   const api = Router()
   api.get('/health', async (_req, res) => {
@@ -27,6 +30,7 @@ export function createApp({ prisma, tokenTtlDays, send, batches }: AppDeps): Exp
   api.use('/auth', auth.router)
   api.use('/coach', coach.router)
   api.use('/cvs', cvs.router)
+  api.use('/jobs', jobs.router)
 
   app.use('/api/v1', api)
   app.use(errorHandler)
