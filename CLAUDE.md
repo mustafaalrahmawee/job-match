@@ -13,7 +13,9 @@ Modellaufruf erst `/prompt-unit <unit>`, dann `/review-loop UC-xx`.
 
 Jeder Prompt folgt [docs/app-prompting-anchor.md](docs/app-prompting-anchor.md), jede Eval
 [docs/app-evaluation-anchor.md](docs/app-evaluation-anchor.md); was je Unit geprüft wird, steht in
-[docs/EVAL_PLAN.md](docs/EVAL_PLAN.md).
+[docs/EVAL_PLAN.md](docs/EVAL_PLAN.md). Zu jeder Prompt-Unit gehört ein Blatt `docs/prompts/<unit>.md`
+(Vorlage `.claude/skills/prompt-unit/blatt.md`) mit Analyse und Entscheidung je Schritt und den
+Fassungen; nach der Übernahme steht der Prompt-Text nur im Code, jeder Teil als benannte Konstante.
 
 Stack, Datenbank und Befehle stehen in der [README](README.md).
 
