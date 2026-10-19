@@ -3,6 +3,7 @@ import type { Conversation, Message, Prisma, PrismaClient } from '../../generate
 import type { SendStream, StreamHandlers, StreamResult } from '../../llm/send.js'
 import { type ChatSettings, coachChatRequest } from '../../prompts/coach_chat.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
+import type { CvsService } from '../cvs/cvs.service.js'
 
 export type ConversationWithMessages = Conversation & { messages: Message[] }
 
@@ -14,6 +15,7 @@ export class CoachService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly send: SendStream,
+    private readonly cvs: CvsService,
   ) { }
 
   createConversation(userId: number, title: string): Promise<Conversation> {
@@ -60,6 +62,7 @@ export class CoachService {
   }
 
   async reply(
+    userId: number,
     conversationId: number,
     history: Message[],
     settings: ChatSettings,
@@ -69,7 +72,9 @@ export class CoachService {
       role: message.role,
       content: message.content as unknown as ContentBlockParam[],
     }))
-    const params = coachChatRequest(messages, settings, null)
+    const cv = await this.cvs.readyAnalysis(userId)
+    const asOf = new Date().toISOString().slice(0, 10)
+    const params = coachChatRequest(messages, settings, cv && { ...cv, asOf })
     const result = await this.send(params, handlers)
     if (result.stopReason === 'refusal') {
       console.warn(`Coach refusal in conversation ${conversationId}: ${result.stopDetails?.category ?? 'no category'}`)

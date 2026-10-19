@@ -18,8 +18,8 @@ export function createApp({ prisma, tokenTtlDays, send, batches, ba }: AppDeps):
 
   const auth = createAuthModule({ prisma, tokenTtlDays })
   const authenticate = requireAuth(auth.service)
-  const coach = createCoachModule({ prisma, send, authenticate })
   const cvs = createCvsModule({ prisma, batches, authenticate })
+  const coach = createCoachModule({ prisma, send, cvs: cvs.service, authenticate })
   const jobs = createJobsModule({ prisma, ba, authenticate })
 
   const api = Router()

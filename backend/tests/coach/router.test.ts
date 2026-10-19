@@ -1,17 +1,35 @@
 import request from 'supertest'
 import { beforeEach, expect, test } from 'vitest'
-import { COACH_CHAT_MODEL, COACH_CHAT_NO_CV, COACH_CHAT_SYSTEM } from '../../src/prompts/coach_chat.js'
-import { bearerFor, createAnna, streamedText, useTestDatabase } from '../helpers.js'
+import { COACH_CHAT_CV_RULES, COACH_CHAT_MODEL, COACH_CHAT_NO_CV, COACH_CHAT_SYSTEM } from '../../src/prompts/coach_chat.js'
+import type { CvAnalysis } from '../../src/prompts/cv_analysis.js'
+import { bearerFor, createAnna, requestText, streamedText, useTestDatabase } from '../helpers.js'
 
 const { app, auth, prisma, model } = useTestDatabase()
 let headers: { Authorization: string }
+let annaId: number
 
 type SseEvent = { event: string; data: Record<string, unknown> }
 
 const SETTINGS = { quality: 'normal', effort: 'medium' }
 
+const ANALYSIS: CvAnalysis = {
+  is_cv: true,
+  language: 'de',
+  suggested_role: 'Frontend',
+  positions: [{ employer: 'Pixelwerk GmbH', title: 'Frontend-Entwicklerin', start: '2023-01', end: null }],
+  skills: ['Vue', 'TypeScript'],
+  education: [],
+  highest_degree: null,
+  languages: [{ name: 'Deutsch', level: 'Muttersprache' }],
+  strengths: [],
+  weaknesses: ['Keine Erfahrung mit Kubernetes'],
+  tips: [],
+}
+
 beforeEach(async () => {
-  headers = await bearerFor(auth, await createAnna(auth))
+  const anna = await createAnna(auth)
+  annaId = anna.id
+  headers = await bearerFor(auth, anna)
 })
 
 function events(text: string): SseEvent[] {
@@ -106,17 +124,40 @@ test('the request carries the coach prompt and the whole history', async () => {
   await send(id, 'Und wie lang soll ein Anschreiben sein?')
 
   const last = model.requests.at(-1)!
-  expect(last).toMatchObject({
-    model: COACH_CHAT_MODEL,
-    system: [
-      { type: 'text', text: COACH_CHAT_SYSTEM },
-      { type: 'text', text: COACH_CHAT_NO_CV },
-    ],
-  })
+  expect(last.model).toBe(COACH_CHAT_MODEL)
+  expect(requestText(last)).toContain(COACH_CHAT_SYSTEM)
+  expect(requestText(last)).toContain(COACH_CHAT_NO_CV)
   expect(last.messages.map((m) => m.role)).toEqual(['user', 'assistant', 'user'])
   expect(last.messages.at(-1)!.content).toEqual([
     { type: 'text', text: 'Und wie lang soll ein Anschreiben sein?' },
   ])
+})
+
+test('the coach gets the ready analysis of the active CV, its role and the date of the request', async () => {
+  await prisma.cvVersion.create({
+    data: { userId: annaId, pdf: new Uint8Array([1]), analysisStatus: 'ready', role: 'Backend', analysis: ANALYSIS },
+  })
+  const id = await newConversation()
+  await send(id, 'Habe ich Kubernetes-Erfahrung?')
+
+  const text = requestText(model.requests.at(-1)!)
+  expect(text).toContain(COACH_CHAT_CV_RULES)
+  for (const fact of [new Date().toISOString().slice(0, 10), 'Backend', 'Pixelwerk GmbH', 'Vue', 'TypeScript']) {
+    expect(text).toContain(fact)
+  }
+})
+
+test('a CV without a finished analysis, or an inactive one, leaves the coach without a CV', async () => {
+  await prisma.cvVersion.create({
+    data: { userId: annaId, pdf: new Uint8Array([1]), isActive: false, analysisStatus: 'ready', analysis: ANALYSIS },
+  })
+  await prisma.cvVersion.create({ data: { userId: annaId, pdf: new Uint8Array([2]), analysisStatus: 'running' } })
+  const id = await newConversation()
+  await send(id, 'Kennst du meinen Lebenslauf?')
+
+  const text = requestText(model.requests.at(-1)!)
+  expect(text).toContain(COACH_CHAT_NO_CV)
+  expect(text).not.toContain('Pixelwerk GmbH')
 })
 
 test('quality and effort reach the request and are stored with the answer', async () => {
