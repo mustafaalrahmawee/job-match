@@ -12,8 +12,7 @@ entsteht, steht in [docs/APP_IDEA.md](docs/APP_IDEA.md); welcher Befehl als Näc
 
 **Reihenfolge:** Phase A baut erst alle Use Cases bis zum Go-live; Modell und Effort je Prompt-Unit
 sind geschätzt und festgelegt ([docs/EVAL_PLAN.md](docs/EVAL_PLAN.md) §5). Phase B misst danach
-Unit für Unit mit Evals und passt Modell, Effort und Prompt an. Die Evals für `coach_chat` und
-`cv_analysis` aus Stufe 1 und 2 bleiben liegen, bis Phase B beginnt.
+Unit für Unit mit Evals und passt Modell, Effort und Prompt an.
 
 ## Dokumentation
 
