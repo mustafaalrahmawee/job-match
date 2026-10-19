@@ -46,7 +46,7 @@ The core of the domain is the chain CV version → analysis (once, stored) → a
 
 Sixteen use cases, ordered by stage; after stage 3 (UC-01 to UC-09) the app is already presentable.
 
-Work happens in two phases. **Phase A** builds every use case, stage by stage, without evals: each prompt unit gets a model and an effort from the estimate table in `EVAL_PLAN.md` §5, written as constants. **Phase B** starts once the app is complete and online: one eval per prompt unit, which may change model, effort and prompt. The two suites that already exist (`coach_chat`, `cv_analysis`) wait for phase B.
+Work happens in two phases. **Phase A** builds every use case, stage by stage, without evals: each prompt unit gets a model and an effort from the estimate table in `EVAL_PLAN.md` §5, written as constants. **Phase B** starts once the app is complete and online: one eval per prompt unit, which may change model, effort and prompt.
 
 | ID | Actor | Use case | Outcome | Stage |
 | --- | --- | --- | --- | --- |

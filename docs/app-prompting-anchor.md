@@ -33,7 +33,7 @@
   project decisions and additions by the author and the agent: the purpose with
   the prompt unit, its philosophy and the runtime shapes (§2), the scope
   boundary to the role-file anchor (§3), the skeletons (§7), and the worked
-  example from the career-coaching project (§8). Directly from the book are
+  example (§8), built on the book's IT support case. Directly from the book are
   AP-02, AP-07, AP-08, AP-10, AP-18, AP-21, AP-27, AP-31, AP-36, AP-37, AP-39,
   AP-40, and AP-45. RP-01 is a pure project decision; all other AP and RP
   rules sharpen a book concept into a project decision.
@@ -104,7 +104,7 @@ what this anchor accepts, because here the machinery _is_ part of the prompt.
 | ----- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | AP-01 | Four-dimension complexity profile  | Before writing, profile the feature on medium, level of abstraction, context required and statefulness, and record the profile beside the prompt unit. Each dimension answers one authoring question: medium (the form in which the problem reaches the app) decides how the input becomes model-readable — text, document, image, speech — and, together with the surface, how the answer transforms back; abstraction decides whether reasoning is needed; context decides the retrieval layer; statefulness decides what persists across calls — conversation history, stored app state, user preferences. Each dimension is rated against three reference points: low like proofreading (text in, concrete small problem, nothing beyond the user's text, no state), medium like IT support (large problem space bounded by documentation, searchable docs, conversation history and attempted solutions), high like travel planning (several media and APIs, subjective tastes plus hard constraints, many external sources, state across weeks including abandoned branches). |
 | AP-02 | Little Red Riding Hood Principle   | The prompt reads like a document type the model has seen many times in training, and stays on that path. Inside a chat API this still applies: the system message is written as a document, and markdown structure is used inside messages because the model knows that shape. The prompt's own grammar, register and tone carry over into the completion, so the static text is written in the clean, finished style the answer should have. |
-| AP-03 | Document frame over role assertion | The unit opens by naming the document and its parties in the third person — "This is the transcript of a career coaching session; the coach answers the last message" — rather than asserting a role in the second person. The frame delivers persona, scope and turn-taking in one sentence and keeps the model on a trained path; a role label asks the model to infer behaviour from one word. Writing the assistant's voice is the author's privilege (playwriting), not the model's alone. |
+| AP-03 | Document frame over role assertion | The unit opens by naming the document and its parties in the third person — "This is the transcript of an IT support chat; the technician answers the last message" — rather than asserting a role in the second person. The frame delivers persona, scope and turn-taking in one sentence and keeps the model on a trained path; a role label asks the model to infer behaviour from one word. Writing the assistant's voice is the author's privilege (playwriting), not the model's alone. |
 | AP-04 | Four-criterion check, per call     | Before shipping a unit, confirm: (i) training-data resemblance, (ii) every fact the answer needs is present, (iii) the prompt conditions toward a solution rather than toward more problem statement, (iv) the completion has a natural endpoint. An author check, not a step inside the prompt. With a chat API, the API largely provides (i), (iii) and (iv): messages become a transcript, the assistant answers, and stops at the end of its message. (ii) remains entirely the author's work and is where most of the effort goes; (i), (iii) and (iv) are still shaped through the system message, the transcript and the tool definitions, including an instruction that bounds length where the surface needs it. |
 | AP-05 | Transform-back is part of the unit | Each unit names its **surface**: rendered markdown, plain text, speech, a UI widget, a tool call, or a parsed object. The output contract is derived from the surface, because a completion is not a solution until the app turns it into one. "Use markdown" is justified by "the surface renders markdown", never by taste.                                                                                                                                                                   |
 | AP-06 | Model, latency and cost as bounds  | The unit records its model and its urgency tier; both cap how much context and how much visible reasoning the prompt may ask for. A high-urgency surface cannot afford a long reasoning preamble however much accuracy it would buy, and a cheap small model is the right answer for a narrow task. Model size trades quality against cost and latency: the unit starts with the smallest model that plausibly does the task and moves up only when the quality gain is worth the price and the surface can wait for it. |
@@ -276,36 +276,44 @@ bracketed names are slots.
 
 ## 8. Worked Example
 
-The pattern applied, in the app's own language. The original unit from the
-career-coaching project — frame first, then positives with reasons:
+The pattern applied to an IT support assistant, the book's example of a
+feature with medium complexity. A first unit — frame first, then positives with
+reasons:
 
 ```ts
-export const CHAT_SYSTEM_PROMPT = `Dies ist das Protokoll eines Karriere-Coachings: Eine Person bespricht mit ihrem Coach Lebenslauf, Stellenanzeigen und Vorstellungsgespräche. Der Coach antwortet auf die letzte Nachricht.
+export const SUPPORT_SYSTEM = `This is the transcript of an IT support chat: an employee describes a problem with their laptop, account or office software, and a support technician helps to solve it. The technician answers the last message.
 
-Der Coach antwortet auf Deutsch, damit das Gespräch in der Sprache der Bewerbung bleibt, und folgt der Person, wenn sie die Sprache wechselt. Er beginnt mit der direkten Antwort und liefert die Begründung danach, damit der Kern sofort sichtbar ist. Er bezieht sich auf konkrete Angaben der Person, damit seine Hinweise umsetzbar sind. Fehlt eine Angabe, stellt er eine gezielte Rückfrage, damit Empfehlungen auf Fakten statt auf Annahmen beruhen. Er schreibt in kurzen Absätzen oder Listen in Markdown, weil die Oberfläche Markdown darstellt.`;
+The technician writes in the language of the last message, so the employee can follow the steps without translating. Each reply opens with the next step to try and gives the reason after it, so the employee can act at once. When a detail is missing — the error message, the device, what changed — the technician asks for that one detail, so the diagnosis rests on facts rather than guesses. Steps are a numbered list in Markdown, because the support panel renders Markdown.`
 ```
 
 What it already satisfies: AP-02/AP-03 (document frame, third person, no role
 assertion), AP-08 (every rule positive and reasoned), AP-11 (answer first),
 AP-12 (targeted follow-up instead of invention), AP-13 (language policy),
-AP-05 (format justified by the surface), AP-09 (five rules, each load-bearing).
+AP-05 (format justified by the surface), AP-09 (four rules, each load-bearing).
 
-What a unit under this anchor adds: a profile comment (surface, urgency, model),
-a declared scope sentence (AP-31) so out-of-domain turns have a defined answer,
-named slots for the standing context and their bounds (AP-15/AP-16/AP-24), and
+What a unit under this anchor adds: a profile comment (medium, abstraction,
+context, state, surface, urgency, model), a declared scope sentence (AP-31) so
+out-of-scope turns have a defined answer, named slots with their class and
+bound (AP-15/AP-16/AP-24), grounding in the supplied documentation (AP-26), and
 the enforcement line (AP-49, AP-33) for anything the app must guarantee.
 
 ```ts
 /**
- * Prompt unit: chat turn, career coaching.
- * Surface: rendered markdown in the chat panel. Urgency: medium. Model: {model}.
- * Slots: profileDigest (indirect, standing), historySummary (indirect, bounded
- * to the last {n} turns plus a digest), userTurn (direct, live).
- * Stop: one coach reply. Enforced in code: markdown sanitising, history bound.
+ * Prompt unit support_chat: advice conversation, retrieval-augmented turn.
+ * Profile: medium text, medium abstraction (large problem space bounded by the
+ * documentation), context from searchable docs, stateful (history and attempted
+ * solutions). Surface: rendered markdown in the support panel. Urgency: medium.
+ * Model: {model}.
+ * Slots: docPassages (indirect, top {k} by score, each in an aside with id,
+ * title and date), history (indirect, last {n} turns plus a digest of attempted
+ * solutions), userTurn (direct, live).
+ * Stop: one technician reply. Enforced in code: cited passage ids exist,
+ * password resets and device wipes only through a confirmation button, markdown
+ * sanitised.
  */
-export const CHAT_SYSTEM_PROMPT = `Dies ist das Protokoll eines Karriere-Coachings: Eine Person bespricht mit ihrem Coach Lebenslauf, Stellenanzeigen und Vorstellungsgespräche. Der Coach antwortet auf die letzte Nachricht. Das Coaching behandelt Bewerbungsunterlagen, Stellensuche und Gesprächsvorbereitung; bei anderen Anliegen nennt der Coach kurz die Grenze und bietet den passenden nächsten Schritt an.
+export const SUPPORT_SYSTEM = `This is the transcript of an IT support chat: an employee describes a problem with their laptop, account or office software, and a support technician helps to solve it. The technician answers the last message. The support covers company devices, accounts and software; for private devices and purchases the technician names the limit briefly and points to the team that handles it.
 
-Der Coach antwortet auf Deutsch, damit das Gespräch in der Sprache der Bewerbung bleibt, und folgt der Person, wenn sie die Sprache wechselt. Er beginnt mit der direkten Antwort und liefert die Begründung danach, damit der Kern sofort sichtbar ist. Er bezieht sich auf konkrete Angaben der Person, damit seine Hinweise umsetzbar sind. Fehlt eine Angabe, stellt er eine gezielte Rückfrage, damit Empfehlungen auf Fakten statt auf Annahmen beruhen. Er schreibt in kurzen Absätzen oder Listen in Markdown, weil die Oberfläche Markdown darstellt.`;
+The technician writes in the language of the last message, so the employee can follow the steps without translating. Each reply opens with the next step to try and gives the reason after it, so the employee can act at once. Each step rests on the documentation passages supplied with the message and names the passage id behind it, so the employee and the app can check the source; where the passages do not cover the problem, the technician says so and asks for the one detail that would narrow it down. Steps are a numbered list in Markdown, because the support panel renders Markdown.`
 ```
 
 The lesson the example carries: the frame does the work a persona assertion is

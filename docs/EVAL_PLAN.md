@@ -1,13 +1,13 @@
 # job-match – Evaluation Plan
 
-As of: October 17, 2026
+As of: October 19, 2026
 
 This plan applies `app-evaluation-anchor.md` to job-match: per use case, is an evaluation needed, what is tested, where the samples come from, how answers are graded, and what must pass before a change is kept. Use cases without a model call are covered by Vitest only.
 
 ## 0. Two Phases
 
 - **Phase A, build the app.** Every use case of `APP_IDEA.md`, stage by stage, up to go-live. Each prompt unit gets model and effort from the estimate table in §5 as constants; no suite, no `pnpm evals` run, nothing under `backend/evals/` changes. The prompt is written once, by hand, against the prompting anchor and a handful of manual tries in the app.
-- **Phase B, measure.** Starts when the app is complete and online. Unit by unit in the order of §4: write the suite, run, check, judge; confirm the estimate or change model, effort and prompt. Everything from §1 on describes phase B. The suites of `coach_chat` and `cv_analysis` already exist from stages 1 and 2 and are the first to run.
+- **Phase B, measure.** Starts when the app is complete and online. Unit by unit in the order of §4: write the suite, run, check, judge; confirm the estimate or change model, effort and prompt. Everything from §1 on describes phase B.
 
 ## 1. Models
 
@@ -73,7 +73,7 @@ Samples are written and reviewed with `/eval-samples <unit> <count>`: the `sampl
 - **Checks:** `end_turn`, not empty, language as expected (detected with a library such as `franc`), length within `max_words` plus 10 %, no `forbidden` phrase, injection ineffective, no claim to know a CV.
 - **Judge:** none in stage 1; from stage 2 Truth against the analysis, Relevance, Restraint.
 - **Threshold:** all checks on all cases, all three runs.
-- **Chosen (October 13, 2026):** Sonnet `medium`, prompt v1, 13/13, about 0.006 $ per case. Rejected: Sonnet `low` (13/13, a second run 11/13), Haiku `low` 4/13 (wrong language), Haiku `medium` 11/13 and `high` 7/13 (too long). Normal · Medium (`v1-sonnet-normal-medium`, October 14): 11/13, length only, about 20 % cheaper; offered as an opt-in without a prompt change.
+- **Chosen:** ⬜
 
 ### Stage 2 · `cv_analysis` (UC-04) and the CV slot of `coach_chat` (UC-06)
 
@@ -85,7 +85,7 @@ Samples are written and reviewed with `/eval-samples <unit> <count>`: the `sampl
 - **Judge:** Truth and Relevance of strengths, weaknesses and tips.
 - **Threshold:** functional 100 %; `is_cv` all; role ≥ 90 %; positions 100 %; must-skill recall ≥ 95 %; absent skills 0 hits; all three runs.
 - **Deviation:** synthetic CVs are cleaner than real ones (no photos, odd section orders, marketing phrases). Real uploads with status `failed` become candidate cases without gold standard.
-- **Chosen (October 16, 2026, until the judge runs):** Haiku `medium`, prompt v2, 35/37, about 0.0008 $ per CV. The two misses are single runs: 31 skills (the app trims to 30) and language names in German for an English CV. Rejected: prompt v1 25/37 (skill limit, injection echoed in tips, certificates, freelance clients as positions), Haiku `high` 35/37 at 30 % more cost. Sonnet `low` not run.
+- **Chosen:** ⬜
 
 **UC-06:** 6–8 canned conversations in `coach_chat/samples/` with a gold analysis from the corpus in the `analysis` slot: "Which of my skills fit a Frontend role?", "Do I have Kubernetes experience?" (gold no; `forbidden` any yes), "How many years have I worked?" (number in `expected_mentions`), "What should I learn next?". Checks: one `expected_mentions` term appears, no `forbidden` phrase, language. Judge Truth against the analysis.
 
@@ -156,12 +156,12 @@ The calendar entry is Vitest with a fake MCP server. Before go-live all suites r
 
 ### Phase A: the estimate
 
-Prices per million tokens (Claude API, October 2026): Haiku 5.5 0.10 $ in / 0.50 $ out, Sonnet 5.5 2 $ / 10 $, Opus 5.5 4 $ / 20 $. Rule of thumb: Haiku for extraction into a schema and short single outputs; Sonnet for prose the applicant reads, grading, and tool use; Opus for nothing until a measurement asks for it. Effort `medium` everywhere, because Sonnet 5.5 and Haiku 5.5 are tuned for it on chat and tool use and `high` costs 20 to 30 % more for the same answer in the two units already measured.
+Prices per million tokens (Claude API, October 2026): Haiku 5.5 0.10 $ in / 0.50 $ out, Sonnet 5.5 2 $ / 10 $, Opus 5.5 4 $ / 20 $. Rule of thumb: Haiku for extraction into a schema and short single outputs; Sonnet for prose the applicant reads, grading, and tool use; Opus for nothing until a measurement asks for it. Effort `medium` everywhere, because Sonnet 5.5 and Haiku 5.5 are tuned for it on chat and tool use and `high` costs more.
 
 | Unit | Stage | Model | Effort | Why | Cost per call, rough |
 | --- | --- | --- | --- | --- | --- |
-| `coach_chat` | 1 | Sonnet 5.5 | `medium` | measured on October 13: Haiku answers in the wrong language or too long | 0.006 $ |
-| `cv_analysis` | 2 | Haiku 5.5 | `medium` | measured on October 16: 35/37 with the PDF, schema output | 0.001 $ |
+| `coach_chat` | 1 | Sonnet 5.5 | `medium` | prose the applicant reads, in the language of the last message and within a length limit | 0.006 $ |
+| `cv_analysis` | 2 | Haiku 5.5 | `medium` | extraction into a schema from a PDF, text layer or scan | 0.001 $ |
 | `job_extract` | 3 | Haiku 5.5 | `medium` | extraction into a schema from text or screenshot, like `cv_analysis` | 0.001 $ |
 | `match_analysis` | 3 | Sonnet 5.5 | `medium` | reasons over two documents, every claim quoted; the score drives the product | 0.02 $ |
 | `coach_agent` | 4 | Sonnet 5.5 | `medium` | tool use over several turns plus web search; Sonnet's recommended starting effort for agents | 0.03 $ per turn |

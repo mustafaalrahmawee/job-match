@@ -21,7 +21,7 @@ Modellaufruf nur `/review-loop UC-xx`. Nach jedem fertigen Use Case: Änderungen
 | UC-03 Gespräche, Qualität, Effort | – | Stufe 1 |
 | UC-04 Lebenslauf hochladen | – | `22b0aeb` |
 | UC-05 Versionen | – | `7b2ee2c` |
-| UC-06 Coach kennt den Lebenslauf | – | `e955682` |
+| UC-06 Coach kennt den Lebenslauf | – | `022f7ad` |
 
 ### Stufe 3 · Stellen und Match
 
@@ -70,8 +70,8 @@ Suite und Läufe schon, dort fehlt nur der Judge.
 
 | Unit | Befehle |
 | --- | --- |
-| `coach_chat` | `pnpm evals judge coach_chat <fassung>`, dann Tabelle in EVAL_PLAN §5 bestätigen oder ändern |
-| `cv_analysis` | `pnpm evals judge cv_analysis <fassung>`, dann Tabelle bestätigen oder ändern |
+| `coach_chat` | `/eval-setup coach_chat` · `/eval-samples coach_chat 12` · `/eval-run coach_chat v1` |
+| `cv_analysis` | `/eval-setup cv_analysis` · `/eval-samples cv_analysis 25` · `/eval-run cv_analysis v1` |
 | `job_extract` | `/eval-setup job_extract` · `/eval-samples job_extract 15` · `/eval-run job_extract v1` |
 | `match_analysis` | `/eval-setup match_analysis` · `/eval-samples match_analysis 30` · `/eval-run match_analysis v1` · erste Judge-Kalibrierung |
 | `coach_agent` | `/eval-setup coach_agent` · `/eval-samples coach_agent 20` · `/eval-run coach_agent v1` |
