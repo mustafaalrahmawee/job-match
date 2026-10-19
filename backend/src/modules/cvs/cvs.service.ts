@@ -74,6 +74,15 @@ export class CvsService {
     return this.refresh(version, version.batchId)
   }
 
+  async readyAnalysis(userId: number): Promise<{ role: CvRole | null; analysis: CvAnalysis } | null> {
+    const version = await this.prisma.cvVersion.findFirst({
+      where: { userId, isActive: true, analysisStatus: 'ready' },
+      select: { role: true, analysis: true },
+    })
+    if (!version?.analysis) return null
+    return { role: version.role as CvRole | null, analysis: version.analysis as CvAnalysis }
+  }
+
   async retry(userId: number, id: number): Promise<CvVersionInfo> {
     const { count } = await this.prisma.cvVersion.updateMany({
       where: { id, userId, isActive: true, analysisStatus: { in: ['none', 'failed'] } },

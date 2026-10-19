@@ -72,15 +72,17 @@ export class CoachController {
   sendMessage: RequestHandler = async (req, res) => {
     const id = conversationIdSchema.parse(req.params.id)
     const { content, ...settings } = sendMessageSchema.parse(req.body)
-    const history = await this.coach.addUserMessage(authOf(req).user.id, id, content)
-    await streamReply(res, (handlers) => this.coach.reply(id, history, settings, handlers))
+    const userId = authOf(req).user.id
+    const history = await this.coach.addUserMessage(userId, id, content)
+    await streamReply(res, (handlers) => this.coach.reply(userId, id, history, settings, handlers))
   }
 
   retry: RequestHandler = async (req, res) => {
     const id = conversationIdSchema.parse(req.params.id)
     const settings = chatSettingsSchema.parse(req.body)
-    const history = await this.coach.unansweredHistory(authOf(req).user.id, id)
-    await streamReply(res, (handlers) => this.coach.reply(id, history, settings, handlers))
+    const userId = authOf(req).user.id
+    const history = await this.coach.unansweredHistory(userId, id)
+    await streamReply(res, (handlers) => this.coach.reply(userId, id, history, settings, handlers))
   }
 }
 

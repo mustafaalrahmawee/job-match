@@ -146,3 +146,12 @@ export async function bearerFor(auth: AuthService, user: User): Promise<{ Author
   const { token } = await auth.issueToken(user)
   return { Authorization: `Bearer ${token}` }
 }
+
+export function requestText({ system, messages }: MessageCreateParamsBase): string {
+  const contents = [system ?? [], ...messages.map((message) => message.content)]
+  return contents
+    .flatMap((content) =>
+      typeof content === 'string' ? [content] : content.map((block) => (block.type === 'text' ? block.text : '')),
+    )
+    .join('\n')
+}

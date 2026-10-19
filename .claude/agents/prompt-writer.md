@@ -23,6 +23,7 @@ Copy the template to `docs/prompts/<unit>.md`, fill in the head with status `Ent
 - **Prompt-Teil:** the German text this step adds, exactly as it will be sent. A step that produces code instead (constants, schema, tool definitions) gets the code in a `ts` block.
 - A point that does not apply gets `AP-xx entfällt – <Grund>`. No field stays empty.
 - Step 12 stays empty until assembly.
+- Whatever only the user can decide, or what lies outside this unit (a bug in a module, a missing field, a test that fixes the shape of the prompt, a deviation the stage allows), goes under Offene Punkte with the step it belongs to and what it would take. Never decide it silently in a step.
 - When the task names an existing unit file, the Prompt-Teile are its text and code copied word for word; Analyse and Entscheidung describe the unit as it is, and Step 12 is filled at once.
 
 Rules for the prompt text: German, like the app. The first sentence names the document type and its parties in the third person; no role label, no "Du bist". Every conduct rule is a positive with its reason; absolutes only for structure the code validates, and said so. Dynamic material goes into marked asides; uploaded or pasted text is fenced off as data in the frame. No anchor IDs and no reference to the anchor inside the prompt text. Examples only where frame and rules leave real ambiguity, format-level. Model and effort are the ones the task names; never pick a model yourself. A context block another unit already builds is reused, not rewritten.

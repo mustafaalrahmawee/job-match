@@ -35,6 +35,8 @@ What to look at in each step:
 10. **Enforcement Line:** everything that must hold is checked in code; writing tools are declared and gated where AP-49 asks; arguments the app knows are not in the tool definition.
 11. **Beispiele:** only where real ambiguity is left, format-level, never a full deliverable.
 
+**Offene Punkte:** a decision that belongs to the user or lies outside the unit, but was made silently inside a step, is a finding; so is an open point without its step or without what it would take.
+
 ## Code
 
 Check the assembled unit file and step 12 of the sheet:

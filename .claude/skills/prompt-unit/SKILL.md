@@ -19,7 +19,7 @@ You only coordinate. You do not write the sheet or the prompt and you do not rev
 2. **Sheet.** Start `prompt-writer` with the job `sheet`: the unit name, model and effort from §5, the use case row and the §4 section as text, the paths of the existing units and sheets, and for `--check` the path of the existing unit file.
 3. **Review.** Start `prompt-reviewer` with the job `sheet`, the path of the sheet and the use case row. It returns findings `P1`, `P2`, … or `Keine Funde.`
 4. **Round two.** If there are findings, start `prompt-writer` with the job `revision`, the path and the findings verbatim. Then start `prompt-reviewer` with the job `re-review`, the path and the writer's answer. No third round.
-5. **Pause.** Show the user a table with finding, step, anchor rule and result (`behoben`, `abgelehnt`, `ok`, `nicht ok`), every `nicht ok` and `N` point as open, and the path of the sheet. Stop and wait. Phase 2 starts only when the user says so; changes the user asks for go to the writer as a `revision`. For `--check`, skip to step 7 with the existing unit file.
+5. **Pause.** Show the user a table with finding, step, anchor rule and result (`behoben`, `abgelehnt`, `ok`, `nicht ok`), every `nicht ok` and `N` point as open, the Offene Punkte of the sheet one line each, and the path of the sheet. Stop and wait. Phase 2 starts only when the user says so; changes the user asks for go to the writer as a `revision`. For `--check`, skip to step 7 with the existing unit file.
 
 ### Phase 2: the code
 

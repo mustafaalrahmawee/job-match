@@ -102,6 +102,12 @@ Prompt-Teil:
 3. Führt zur Lösung, nicht zu mehr Problem:
 4. Natürliches Ende:
 
+## Offene Punkte
+
+Was nur die Person entscheiden kann oder außerhalb dieser Unit liegt, je Punkt: was, warum, welcher Schritt, was nötig wäre.
+
+- 
+
 ## Fassungen
 
 | Fassung | Ergebnis | Fund aus der Eval | Schritt | Änderung |
