@@ -88,7 +88,7 @@ Every stage introduces one topic; the table shows where each one naturally appea
 | --- | --- | --- |
 | Messages API, streaming | Coach chat via Server-Sent Events, stop reasons, effort sent explicitly | UC-02, UC-03 |
 | Working with files, Structured Outputs | PDF as document block, analysis as validated JSON | UC-04 |
-| Message Batches, prompt caching | CV analysis as batch with cached system prompt; stable prefix for long chats | UC-04, UC-13 |
+| Message Batches, prompt caching | CV analysis as batch; stable prefix cached for long chats | UC-04, UC-13 |
 | Vision | Screenshot of a job ad to text | UC-08 |
 | Prompting, prompt injection | CV and ad text go into the prompt as marked data, never as instructions; what must hold is checked in code | UC-08, UC-09 |
 | Tools, agent loop | Coach tools (save job, set status, generate questions) with own loop and stop conditions; server tool web search | UC-11 |
