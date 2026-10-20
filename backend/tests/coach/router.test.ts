@@ -1,6 +1,12 @@
 import request from 'supertest'
 import { beforeEach, expect, test } from 'vitest'
-import { COACH_CHAT_CV_RULES, COACH_CHAT_MODEL, COACH_CHAT_NO_CV, COACH_CHAT_SYSTEM } from '../../src/prompts/coach_chat.js'
+import {
+  COACH_CHAT_CV_RULES,
+  COACH_CHAT_MODEL,
+  COACH_CHAT_NO_CV,
+  COACH_CHAT_REFOCUS,
+  COACH_CHAT_SYSTEM,
+} from '../../src/prompts/coach_chat.js'
 import type { CvAnalysis } from '../../src/prompts/cv_analysis.js'
 import { bearerFor, createAnna, requestText, streamedText, useTestDatabase } from '../helpers.js'
 
@@ -128,8 +134,29 @@ test('the request carries the coach prompt and the whole history', async () => {
   expect(requestText(last)).toContain(COACH_CHAT_SYSTEM)
   expect(requestText(last)).toContain(COACH_CHAT_NO_CV)
   expect(last.messages.map((m) => m.role)).toEqual(['user', 'assistant', 'user'])
+  expect(last.messages[0].content).toEqual([{ type: 'text', text: 'Hallo' }])
   expect(last.messages.at(-1)!.content).toEqual([
     { type: 'text', text: 'Und wie lang soll ein Anschreiben sein?' },
+    { type: 'text', text: COACH_CHAT_REFOCUS },
+  ])
+})
+
+test('the refocus note is neither stored nor shown', async () => {
+  const id = await newConversation()
+  await send(id, 'Hallo')
+  await send(id, 'Und wie lang soll ein Anschreiben sein?')
+
+  const stored = await prisma.message.findMany({ where: { role: 'user' }, orderBy: { id: 'asc' } })
+  expect(stored.map((m) => m.content)).toEqual([
+    [{ type: 'text', text: 'Hallo' }],
+    [{ type: 'text', text: 'Und wie lang soll ein Anschreiben sein?' }],
+  ])
+  const show = await request(app).get(`/api/v1/coach/conversations/${id}`).set(headers)
+  expect((show.body as { messages: { text: string }[] }).messages.map((m) => m.text)).toEqual([
+    'Hallo',
+    'Hallo, ich bin dein Coach.',
+    'Und wie lang soll ein Anschreiben sein?',
+    'Hallo, ich bin dein Coach.',
   ])
 })
 
@@ -246,7 +273,15 @@ test('a failed answer keeps the question and can be retried', async () => {
   const retried = await retry(id, { quality: 'extended', effort: 'high' })
   expect(events(retried.text).at(-1)!.data).toMatchObject({ message: { text: 'Nenne eine Spanne.' } })
   expect(model.requests.at(-1)).toMatchObject({ thinking: { type: 'adaptive' }, output_config: { effort: 'high' } })
-  expect(model.requests.at(-1)!.messages).toHaveLength(1)
+  expect(model.requests.at(-1)!.messages).toEqual([
+    {
+      role: 'user',
+      content: [
+        { type: 'text', text: 'Wie verhandle ich mein Gehalt?' },
+        { type: 'text', text: COACH_CHAT_REFOCUS },
+      ],
+    },
+  ])
 
   expect((await retry(id)).status).toBe(409)
 })
