@@ -14,7 +14,7 @@ const ANALYSIS: CvAnalysis = {
   is_cv: true,
   language: 'de',
   suggested_role: 'Frontend',
-  positions: [{ employer: 'Pixelwerk GmbH', title: 'Frontend-Entwicklerin', start: '2023-01', end: null }],
+  positions: [{ employer: 'Pixelwerk GmbH', title: 'Frontend-Entwicklerin', start: '01/2023', end: null }],
   skills: Array.from({ length: 40 }, (_, i) => `Skill ${i + 1}`),
   education: [{ degree: 'B.Sc. Informatik', institution: 'TU Berlin', year: '2022' }],
   highest_degree: 'B.Sc. Informatik',
