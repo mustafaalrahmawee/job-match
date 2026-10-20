@@ -2,6 +2,7 @@ import { expect, test } from 'vitest'
 import {
   COACH_CHAT_CV_RULES,
   COACH_CHAT_NO_CV,
+  COACH_CHAT_REFOCUS,
   COACH_CHAT_SYSTEM,
   type CoachCv,
   coachChatRequest,
@@ -68,4 +69,32 @@ test('with a ready CV the request holds the CV rules and every fact of the analy
 
 test('an unconfirmed role still reaches the request as the suggested one', () => {
   expect(requestText(coachChatRequest(messages, settings, { ...cv, role: null }))).toContain('Fullstack')
+})
+
+test('the refocus note follows only the last message, as its own block', () => {
+  const history = [
+    { role: 'user' as const, content: [{ type: 'text' as const, text: 'Hallo' }] },
+    { role: 'assistant' as const, content: [{ type: 'text' as const, text: 'Hallo, ich bin dein Coach.' }] },
+    { role: 'user' as const, content: 'Wie lang soll ein Anschreiben sein?' },
+  ]
+  const copy = structuredClone(history)
+
+  const request = coachChatRequest(history, settings, null)
+
+  expect(request.messages).toEqual([
+    copy[0],
+    copy[1],
+    {
+      role: 'user',
+      content: [
+        { type: 'text', text: 'Wie lang soll ein Anschreiben sein?' },
+        { type: 'text', text: COACH_CHAT_REFOCUS },
+      ],
+    },
+  ])
+  expect(history).toEqual(copy)
+})
+
+test('the date of the request is the stand of the CV aside', () => {
+  expect(requestText(coachChatRequest(messages, settings, cv))).toContain('stand="2026-10-16"')
 })
