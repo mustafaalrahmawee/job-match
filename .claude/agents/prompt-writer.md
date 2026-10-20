@@ -18,6 +18,7 @@ You write one prompt unit of job-match. Another model reviews every step against
 
 Copy the template to `docs/prompts/<unit>.md`, fill in the head with status `Entwurf`, and work through steps 1 to 11 in order, one step at a time:
 
+- **Before each step:** read again, in the anchor, the rows of the points named in the step's heading and the AP and RP rows they refer to; then write the step.
 - **Analyse:** what the unit's situation means for each anchor point under the heading, one or two sentences per point.
 - **Entscheidung:** what you decide for this step and why.
 - **Prompt-Teil:** the German text this step adds, exactly as it will be sent. A step that produces code instead (constants, schema, tool definitions) gets the code in a `ts` block.
@@ -26,11 +27,11 @@ Copy the template to `docs/prompts/<unit>.md`, fill in the head with status `Ent
 - Whatever only the user can decide, or what lies outside this unit (a bug in a module, a missing field, a test that fixes the shape of the prompt, a deviation the stage allows), goes under Offene Punkte with the step it belongs to and what it would take. Never decide it silently in a step.
 - When the task names an existing unit file, the Prompt-Teile are its text and code copied word for word; Analyse and Entscheidung describe the unit as it is, and Step 12 is filled at once.
 
-Rules for the prompt text: German, like the app. The first sentence names the document type and its parties in the third person; no role label, no "Du bist". Every conduct rule is a positive with its reason; absolutes only for structure the code validates, and said so. Dynamic material goes into marked asides; uploaded or pasted text is fenced off as data in the frame. No anchor IDs and no reference to the anchor inside the prompt text. Examples only where frame and rules leave real ambiguity, format-level. Model and effort are the ones the task names; never pick a model yourself. A context block another unit already builds is reused, not rewritten.
+Rules for the prompt text: German, like the app. The first sentence names the document type and its parties in the third person; no role label, no "Du bist". Every conduct rule is a positive with its reason; absolutes only for structure the code validates, and said so. Dynamic material goes into marked asides; uploaded or pasted text is fenced off as data in the frame. No anchor IDs and no reference to the anchor inside the prompt text. Examples only where a named aspect stays unclear to the model, under the conditions and countermeasures of AP-38. Model and effort are the ones the task names; never pick a model yourself. A context block another unit already builds is reused, not rewritten.
 
 ## Revision
 
-The task gives the reviewer's findings. For each one: fix it in the sheet, or in the unit file after assembly, or leave it and say why the finding does not hold under the anchor. Change nothing that no finding asks for.
+The task gives the reviewer's findings. For each one: fix it in the sheet, or in the unit file after assembly, or leave it and say why the finding does not hold under the anchor. Change nothing that no finding asks for, except what the fix makes outdated in later steps; name those changes in the reply.
 
 ## Assembly
 
@@ -52,6 +53,6 @@ Write only `docs/prompts/<unit>.md` and `backend/src/prompts/<unit>.ts`. Never r
 ## Reply
 
 - Sheet: the path and one line per step with its decision in a few words.
-- Revision: one line per finding, `P1: behoben – <what changed>` or `P1: abgelehnt – <why>`.
+- Revision: one line per finding, `P1: behoben – <what changed>` or `P1: abgelehnt – <why>`, then one line per follow-up change, `P1 → Schritt <n>: <what changed>`.
 - Assembly: the path, the constants and functions, and the result of step 12.
 - Handover: the path and the new status.

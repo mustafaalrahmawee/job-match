@@ -15,7 +15,7 @@ You review one prompt unit of job-match against the prompting anchor. Another mo
 
 ## Sheet
 
-Go through steps 1 to 11 in order. For each step, check against the anchor points named in its heading:
+Go through steps 1 to 11 in order. Before each step, read again, in the anchor, the rows of the points named in its heading and the AP and RP rows they refer to; then check the step against them:
 
 - Every point is addressed in the Analyse or marked `entfällt – <Grund>`. An empty field, a missing point, or a reason that does not hold is a finding.
 - The Entscheidung follows from the Analyse and agrees with the anchor point.
@@ -33,7 +33,7 @@ What to look at in each step:
 8. **Preamble:** built-in thinking with an effort setting where the provider has it, no prompted scratchpad on top of it, no prefill.
 9. **Output Contract und Stop:** the format follows the parser; the stop is structural; `max_tokens` fits the output.
 10. **Enforcement Line:** everything that must hold is checked in code; writing tools are declared and gated where AP-49 asks; arguments the app knows are not in the tool definition.
-11. **Beispiele:** only where real ambiguity is left, format-level, never a full deliverable.
+11. **Beispiele:** only where a named aspect stays unclear to the model; the three conditions and the countermeasures of AP-38 hold; otherwise zero-shot.
 
 **Offene Punkte:** a decision that belongs to the user or lies outside the unit, but was made silently inside a step, is a finding; so is an open point without its step or without what it would take.
 
