@@ -1,6 +1,6 @@
 ---
 name: review-loop
-description: Builds and reviews one use case with two coding agents (writer and reviewer) that talk only through files in .review/. The writer collects the context, implements backend and frontend code and asks for a review; the reviewer comments; the writer fixes; one re-review. Each call detects the next step from the files there. Call /review-loop UC-04 to start, /review-loop to continue, /review-loop reset to start over.
+description: Builds and reviews one use case with two coding agents that talk only through files in .review/. This Claude Code session is the writer; the reviewer is a headless Claude Code on z.ai (glm-5.3, effort max) that zai-review.sh starts. The writer collects the context, implements backend and frontend code and asks for a review; the reviewer comments; the writer fixes; one re-review. Call /review-loop UC-04 to build and get the review, /review-loop to fix and close, /review-loop reset to start over.
 disable-model-invocation: true
 ---
 
@@ -8,27 +8,31 @@ disable-model-invocation: true
 
 Arguments: **$ARGUMENTS**.
 
-Two agents work in turns on one use case: the writer and the reviewer. They talk only through files in `.review/` at the repository root. Each call does one step, then stops and tells the user who is next.
+Two agents work in turns on one use case: the writer and the reviewer. They talk only through files in `.review/` at the repository root. You are the writer. The reviewer is a headless Claude Code on z.ai with its own instructions in `reviewer.md`; you start it with the script next to this file and never do a reviewer step yourself:
+
+```bash
+.claude/skills/review-loop/zai-review.sh review
+```
+
+The argument is `review` or `re-review`. Run it with Bash in the background (`run_in_background: true`) and wait for the notice; it can take several minutes. It reads the key from `backend/.env`, lets the reviewer only read files, search and run backend tests, and writes the answer to `.review/review.md` or `.review/re-review.md`. If it fails, show the user the last lines of `.review/zai-<step>.log`, stop and say that `/review-loop` retries the step.
 
 If the arguments are `reset`, delete `.review/` and stop. In step 1 the arguments name the use case, e.g. `UC-04`, or describe the goal in words.
 
 Scope is application code only: `backend/` and `frontend/`. Never touch `backend/evals/`, never run `pnpm evals`, never create or change a prompt unit in `backend/src/prompts/`; if the use case needs one, say so and stop. Never commit.
 
-The rules of the project (`CLAUDE.md`, `AGENTS.md`, if they exist) apply to both roles. Write everything in `.review/` in German.
+The rules of the project (`CLAUDE.md`, `AGENTS.md`, if they exist) apply to both roles. Write everything in `.review/` in German. A call to `/review-loop` runs every step in its row of the table below, then stops.
 
 ## Find the step
 
-| Files in `.review/` | Step | Role |
-|---|---|---|
-| none, or only `context.md` | 1 · build | writer |
-| `request.md` | 2 · review | reviewer |
-| `review.md`, no `fixes.md` | 3 · fix | writer |
-| `fixes.md`, no `re-review.md` | 4 · re-review | reviewer |
-| `re-review.md` | 5 · close | writer |
+| Files in `.review/` | Steps of this call |
+|---|---|
+| none, or only `context.md` | 1 · build, 2 · review |
+| `request.md`, no `review.md` | 2 · review |
+| `review.md`, no `fixes.md` | 3 · fix, 4 · re-review, 5 · close |
+| `fixes.md`, no `re-review.md` | 4 · re-review, 5 · close |
+| `re-review.md` | 5 · close |
 
-In step 1 you become the writer. From step 2 on, read the line `Schreiber:` in `request.md`: do a writer step only if you are that tool, a reviewer step only if you are not. Otherwise stop and tell the user to call `/review-loop` in the other tool.
-
-Say in one line which step you do and in which role.
+Say in one line which steps you do.
 
 ## 1 · Build (writer)
 
@@ -102,23 +106,10 @@ Schreiber: <your tool and model, e.g. Claude Code · Opus 5.5>
 <full diff in a diff code block>
 ```
 
-## 2 · Review (reviewer)
+## 2 · Review (reviewer on z.ai)
 
-1. Read `context.md`, `request.md` and the rule files named in `context.md`.
-2. Open the changed files themselves and the code around them: callers, tests, schemas, frontend calls of the API. The diff is the starting point, not the whole picture.
-3. Check that every part of "Anforderung" is met. Look for wrong behavior, missing edge cases, security gaps (authentication, access to other users' data), missing or weak tests and broken project rules, including the design in `docs/design/` for frontend changes. Report style only when it breaks a written rule. No praise, no retelling of the diff.
-4. Check every finding against the code before writing it down. Drop what you cannot back up.
-5. Never change code. Running tests is allowed.
-6. Write `.review/review.md`, most important first, at most 10 findings. Severity is `Fehler` (wrong behavior now), `Lücke` (part of the requirement missing), `Risiko` (breaks later or unsafe) or `Regel` (breaks a written rule). With no findings write `Keine Funde.`
-
-```markdown
-# Review
-
-## R1 · Fehler · <path>:<line>
-**Problem:** <what is wrong>
-**Warum:** <what happens because of it, with a concrete input>
-**Vorschlag:** <how to fix it>
-```
+1. Run `zai-review.sh review`.
+2. Show the user the findings from `.review/review.md` in a short list: number, severity, place, problem in one line. Do not judge them yet; that is step 3.
 
 ## 3 · Fix (writer)
 
@@ -140,19 +131,9 @@ Schreiber: <your tool and model, e.g. Claude Code · Opus 5.5>
 <commands and result>
 ```
 
-## 4 · Re-review (reviewer)
+## 4 · Re-review (reviewer on z.ai)
 
-1. Read `review.md` and `fixes.md`, then look at the code at each named place.
-2. For each finding decide `ok` or `nicht ok` with one reason. A rejection is `ok` when the reason holds.
-3. No new findings, except a bug the fixes themselves brought in; name it `N1`, `N2`.
-4. Never change code. Write `.review/re-review.md`:
-
-```markdown
-# Re-Review
-
-- R1 · ok
-- R2 · nicht ok · <reason>
-```
+Run `zai-review.sh re-review`. Its answer in `.review/re-review.md` has one line per finding, `ok` or `nicht ok` with a reason, and `N1`, `N2` for bugs the fixes brought in.
 
 ## 5 · Close (writer)
 
@@ -161,6 +142,6 @@ Schreiber: <your tool and model, e.g. Claude Code · Opus 5.5>
 3. List the changed files, so the user can commit them.
 4. Delete `.review/`.
 
-## End of each step
+## End of each call
 
-Tell the user the next step and in which tool to call `/review-loop` (writer or reviewer). After step 5 the loop is over.
+After step 2, tell the user that `/review-loop` fixes, gets the re-review and closes. After step 5 the loop is over.

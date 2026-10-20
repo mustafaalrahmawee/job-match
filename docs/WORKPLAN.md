@@ -3,7 +3,8 @@
 Stand: 17. Oktober 2026
 
 Alle Skill-Aufrufe in der Reihenfolge, in der sie dran sind. Jeder Aufruf kommt in den Chat von
-Claude Code; `/review-loop` läuft abwechselnd in Claude Code (Schreiber) und im z.ai-Tool (Prüfer).
+Claude Code; bei `/review-loop` schreibt Claude Code, den Prüfer startet es selbst als Claude Code auf
+z.ai (`glm-5.3`).
 Was ein Use Case leistet, steht in [APP_IDEA.md](APP_IDEA.md); Modell und Effort je Prompt-Unit in
 [EVAL_PLAN.md](EVAL_PLAN.md) §5.
 

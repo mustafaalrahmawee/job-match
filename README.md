@@ -81,5 +81,7 @@ Aufruf wann dran ist, steht in [docs/WORKPLAN.md](docs/WORKPLAN.md).
   `docs/app-prompting-anchor.md`: der Subagent `prompt-writer` (Opus 5.5) schreibt, `prompt-reviewer`
   (Fable 5.1) prüft gegen den Anker, höchstens zwei Runden. Läuft vor `/review-loop` des Use Case.
 - `/review-loop UC-xx` – baut einen Use Case mit zwei Agenten (Schreiber und Prüfer), die nur über
-  Dateien in `.review/` sprechen; `/review-loop` setzt fort, `/review-loop reset` beginnt neu. Über
-  `.zcode/skills/` auch im z.ai-Tool verfügbar, damit der Prüfer dort laufen kann.
+  Dateien in `.review/` sprechen: Claude Code schreibt, den Prüfer startet `zai-review.sh` als
+  Claude Code auf z.ai (`glm-5.3`, Effort `max`, Schlüssel aus `backend/.env`). `/review-loop UC-xx`
+  baut und holt das Review, `/review-loop` behebt, holt das Re-Review und schließt ab,
+  `/review-loop reset` beginnt neu.
