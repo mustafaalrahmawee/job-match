@@ -2,7 +2,7 @@
 
 - **Use Case:** UC-09 Eine Match-Analyse für eine Stelle durchführen (Score 0–100, Stärken, Lücken, Tipps, jede an eine konkrete Aussage in Lebenslauf oder Anzeige gebunden; gespeichert, archiviert, wenn die Version wechselt)
 - **Modell und Effort:** Sonnet 5.5 (`claude-sonnet-5-5`), Effort `medium` (Schätzung aus EVAL_PLAN §5: „reasons over two documents, every claim quoted; the score drives the product“, rund 0,02 $ je Aufruf)
-- **Status:** geprüft
+- **Status:** übernommen
 - **Code:** `backend/src/prompts/match_analysis.ts`
 
 Jeder Schritt folgt der Reihenfolge in `app-prompting-anchor.md` §6. Unter jedem Schritt stehen die Anker-Punkte, die er abdeckt. Im ausgefüllten Blatt bleibt kein Feld leer: Trifft ein Punkt nicht zu, steht dort `entfällt – <Grund>`. Nach der Übernahme werden die Prompt-Teile durch den Namen der Konstante im Code ersetzt; Analyse und Entscheidung bleiben.
@@ -18,34 +18,7 @@ Analyse:
 
 Entscheidung: Die Unit ist ein Abgleich mit Urteil über zwei gespeicherte Texte, ohne Zustand im Aufruf, Oberfläche geparstes Objekt mit geprüften Zitaten, Dringlichkeit mittel. Modell und Effort sind Konstanten mit dem Wert der Schätztabelle; `Variant` erlaubt der Eval, beide zu überschreiben, wie bei `cv_analysis` und `job_extract`.
 
-Prompt-Teil:
-
-Kopfkommentar (der ganze Kommentar entsteht aus den Teilen der Schritte 2, 1, 5, 9 und 10 in dieser Reihenfolge):
-
-```ts
- * Profile: medium low (two stored texts: the ready analysis of the active CV version, rewritten into
- * labelled lists, and the ad of a pool or own job, German or English), abstraction medium to high (each
- * requirement of the ad weighed against the CV: required or wished for, years, languages, domain, and a
- * score comparable across jobs), context low to medium (the two stored texts, the request date and the
- * static score scale; no retrieval), state none (one call per run; the app stores the result on the CV
- * version and the job, replaces it on a successful new run and archives it when the active version
- * changes).
- * Surface: parsed object, validated, every quote checked against its source, stored as the match result
- * and shown on the match page: score with bar and label, strengths and gaps side by side, tips below, each
- * entry plain text with its quotes; read later by interview_question and cover_letter.
- * Urgency: medium (the applicant waits for the result; one synchronous call, no batch, no streaming;
- * route timeout 120 seconds).
- * Model: claude-sonnet-5-5, effort medium, adaptive thinking.
-```
-
-Konstanten:
-
-```ts
-export const MATCH_ANALYSIS_MODEL = 'claude-sonnet-5-5'
-export const MATCH_ANALYSIS_EFFORT: OutputConfig['effort'] = 'medium'
-
-export type Variant = { model?: string; effort?: OutputConfig['effort'] }
-```
+Prompt-Teil: → Kopfkommentar (Profile, Surface, Urgency, Model), `MATCH_ANALYSIS_MODEL`, `MATCH_ANALYSIS_EFFORT`, `Variant`
 
 ## 2. Archetyp und Laufzeitform — AP-30, §2
 
@@ -56,12 +29,7 @@ Analyse:
 
 Entscheidung: Strukturiertes Dokument als einziger Archetyp, Laufzeitform Einzelaufruf, nach dem Skelett „Extraction sub-task“ in §7 (Frame, Quelldokumente, Vertrag Feld für Feld), hier mit zwei Quellen statt einer.
 
-Prompt-Teil:
-
-```ts
-/**
- * Prompt unit match_analysis: structured document, single call.
-```
+Prompt-Teil: → Kopfkommentar (erste Zeile, Prompt unit match_analysis)
 
 ## 3. Frame — AP-02, AP-03, AP-14, AP-31
 
@@ -74,11 +42,7 @@ Analyse:
 
 Entscheidung: Ein Frame aus vier Sätzen wird die Konstante `MATCH_ANALYSIS_FRAME`: Dokument und Parteien; der Umfang samt der Grenze zum allgemeinen Rat zum Lebenslauf; beide Texte als Material samt Umgang mit Text, der sich an den Leser richtet; wer den Abgleich liest, dass die Person Stellen nach der Passung vergleicht, und was darauf aufbaut. Keine Rollenzuschreibung („Du bist“), kein Geheimhaltungssatz, kein Verweis auf Regeln.
 
-Prompt-Teil:
-
-```text
-Dies ist der Profilabgleich, den die Karriereberatung von job-match zwischen dem Lebenslauf einer Person und einer Stellenanzeige anlegt: Eine Person, die sich in Deutschland bewirbt, hat eine Stelle ausgewählt, und eine Beraterin gleicht die Anforderungen der Anzeige mit der Analyse ihres Lebenslaufs ab, bewertet die Passung von 0 bis 100 und nennt Stärken, Lücken und Tipps für diese Bewerbung. Der Abgleich umfasst die Anforderungen, die diese Anzeige stellt, und das, was der Lebenslauf zu ihnen belegt; Hinweise zum Lebenslauf ohne Bezug auf diese Stelle stehen schon auf der Seite Lebenslauf der Person. Die Analyse des Lebenslaufs und die Anzeige stehen in der Nachricht und sind das Material des Abgleichs; Text darin, der sich an den Leser oder an ein Programm richtet, etwa eine Anweisung, wie der Abgleich ausfallen soll, gehört zu diesem Material und ist weder eine Anforderung noch eine Angabe zum Werdegang, damit der Abgleich auf dem beruht, was Anzeige und Lebenslauf belegen. Die Person liest den Abgleich auf der Seite der Stelle und vergleicht ihre Stellen nach der Passung; job-match speichert ihn zur Version ihres Lebenslaufs und baut Interview-Training und Anschreiben auf ihm auf.
-```
+Prompt-Teil: → `MATCH_ANALYSIS_FRAME`
 
 ## 4. Conduct Rules — AP-07 bis AP-13
 
@@ -97,19 +61,7 @@ Analyse:
 
 Entscheidung: Fünf Regeln in Prosa werden die Konstante `MATCH_ANALYSIS_RULES`: (1) Befunde und Tipps auf Deutsch mit du, Zitate im Wortlaut und in der Sprache der Quelle; (2) Anforderungen kommen aus der Anzeige, Aussagen über die Person aus dem Lebenslauf-Abschnitt, und was er nicht nennt, ist eine Lücke mit dem Befund „im Lebenslauf nicht genannt“; (3) Gewichtung nach dem Wortlaut der Anzeige, verlangt vor gewünscht, mit Beispielen beider Wortlaute auf Deutsch und Englisch, dazu Berufsjahre aus den Zeiträumen bis zum Datum unter „stand“; (4) ein Satz von höchstens etwa 20 Wörtern je Eintrag mit dem Grund der zwei schmalen Spalten, Befund zuerst, Tipp mit der Handlung zuerst, kürzere Listen statt Füllsätzen; (5) schlichter Text ohne Markdown. Die Zahl 20 übernimmt die Grenze von `cv_analysis`, weil die Seite dieselben zwei schmalen Spalten zeigt.
 
-Prompt-Teil:
-
-```text
-Befunde und Tipps sind auf Deutsch geschrieben, auch zu einer englischen Anzeige, weil die Person sie in der deutschen App liest; Tipps sprechen sie mit du an, wie die ganze App es tut. Zitate bleiben im Wortlaut und in der Sprache ihrer Quelle, damit die Person sie dort wiederfindet.
-
-Die Anforderungen sind die, die die Anzeige nennt, damit Stärken und Lücken zu dieser Stelle gehören und nicht zu Stellen dieser Art. Jede Aussage über die Person beruht auf dem Abschnitt zu ihrem Lebenslauf. Eine Anforderung, die er nicht nennt, ist eine Lücke, und der Befund sagt, dass der Lebenslauf sie nicht nennt, weil job-match vom Lebenslauf nur diese Analyse kennt und ein Arbeitgeber ebenso nur liest, was im Lebenslauf steht; hat die Person es doch, kann ein Tipp raten, es im Lebenslauf zu nennen.
-
-Die Beraterin wiegt jede Anforderung so, wie die Anzeige sie formuliert: was sie verlangt, etwa mit „setzen voraus“, „bringst du mit“ oder „required“, schwerer als das, was sie sich nur wünscht, etwa mit „idealerweise“, „von Vorteil“ oder „nice to have“, damit Passung und Reihenfolge der Lücken die Stelle wiedergeben und nicht die Länge ihrer Liste. Berufsjahre zählt sie aus den Zeiträumen der Stationen; eine Station bis „heute“ läuft bis zum Datum unter „stand“, damit sich eine verlangte Zahl von Jahren mit dem Werdegang vergleichen lässt.
-
-Jeder Befund und jeder Tipp ist ein kurzer Satz von höchstens etwa 20 Wörtern, weil die Seite jeden Eintrag als einen Listenpunkt zeigt, Stärken und Lücken nebeneinander in zwei schmalen Spalten; ein Befund beginnt mit dem Punkt, ein Tipp mit dem, was die Person tun kann. Geben Anzeige oder Lebenslauf weniger her, bleiben die Listen kürzer, damit jeder Eintrag einen eigenen Punkt trägt.
-
-Alle Texte sind schlichter Text ohne Markdown, weil die Seite jeden Eintrag als einfachen Listenpunkt zeigt.
-```
+Prompt-Teil: → `MATCH_ANALYSIS_RULES`
 
 ## 5. Context Slots — AP-15 bis AP-18, AP-20, AP-23 bis AP-27
 
@@ -128,80 +80,7 @@ Analyse:
 
 Entscheidung: Vier Slots. (1) `MATCH_ANALYSIS_SYSTEM`: statisch, Boilerplate, aus Frame und Regeln, ohne `cache_control` (Schritt 6). (2) Lebenslauf: dynamisch, indirekt, aus `CvsService.readyAnalysis` und dem Datum der Anfrage, zugeschnitten durch die vorhandene Funktion `cvAside` aus `coach_chat.ts`, importiert mit ihrem Typ `CoachCv` und aufgerufen mit den sieben Abschnitten in `MATCH_CV_SECTIONS` (Zielrolle, Stationen, Kenntnisse, Ausbildung, Höchster Abschluss, Sprachen, Stärken), ohne Schwächen und Tipps der Analyse; dafür ergänzt der Zusammenbau in `coach_chat.ts` genau den optionalen Parameter `only` an `cvAside` und sonst nichts (von der Person freigegeben, Offene Punkte); begrenzt durch `CV_LIST_LIMITS`; erster Text-Block im Nutzer-Turn. `MATCH_CV_SECTIONS` ist exportiert, damit Service und Eval die Zitate gegen denselben Abschnitt prüfen. (3) Anzeige: dynamisch, direkt, aus `JobsService.get`, als Document-Block mit Textquelle und einem Titel je Quelle, gebaut von `adDocument`; der Text kommt aus `adText` (Titel, Firma, wenn genannt, Stadt, Leerzeile, Beschreibung bis `JOB_TEXT_MAX_CHARS`; gekürzt nur im Prompt, den Log-Eintrag dazu schreibt der Service). `adText` ist exportiert, damit Service und Eval die Zitate gegen denselben Text prüfen. (4) `MATCH_ANALYSIS_REFOCUS` und `MATCH_ANALYSIS_CONTRACT`: statisch, Boilerplate, ein Text-Block nach der Anzeige (Schritte 7 und 9). `JOB_SOURCES` und `JOB_TEXT_MAX_CHARS` kommen aus `jobs.schemas.ts`, wie `job_extract` dort `OFFER_TYPES` liest, damit Quellen und Grenze eine Quelle haben. Kein PDF, kein Gehalt, keine Angebotsart, kein früheres Ergebnis.
 
-Prompt-Teil:
-
-Vorhandener Code, wiederverwendet (aus `backend/src/prompts/coach_chat.ts`):
-
-```ts
-import { cvAside, type CoachCv } from './coach_chat.js'
-```
-
-Freigegebene Änderung in `backend/src/prompts/coach_chat.ts`, genau diese zwei Zeilen; die Liste der neun Abschnitte, das Format und der Rest der Datei bleiben, wie sie sind:
-
-```ts
-export function cvAside({ role, analysis, asOf }: CoachCv, only?: readonly string[]): string {
-```
-
-```ts
-  const body = sections
-    .filter(([title]) => !only || only.includes(title))
-```
-
-Neuer Code:
-
-```ts
-import { JOB_SOURCES, JOB_TEXT_MAX_CHARS } from '../modules/jobs/jobs.schemas.js'
-
-export const MATCH_CV_SECTIONS = [
-  'Zielrolle',
-  'Stationen',
-  'Kenntnisse',
-  'Ausbildung',
-  'Höchster Abschluss',
-  'Sprachen',
-  'Stärken',
-] as const
-
-export type MatchJob = {
-  source: (typeof JOB_SOURCES)[number]
-  title: string
-  company: string | null
-  city: string
-  description: string
-}
-
-const AD_TITLES: Record<MatchJob['source'], string> = {
-  ba: 'Stellenanzeige aus der Jobbörse der Bundesagentur für Arbeit',
-  own: 'Stellenanzeige, von der Person gespeichert',
-}
-
-export function adText(job: MatchJob): string {
-  const head = [`Titel: ${job.title}`, ...(job.company ? [`Firma: ${job.company}`] : []), `Ort: ${job.city}`]
-  return `${head.join('\n')}\n\n${job.description.slice(0, JOB_TEXT_MAX_CHARS)}`
-}
-
-export function adDocument(job: MatchJob): ContentBlockParam {
-  return {
-    type: 'document',
-    source: { type: 'text', media_type: 'text/plain', data: adText(job) },
-    title: AD_TITLES[job.source],
-  }
-}
-```
-
-Kopfkommentar:
-
-```ts
- * Slots: system text (static boilerplate: frame and rules, not cached); CV (dynamic, indirect: ready
- * analysis of the active version with its role from CvsService.readyAnalysis plus the request date,
- * rewritten by cvAside from coach_chat into labelled lists in a <lebenslauf> aside, limited to the
- * evidence sections in MATCH_CV_SECTIONS (no weaknesses or tips of the analysis), bounded by
- * CV_LIST_LIMITS, first text block of the user turn); ad (dynamic, direct: the chosen job from
- * JobsService.get as a plain-text document block titled with its source, built by adDocument from adText:
- * title, company, city and the description cut at JOB_TEXT_MAX_CHARS in the prompt only, the stored
- * description stays whole and the calling service logs each cut); refocus and field contract
- * (static boilerplate: one text block after the ad, with MATCH_LIST_LIMITS and MATCH_SCORE_BANDS).
-```
+Prompt-Teil: → `cvAside` und `CoachCv` (aus `coach_chat.ts`, mit dem Parameter `only`), `MATCH_CV_SECTIONS`, `MatchJob`, `AD_TITLES`, `adText`, `adDocument`, Kopfkommentar (Slots)
 
 ## 6. Anordnung — AP-21, AP-22, AP-28
 
@@ -214,40 +93,7 @@ Analyse:
 
 Entscheidung: `MATCH_ANALYSIS_SYSTEM` verbindet `MATCH_ANALYSIS_FRAME` und `MATCH_ANALYSIS_RULES` mit einer Leerzeile und geht als System-Text ohne `cache_control`; danach ein Nutzer-Turn aus `cvAside(cv, MATCH_CV_SECTIONS)` als Text-Block, `adDocument(job)` und einem Text-Block aus `MATCH_ANALYSIS_REFOCUS` und `MATCH_ANALYSIS_CONTRACT`, mit einer Leerzeile verbunden. `matchAnalysisRequest(cv, job, variant)` baut die ganze Anfrage, wie `jobExtractRequest`.
 
-Prompt-Teil:
-
-```ts
-import type { ContentBlockParam, MessageCreateParamsNonStreaming, OutputConfig } from '@anthropic-ai/sdk/resources/messages'
-
-export const MATCH_ANALYSIS_SYSTEM = `${MATCH_ANALYSIS_FRAME}\n\n${MATCH_ANALYSIS_RULES}`
-
-export function matchAnalysisRequest(
-  cv: CoachCv,
-  job: MatchJob,
-  variant: Variant = {},
-): MessageCreateParamsNonStreaming {
-  return {
-    model: variant.model ?? MATCH_ANALYSIS_MODEL,
-    max_tokens: MATCH_ANALYSIS_MAX_TOKENS,
-    thinking: { type: 'adaptive' },
-    output_config: {
-      effort: variant.effort ?? MATCH_ANALYSIS_EFFORT,
-      format: { type: 'json_schema', schema: MATCH_ANALYSIS_JSON_SCHEMA },
-    },
-    system: MATCH_ANALYSIS_SYSTEM,
-    messages: [
-      {
-        role: 'user',
-        content: [
-          { type: 'text', text: cvAside(cv, MATCH_CV_SECTIONS) },
-          adDocument(job),
-          { type: 'text', text: `${MATCH_ANALYSIS_REFOCUS}\n\n${MATCH_ANALYSIS_CONTRACT}` },
-        ],
-      },
-    ],
-  }
-}
-```
+Prompt-Teil: → `MATCH_ANALYSIS_SYSTEM`, `matchAnalysisRequest`
 
 ## 7. Refocus und Transition — AP-29
 
@@ -257,11 +103,7 @@ Analyse:
 
 Entscheidung: Zwei Sätze als Konstante `MATCH_ANALYSIS_REFOCUS`, im Text-Block nach der Anzeige vor `MATCH_ANALYSIS_CONTRACT`: was oben steht, dann die Arbeitsfolge. Die Reihenfolge der Felder nennt allein der Vertrag. Keine eigene Transition im Text.
 
-Prompt-Teil:
-
-```text
-Oben stehen die Analyse des Lebenslaufs der Person zwischen <lebenslauf> und </lebenslauf> und die Anzeige der Stelle, die sie ausgewählt hat. Die Beraterin geht die Anforderungen der Anzeige einzeln durch, sucht zu jeder den Beleg im Lebenslauf und füllt danach den folgenden Abgleich aus.
-```
+Prompt-Teil: → `MATCH_ANALYSIS_REFOCUS`
 
 ## 8. Preamble und Reasoning — AP-34, AP-35, AP-39 bis AP-41, AP-45
 
@@ -276,15 +118,7 @@ Analyse:
 
 Entscheidung: Kein Text vor dem JSON; Nachdenken nur im eingebauten Thinking (`adaptive`, Tiefe über `MATCH_ANALYSIS_EFFORT`). Reihenfolge im Schema (Schritt 9): `gaps`, `strengths`, `score`, `tips`; in jedem Eintrag `ad_quote`, `cv_quote`, `text`. Der Plan steht im Refocus.
 
-Prompt-Teil:
-
-```ts
-    thinking: { type: 'adaptive' },
-    output_config: {
-      effort: variant.effort ?? MATCH_ANALYSIS_EFFORT,
-```
-
-(Teil von `matchAnalysisRequest`, Schritt 6.)
+Prompt-Teil: → `matchAnalysisRequest` (`thinking`, `output_config.effort`)
 
 ## 9. Output Contract und Stop — AP-32, AP-33
 
@@ -296,77 +130,7 @@ Analyse:
 
 Entscheidung: Das Schema `matchAnalysisSchema` mit drei Eintragsformen in der Reihenfolge aus Schritt 8; Pflicht und `null` je Liste wie oben; Score, leere Zitate und das Zitat eines Tipps per `refine`. `MATCH_LIST_LIMITS` mit 5, 5 und 3 als Obergrenzen (bestätigt). `MATCH_SCORE_BANDS` mit vier Bereichen an den Grenzen 80, 55 und 25 und den Wörtern der Seite in `fit` (bestätigt), im Vertrag eingesetzt wie die Rollen in `cv_analysis`; Seite und Eval lesen dieselbe Konstante. Der Ausgabevertrag wird die Konstante `MATCH_ANALYSIS_CONTRACT`: ein Einleitungsabsatz (Schema und Höchstzahlen als von der App geprüft, das Gewichtigste vorn), ein Absatz zu den Zitaten (Form und dass die App jedes in seiner Quelle sucht und den Abgleich nur speichert, wenn sie alle findet – so entschieden, Schritt 10), dann die Felder in der Reihenfolge des Schemas, jedes mit Abgrenzung, Leerwert und Grund. `MATCH_ANALYSIS_MAX_TOKENS` ist 16000.
 
-Prompt-Teil:
-
-```ts
-import { z } from 'zod'
-
-export const MATCH_ANALYSIS_MAX_TOKENS = 16000
-
-export const MATCH_LIST_LIMITS = { gaps: 5, strengths: 5, tips: 3 } as const
-
-export const MATCH_SCORE_BANDS = [
-  {
-    min: 80,
-    max: 100,
-    fit: 'Sehr gute Passung',
-    description: 'alles, was die Anzeige verlangt, ist belegt; Lücken gibt es höchstens bei dem, was sie sich nur wünscht',
-  },
-  {
-    min: 55,
-    max: 79,
-    fit: 'Gute Passung',
-    description: 'Berufsfeld und Kern der Stelle passen, aber eine verlangte Anforderung fehlt oder ist nur teilweise belegt',
-  },
-  {
-    min: 25,
-    max: 54,
-    fit: 'Geringe Passung',
-    description:
-      'mehrere verlangte Anforderungen fehlen, oder eine, die die Stelle trägt, etwa deutlich weniger Berufsjahre als verlangt oder die verlangte Sprache',
-  },
-  {
-    min: 0,
-    max: 24,
-    fit: 'Anderes Berufsfeld',
-    description: 'der Werdegang liegt in einem anderen Berufsfeld als die Stelle',
-  },
-] as const
-
-const quote = z.string().refine((value) => value.trim() !== '')
-
-export const matchAnalysisSchema = z.object({
-  gaps: z.array(z.object({ ad_quote: quote, cv_quote: quote.nullable(), text: z.string() })),
-  strengths: z.array(z.object({ ad_quote: quote.nullable(), cv_quote: quote, text: z.string() })),
-  score: z.number().refine((score) => Number.isInteger(score) && score >= 0 && score <= 100),
-  tips: z.array(
-    z
-      .object({ ad_quote: quote.nullable(), cv_quote: quote.nullable(), text: z.string() })
-      .refine((tip) => tip.ad_quote !== null || tip.cv_quote !== null),
-  ),
-})
-
-export type MatchAnalysis = z.infer<typeof matchAnalysisSchema>
-
-export const MATCH_ANALYSIS_JSON_SCHEMA = z.toJSONSchema(matchAnalysisSchema)
-
-export const MATCH_ANALYSIS_CONTRACT = `Der Abgleich ist ein JSON-Objekt mit den folgenden Feldern in dieser Reihenfolge; die App prüft seine Form und speichert nur einen Abgleich, der sie erfüllt. Die Höchstzahlen der Listen sind fest, weil die App längere Listen am Ende abschneidet; deshalb steht in jeder Liste das Gewichtigste vorn.
-
-Jeder Eintrag stützt sich auf Zitate: ad_quote ist eine Stelle aus der Anzeige, cv_quote eine aus dem Abschnitt <lebenslauf>, jedes Zeichen für Zeichen so, wie es in seiner Quelle steht – die kürzeste Stelle, die den Punkt trägt, innerhalb einer Zeile, ohne Auslassungszeichen und ohne Übersetzung. Die App sucht jedes Zitat in seiner Quelle und speichert den Abgleich nur, wenn sie alle findet; die Person sieht die Zitate unter dem Eintrag und findet sie in Anzeige und Lebenslauf wieder.
-
-- gaps: bis zu ${MATCH_LIST_LIMITS.gaps} Lücken, Anforderungen der Anzeige, die der Lebenslauf nicht oder nur teilweise belegt, zuerst die, die die Passung am stärksten senkt, damit die Person die entscheidende Lücke zuerst liest. ad_quote ist die Anforderung; cv_quote ist der Eintrag, der sie teilweise trägt, etwa ein verwandtes Werkzeug oder eine kürzere Berufszeit, und null, wenn der Lebenslauf nichts dazu nennt; text sagt, was fehlt und ob die Anzeige es verlangt oder sich nur wünscht.
-- strengths: bis zu ${MATCH_LIST_LIMITS.strengths} Stärken, was der Lebenslauf belegt und die Stelle braucht, die gewichtigste zuerst. cv_quote ist der Beleg im Lebenslauf; ad_quote ist die Anforderung, auf die die Stärke antwortet, und null, wenn die Anzeige sie nicht ausdrücklich nennt; text sagt, was die Stärke für diese Stelle bedeutet.
-- score: die Passung als ganze Zahl von 0 bis 100 nach der folgenden Skala, damit gleiche Passung zu gleichen Zahlen führt und die Person ihre Stellen danach vergleichen kann; innerhalb eines Bereichs liegt die Zahl umso höher, je mehr und je gewichtigere Anforderungen belegt sind.
-${MATCH_SCORE_BANDS.map((band) => `  - ${band.min}–${band.max}, ${band.fit}: ${band.description}`).join('\n')}
-- tips: bis zu ${MATCH_LIST_LIMITS.tips} Tipps, was die Person in dieser Bewerbung tun kann – im Anschreiben, im Lebenslauf oder im Gespräch –, jeder zu einer der Lücken oder Stärken oben, der wichtigste zuerst. ad_quote und cv_quote sind die Stellen, auf die er sich stützt; mindestens eine ist gesetzt, die andere ist null, wenn er sich nur auf eine Quelle stützt.`
-```
-
-Kopfkommentar:
-
-```ts
- * Stop: JSON schema satisfied, stop reason end_turn; the parser reads the first text block, validates it
- * with matchAnalysisSchema and checks the quotes; the thinking block stays unread.
-```
+Prompt-Teil: → `MATCH_ANALYSIS_MAX_TOKENS`, `MATCH_LIST_LIMITS`, `MATCH_SCORE_BANDS`, `matchAnalysisSchema`, `MatchAnalysis`, `MATCH_ANALYSIS_JSON_SCHEMA`, `MATCH_ANALYSIS_CONTRACT`, Kopfkommentar (Stop)
 
 ## 10. Enforcement Line und Tools — AP-42, AP-44, AP-46 bis AP-49
 
@@ -382,26 +146,7 @@ Analyse:
 
 Entscheidung: Keine Tools. Bei einem fehlenden Zitat ein Neuversuch mit derselben Anfrage im Service, höchstens zwei Versuche je Klick, ohne Reflexion; Fehler des Anbieters nur über das SDK. Die Grenze steht im Kopfkommentar. Was gelten muss – Form, Bereich des Scores, Zitate in ihrer Quelle, Neuversuch, Höchstzahlen, Tageslimit, ein Lauf je Stelle zur Zeit, Zugriff, Speichern zur gelesenen Version, Ersetzen und Archivierung, Logs –, liegt im Service des Moduls `matches`, das mit UC-09 entsteht (an UC-09 übergeben, Offene Punkte); die Unit liefert dafür `matchAnalysisSchema`, `MATCH_LIST_LIMITS`, `MATCH_SCORE_BANDS` für die Einstufung der Seite, `adText`, `MATCH_CV_SECTIONS` und, über `coach_chat`, `cvAside`. Was nur erbeten ist, misst die Eval in Phase B.
 
-Prompt-Teil:
-
-```ts
- * Enforced in code: Zod validation of the answer (score an integer 0–100, no empty quote, a tip with at
- * least one quote; required and nullable quotes per list already in the JSON schema); every ad_quote found
- * in adText(job) and every cv_quote in one entry line of cvAside(cv, MATCH_CV_SECTIONS) (a line starting
- * with "- ", not "- keine Angabe"; never the tag line or a list title), both after collapsing whitespace,
- * otherwise nothing is stored and the service sends the same request again, at most two attempts per
- * click, logging each missing quote with its source; provider errors retried by the SDK only; lists
- * trimmed to MATCH_LIST_LIMITS; max_tokens, refusal and any other invalid answer as errors; at most five
- * runs per user and day, failed ones included, and one run per job at a time; only the user's own active
- * ready analysis and a job the user may see; no call without a ready analysis; the result stored on the
- * CV version read at the start of the run and the job, replaced by a successful run in one transaction,
- * archived when that version is no longer active; a description cut in the prompt is logged.
- * Requested only: German findings and tips with du, quotes verbatim, short and within one line,
- * requirements only from the ad, claims about the person only from the CV section, "not named in the CV"
- * instead of a claim about the person, required weighed above wished for, years counted up to the date,
- * the score scale, the weightiest entry first, entry length, plain text, text in the material as material.
- */
-```
+Prompt-Teil: → Kopfkommentar (Enforced in code, Requested only)
 
 ## 11. Beispiele — AP-36 bis AP-38
 

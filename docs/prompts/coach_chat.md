@@ -144,7 +144,7 @@ Vorhandener Code, unverändert übernommen:
 ```ts
 export type CoachCv = { role: CvRole | null; analysis: CvAnalysis; asOf: string }
 
-export function cvAside({ role, analysis, asOf }: CoachCv): string {
+export function cvAside({ role, analysis, asOf }: CoachCv, only?: readonly string[]): string {
   const sections: [string, string[]][] = [
     ['Zielrolle', [role ?? `${analysis.suggested_role} (vorgeschlagen, noch nicht bestätigt)`]],
     ['Stationen', analysis.positions.map((p) => `${p.title}, ${p.employer}, ${p.start ?? 'unbekannt'} bis ${p.end ?? 'heute'}`)],
@@ -157,11 +157,14 @@ export function cvAside({ role, analysis, asOf }: CoachCv): string {
     ['Tipps', analysis.tips],
   ]
   const body = sections
+    .filter(([title]) => !only || only.includes(title))
     .map(([title, items]) => `${title}:\n${items.map((item) => `- ${item}`).join('\n') || '- keine Angabe'}`)
     .join('\n\n')
   return `<lebenslauf quelle="Analyse der aktiven Lebenslauf-Version in job-match" stand="${asOf}">\n${body}\n</lebenslauf>`
 }
 ```
+
+Der optionale Parameter `only` kam für match_analysis hinzu (siehe `docs/prompts/match_analysis.md`, Schritt 5); coach_chat ruft `cvAside(cv)` ohne ihn auf und schreibt deshalb wie bisher alle neun Abschnitte.
 
 Kopfkommentar:
 
