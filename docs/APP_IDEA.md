@@ -63,7 +63,7 @@ Work happens in two phases. **Phase A** builds every use case, stage by stage, w
 | UC-11 | Applicant | Let the coach act in the chat | Coach saves a job, sets a status, generates interview questions, researches a company via web search; steps visible in the UI | 4 |
 | UC-12 | Applicant | Train an interview in writing | Question, written answer, grade with feedback, next question; final report; pause and resume | 5 |
 | UC-13 | Applicant | Run long trainings and chats | No context overflow; stable prefix cached; cost per request visible in the logs | 6 |
-| UC-14 | Applicant | Ask for the five best jobs | Vector search in the pool, filtered by role; model explains each pick with a reference to the job | 7 |
+| UC-14 | Applicant | Ask for the five best jobs | Hybrid search in the pool (vector search and Postgres full text, merged by rank), filtered by role and offer type (no apprenticeship or internship for a CV with work experience); model explains each pick with a reference to the job | 7 |
 | UC-15 | Applicant | Generate a cover letter and put an interview date in the calendar | Word file for the job and the active version; calendar entry via MCP | 8 |
 | UC-16 | Applicant | Register, change the password, delete the account, download own data | Public registration; deletion removes everything; usage limit per account | Go-live |
 
@@ -94,7 +94,7 @@ Every stage introduces one topic; the table shows where each one naturally appea
 | Tools, agent loop | Coach tools (save job, set status, generate questions) with own loop and stop conditions; server tool web search | UC-11 |
 | Workflow vs. agent | Interview training as fixed flow or agent; decision written down before building | UC-12 |
 | Context management | Compaction for long sessions, token counting before sending | UC-13 |
-| RAG | Embeddings in ChromaDB behind the `VectorStore` interface, Postgres stays the source of truth, "top 5 jobs" with reasons | UC-14 |
+| RAG | Embeddings in ChromaDB behind the `VectorStore` interface, Postgres stays the source of truth; hybrid with Postgres full text so exact tool names count, both rankings merged by Reciprocal Rank Fusion; "top 5 jobs" with reasons | UC-14 |
 | Agent Skills, Files API, MCP | Cover letter as Word file; calendar via MCP | UC-15 |
 | Eval | Phase B: example suite per prompt unit; model and effort first estimated (phase A), then confirmed or changed by measurement; glm-5.3 as independent judge | all AI features |
 

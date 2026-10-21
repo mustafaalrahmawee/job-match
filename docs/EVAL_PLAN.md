@@ -139,9 +139,9 @@ No new unit. `coach_chat` and `interview_grade` get histories of 40–60 turns u
 
 ### Stage 7 · `job_recommendation` (UC-14)
 
-- **Samples:** 20–30 cases over the pool fixture `backend/evals/corpus/jobs.json` (100–200 jobs). The writer plants three to five fitting jobs per CV plus distractors. gold: `cv_case`, `role`, `expected_job_ids`, `forbidden_job_ids`.
-- **Checks:** no job of another role among the five · ≥ 3 `expected_job_ids` in the top-k · every reason cites one of the five ids. Judge Truth, Relevance.
-- **First decision:** the role filter; then retrieval hit. A change to embedding model or top-k reruns retrieval hit alone.
+- **Samples:** 20–30 cases over the pool fixture `backend/evals/corpus/jobs.json` (100–200 jobs). The writer plants three to five fitting jobs per CV plus distractors, among them apprenticeships and internships of the same role. gold: `cv_case`, `role`, `expected_job_ids`, `forbidden_job_ids`.
+- **Checks:** no job of another role among the five · no apprenticeship or internship among the five for a CV with work experience · ≥ 3 `expected_job_ids` in the top-k · every reason cites one of the five ids. Judge Truth, Relevance.
+- **First decision:** the role filter; then retrieval hit. A change to embedding model, top-k or the fusion with full text reruns retrieval hit alone.
 - **Threshold:** role filter 100 %, retrieval hit all, job cited 100 %. **Chosen:** ⬜
 
 ### Stage 8 · `cover_letter` (UC-15)
@@ -227,7 +227,7 @@ Please provide a thorough analysis and then conclude your answer with
 | Model swap for a unit | `evals run <unit> <fassung> <model> <effort>` over all cases |
 | Agent loop, tool definition, attempt budget | `coach_agent` and `coach_chat` suites plus the tool-pass unit tests |
 | Compaction, cached prefix, token counting | `samples/long/` on `coach_chat` and `interview_grade` |
-| Embedding model, top-k | retrieval hit and role filter of `job_recommendation`; no judge |
+| Embedding model, top-k, fusion with full text | retrieval hit, role and offer-type filter of `job_recommendation`; no judge |
 | Judge prompt or judge model | `evals calibrate`; before the first calibration the diff of `judge.txt` is read |
 
 ## 8. Files and Commands
