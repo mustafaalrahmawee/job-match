@@ -19,11 +19,11 @@ export type SendResult = {
 
 export type SendStream = (params: MessageCreateParamsBase, handlers: StreamHandlers) => Promise<SendResult>
 
-export type SendMessage = (params: MessageCreateParamsNonStreaming) => Promise<SendResult>
+export type SendMessage = (params: MessageCreateParamsNonStreaming, options?: { signal?: AbortSignal }) => Promise<SendResult>
 
 export function createSendMessage(client: Anthropic): SendMessage {
-  return async (params) => {
-    const message = await client.messages.create(params)
+  return async (params, options) => {
+    const message = await client.messages.create(params, options)
     if (!message.stop_reason) throw new Error('The message ended without a stop reason')
     return {
       content: message.content,
