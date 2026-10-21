@@ -27,8 +27,8 @@ Modellaufruf nur `/review-loop UC-xx`. Nach jedem fertigen Use Case: Änderungen
 ### Stufe 3 · Stellen und Match
 
 - [x] `/review-loop UC-07` – Import aus der Bundesagentur, kein Modell
-- [ ] `/prompt-unit job_extract`
-- [ ] `/review-loop UC-08` – eigene Stelle aus Text oder Screenshot
+- [x] `/prompt-unit job_extract`
+- [x] `/review-loop UC-08` – eigene Stelle aus Text oder Screenshot
 - [ ] `/prompt-unit match_analysis`
 - [ ] `/review-loop UC-09` – Match-Analyse
 
