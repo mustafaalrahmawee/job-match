@@ -7,6 +7,7 @@ import { createCoachModule } from './modules/coach/coach.module.js'
 import { createCvsModule } from './modules/cvs/cvs.module.js'
 import type { BaClient } from './modules/jobs/jobs.ba.js'
 import { createJobsModule } from './modules/jobs/jobs.module.js'
+import { createMatchesModule } from './modules/matches/matches.module.js'
 import { requireAuth } from './shared/auth.middleware.js'
 import { errorHandler } from './shared/errors.js'
 
@@ -28,6 +29,7 @@ export function createApp({ prisma, tokenTtlDays, sendStream, sendMessage, batch
   const cvs = createCvsModule({ prisma, batches, authenticate })
   const coach = createCoachModule({ prisma, sendStream, cvs: cvs.service, authenticate })
   const jobs = createJobsModule({ prisma, ba, sendMessage, authenticate })
+  const matches = createMatchesModule({ prisma, sendMessage, cvs: cvs.service, jobs: jobs.service, authenticate })
 
   const api = Router()
   api.get('/health', async (_req, res) => {
@@ -38,6 +40,7 @@ export function createApp({ prisma, tokenTtlDays, sendStream, sendMessage, batch
   api.use('/coach', coach.router)
   api.use('/cvs', cvs.router)
   api.use('/jobs', jobs.router)
+  api.use('/matches', matches.router)
 
   app.use('/api/v1', api)
   app.use(errorHandler)

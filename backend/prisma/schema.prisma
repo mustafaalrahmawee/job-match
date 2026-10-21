@@ -19,6 +19,8 @@ model User {
   conversations Conversation[]
   cvVersions    CvVersion[]
   jobs          Job[]
+  matchResults  MatchResult[]
+  matchRuns     MatchRun[]
 
   @@map("users")
 }
@@ -96,6 +98,7 @@ model CvVersion {
   cacheWriteTokens Int?           @map("cache_write_tokens")
   createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz
   user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchResults     MatchResult[]
 
   @@index([userId])
   @@map("cv_versions")
@@ -114,23 +117,25 @@ enum OfferType {
 }
 
 model Job {
-  id          Int       @id @default(autoincrement())
-  source      JobSource
-  userId      Int?      @map("user_id")
-  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  externalId  String    @map("external_id") @db.VarChar(64)
-  title       String    @db.VarChar(300)
-  company     String?   @db.VarChar(300)
-  city        String    @db.VarChar(200)
-  region      String?   @db.VarChar(32)
-  description String
-  offerType   OfferType @map("offer_type")
-  role        String    @db.VarChar(32)
-  fullTime    Boolean   @map("full_time")
-  partTime    Boolean   @map("part_time")
-  salary      String?   @db.VarChar(200)
-  publishedAt DateTime  @map("published_at") @db.Date
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  id           Int           @id @default(autoincrement())
+  source       JobSource
+  userId       Int?          @map("user_id")
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  externalId   String        @map("external_id") @db.VarChar(64)
+  title        String        @db.VarChar(300)
+  company      String?       @db.VarChar(300)
+  city         String        @db.VarChar(200)
+  region       String?       @db.VarChar(32)
+  description  String
+  offerType    OfferType     @map("offer_type")
+  role         String        @db.VarChar(32)
+  fullTime     Boolean       @map("full_time")
+  partTime     Boolean       @map("part_time")
+  salary       String?       @db.VarChar(200)
+  publishedAt  DateTime      @map("published_at") @db.Date
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  matchResults MatchResult[]
+  matchRuns    MatchRun[]
 
   @@unique([source, externalId])
   @@index([publishedAt])
@@ -139,7 +144,7 @@ model Job {
 }
 
 model JobImport {
-  id        Int      @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   imported   Int
   duplicates Int
   filtered   Int
@@ -147,4 +152,46 @@ model JobImport {
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   @@map("job_imports")
+}
+
+model MatchResult {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  cvVersionId Int       @map("cv_version_id")
+  jobId       Int       @map("job_id")
+  score       Int
+  strengths   Json
+  gaps        Json
+  tips        Json
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cvVersion   CvVersion @relation(fields: [cvVersionId], references: [id], onDelete: Cascade)
+  job         Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([cvVersionId, jobId])
+  @@index([userId, jobId])
+  @@map("match_results")
+}
+
+enum MatchRunStatus {
+  running
+  ready
+  failed
+}
+
+model MatchRun {
+  id           Int            @id @default(autoincrement())
+  userId       Int            @map("user_id")
+  jobId        Int            @map("job_id")
+  status       MatchRunStatus @default(running)
+  model        String         @db.VarChar(64)
+  effort       String?        @db.VarChar(16)
+  inputTokens  Int            @default(0) @map("input_tokens")
+  outputTokens Int            @default(0) @map("output_tokens")
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job          Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("match_runs")
 }

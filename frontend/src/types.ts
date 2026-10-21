@@ -154,3 +154,20 @@ export type OwnJobInput = {
   salary: string
   description: string
 }
+
+export type MatchEntry = { ad_quote: string | null; cv_quote: string | null; text: string }
+
+export type MatchResult = {
+  id: number
+  job_id: number
+  score: number
+  fit: string
+  strengths: MatchEntry[]
+  gaps: MatchEntry[]
+  tips: MatchEntry[]
+  archived: boolean
+  created_at: string
+  cv_version: { id: number; role: CvRole | null; created_at: string }
+}
+
+export type MatchOverview = { current: MatchResult | null; archived: MatchResult[] }
