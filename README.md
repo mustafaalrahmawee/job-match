@@ -5,6 +5,11 @@ analysieren, passende Stellen und Match-Score sehen, Bewerbungen im Blick behalt
 Vorstellungsgespräch schriftlich üben. Zugleich ein Lernprojekt für LLM-Anwendungen mit der
 Claude API.
 
+**Für Reviewer:** Die App ist absichtlich gewöhnlich. Was das Projekt zeigt, ist die Methode dahinter:
+jeder Prompt nach einem schriftlichen Anker mit Blatt je Schritt, Modellwahl als Kosten-Trade-off,
+Eval-Plan mit getrennten Rollen, Review jedes Use Case durch ein zweites Modell, Claude Code als
+Werkzeug mit Skills und Subagenten. Einstieg mit Prüfpfaden: [docs/ENGINEERING.md](docs/ENGINEERING.md).
+
 **Stand:** Stufe 1 (UC-01 bis UC-03: Login, Chat mit dem Coach, Gespräche verwalten) und Stufe 2
 (UC-04 bis UC-06: Lebenslauf) sind fertig, Stufe 3 (Stellen und Match) ist dran. Was je Stufe
 entsteht, steht in [docs/APP_IDEA.md](docs/APP_IDEA.md); welcher Befehl als Nächstes kommt, in
