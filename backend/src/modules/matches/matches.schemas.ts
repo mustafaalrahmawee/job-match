@@ -1,8 +1,9 @@
 import { z } from 'zod'
 import type { CvRole } from '../../prompts/cv_analysis.js'
 import type { MatchAnalysis } from '../../prompts/match_analysis.js'
+import type { JOB_SOURCES } from '../jobs/jobs.schemas.js'
 
-export const matchQuerySchema = z.object({ job_id: z.coerce.number().int().positive() })
+export const matchJobIdSchema = z.coerce.number().int().positive()
 
 export const matchRunSchema = z.object({ job_id: z.int().positive() })
 
@@ -20,3 +21,7 @@ export type MatchOutput = {
 }
 
 export type MatchOverviewOutput = { current: MatchOutput | null; archived: MatchOutput[] }
+
+export type MatchListItemOutput = MatchOutput & {
+  job: { id: number; source: (typeof JOB_SOURCES)[number]; title: string; company: string | null; city: string }
+}

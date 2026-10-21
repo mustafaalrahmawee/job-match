@@ -2,15 +2,36 @@ import type { RequestHandler } from 'express'
 import type { CvRole } from '../../prompts/cv_analysis.js'
 import { MATCH_SCORE_BANDS, type MatchAnalysis } from '../../prompts/match_analysis.js'
 import { authOf } from '../../shared/auth.middleware.js'
-import { matchQuerySchema, matchRunSchema, type MatchOutput, type MatchOverviewOutput } from './matches.schemas.js'
+import {
+  matchJobIdSchema,
+  matchRunSchema,
+  type MatchListItemOutput,
+  type MatchOutput,
+  type MatchOverviewOutput,
+} from './matches.schemas.js'
 import type { MatchesService, MatchResultInfo } from './matches.service.js'
 
 export class MatchesController {
   constructor(private readonly matches: MatchesService) { }
 
+  list: RequestHandler = async (req, res) => {
+    const results = await this.matches.list(authOf(req).user.id)
+    const body: MatchListItemOutput[] = results.map((result) => ({
+      ...output(result),
+      job: {
+        id: result.job.id,
+        source: result.job.source,
+        title: result.job.title,
+        company: result.job.company,
+        city: result.job.city,
+      },
+    }))
+    res.json(body)
+  }
+
   show: RequestHandler = async (req, res) => {
-    const { job_id } = matchQuerySchema.parse(req.query)
-    const { current, archived } = await this.matches.overview(authOf(req).user.id, job_id)
+    const jobId = matchJobIdSchema.parse(req.params.jobId)
+    const { current, archived } = await this.matches.overview(authOf(req).user.id, jobId)
     const body: MatchOverviewOutput = { current: current && output(current), archived: archived.map(output) }
     res.json(body)
   }

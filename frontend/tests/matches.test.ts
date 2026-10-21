@@ -39,7 +39,7 @@ test('the overview of a job is loaded with its current and archived results', as
 
   await matches.load(7)
 
-  expect(fetch.mock.calls[0][0]).toBe('/api/v1/matches?job_id=7')
+  expect(fetch.mock.calls[0][0]).toBe('/api/v1/matches/jobs/7')
   expect(matches.current).toEqual(RESULT)
   expect(matches.archived).toEqual([OLD])
 })
@@ -70,7 +70,7 @@ test('a result for a version that became inactive meanwhile reloads the overview
 
   await matches.run(7)
 
-  expect(fetch.mock.calls[2][0]).toBe('/api/v1/matches?job_id=7')
+  expect(fetch.mock.calls[2][0]).toBe('/api/v1/matches/jobs/7')
   expect(matches.current).toBeNull()
   expect(matches.archived).toEqual([OLD, { ...RESULT, archived: true }])
 })
@@ -86,4 +86,16 @@ test('a failed run keeps the earlier result and throws the reason', async () => 
 
   await expect(matches.run(7)).rejects.toEqual(new ApiError(429, 'limit_reached'))
   expect(matches.current).toEqual(RESULT)
+})
+
+test('the list of all results of the active version is loaded', async () => {
+  const entry = { ...RESULT, job: { id: 7, source: 'ba', title: 'Frontend-Entwicklerin', company: null, city: 'Berlin' } }
+  const fetch = vi.fn().mockResolvedValue(json([entry]))
+  vi.stubGlobal('fetch', fetch)
+  const matches = useMatchesStore()
+
+  await matches.loadList()
+
+  expect(fetch.mock.calls[0][0]).toBe('/api/v1/matches')
+  expect(matches.list).toEqual([entry])
 })

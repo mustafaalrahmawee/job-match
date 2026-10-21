@@ -171,3 +171,7 @@ export type MatchResult = {
 }
 
 export type MatchOverview = { current: MatchResult | null; archived: MatchResult[] }
+
+export type MatchListItem = MatchResult & {
+  job: { id: number; source: JobSource; title: string; company: string | null; city: string }
+}
