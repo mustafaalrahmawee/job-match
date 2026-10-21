@@ -30,7 +30,7 @@ Modellaufruf nur `/review-loop UC-xx`. Nach jedem fertigen Use Case: Änderungen
 - [x] `/prompt-unit job_extract`
 - [x] `/review-loop UC-08` – eigene Stelle aus Text oder Screenshot
 - [x] `/prompt-unit match_analysis`
-- [ ] `/review-loop UC-09` – Match-Analyse
+- [x] `/review-loop UC-09` – Match-Analyse
 
 ### Stufe 4 · Bewerbungen und Coach-Aktionen
 
