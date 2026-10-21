@@ -25,6 +25,8 @@ export type MatchResultInfo = MatchResult & { cvVersion: { isActive: boolean; ro
 
 export type MatchOverview = { current: MatchResultInfo | null; archived: MatchResultInfo[] }
 
+export type MatchWithJob = MatchResultInfo & { job: Job }
+
 export class MatchesService {
   constructor(
     private readonly prisma: PrismaClient,
@@ -32,6 +34,21 @@ export class MatchesService {
     private readonly cvs: CvsService,
     private readonly jobs: JobsService,
   ) { }
+
+  async list(userId: number): Promise<MatchWithJob[]> {
+    const results = await this.prisma.matchResult.findMany({
+      where: { userId, cvVersion: { isActive: true } },
+      include: VERSION,
+      orderBy: [{ score: 'desc' }, { createdAt: 'desc' }],
+    })
+    const jobs = new Map(
+      (await this.jobs.visible(userId, results.map((result) => result.jobId))).map((job) => [job.id, job]),
+    )
+    return results.flatMap((result) => {
+      const job = jobs.get(result.jobId)
+      return job ? [{ ...result, job }] : []
+    })
+  }
 
   async overview(userId: number, jobId: number): Promise<MatchOverview> {
     await this.jobs.get(userId, jobId)

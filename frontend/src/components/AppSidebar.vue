@@ -134,7 +134,7 @@
 </template>
 
 <script setup lang="ts">
-import { Bookmark, Briefcase, FileText, House, LogOut, MessageSquare, PanelLeft, Pencil, Trash2 } from '@lucide/vue'
+import { Bookmark, Briefcase, FileText, Gauge, House, LogOut, MessageSquare, PanelLeft, Pencil, Trash2 } from '@lucide/vue'
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
@@ -152,6 +152,7 @@ const NAV = [
   { to: '/cv', label: 'Lebenslauf', icon: FileText, exact: false },
   { to: '/jobs', label: 'Stellen', icon: Briefcase, exact: false },
   { to: '/jobs/own', label: 'Eigene Stellen', icon: Bookmark, exact: false },
+  { to: '/matches', label: 'Matches', icon: Gauge, exact: false },
 ]
 
 const auth = useAuthStore()

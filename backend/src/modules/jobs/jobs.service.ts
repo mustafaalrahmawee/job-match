@@ -114,6 +114,10 @@ export class JobsService {
     return job
   }
 
+  visible(userId: number, ids: number[]): Promise<Job[]> {
+    return this.prisma.job.findMany({ where: { id: { in: ids }, OR: [{ source: 'ba' }, { userId }] } })
+  }
+
   async extract(input: JobExtractInput): Promise<JobDraft> {
     let result: SendResult
     try {

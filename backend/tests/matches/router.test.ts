@@ -98,7 +98,7 @@ function run(jobId = job.id, auth = headers) {
 }
 
 function overview(jobId = job.id) {
-  return request(app).get(`/api/v1/matches?job_id=${jobId}`).set(headers)
+  return request(app).get(`/api/v1/matches/jobs/${jobId}`).set(headers)
 }
 
 test('a match analysis needs a login', async () => {
@@ -420,11 +420,48 @@ test('a description cut in the prompt is logged with the job', async () => {
   expect(warn).toHaveBeenCalledWith(expect.stringContaining(`job ${long.id}`))
 })
 
-test('the overview needs a job id and is empty before the first run', async () => {
-  expect((await request(app).get('/api/v1/matches').set(headers)).status).toBe(422)
+test('the overview needs a valid job id and is empty before the first run', async () => {
+  expect((await request(app).get('/api/v1/matches/jobs/abc').set(headers)).status).toBe(422)
 
   const response = await overview()
 
   expect(response.status).toBe(200)
   expect(response.body).toEqual({ current: null, archived: [] })
+})
+
+test('the list shows the results of the active version with their job, the best fit first', async () => {
+  const first = await readyCv()
+  const weaker = await poolJob(AD)
+  answers({ ...MATCH, score: 40 })
+  await run(weaker.id)
+  answers(MATCH)
+  await run()
+  await prisma.cvVersion.update({ where: { id: first.id }, data: { isActive: false } })
+  const second = await readyCv()
+  answers({ ...MATCH, score: 60 })
+  await run()
+  answers({ ...MATCH, score: 70 })
+  await run(weaker.id)
+
+  const response = await request(app).get('/api/v1/matches').set(headers)
+
+  expect(response.status).toBe(200)
+  const list = response.body as { score: number; archived: boolean; job: { id: number; title: string }; cv_version: { id: number } }[]
+  expect(list.map((entry) => [entry.job.id, entry.score])).toEqual([
+    [weaker.id, 70],
+    [job.id, 60],
+  ])
+  expect(list[0]).toMatchObject({ archived: false, cv_version: { id: second.id }, job: { title: job.title } })
+})
+
+test('the list never shows results of another user', async () => {
+  await readyCv()
+  answers(MATCH)
+  await run()
+  const ben = await auth.createUser('ben@example.com', 'auch-geheim')
+
+  const response = await request(app).get('/api/v1/matches').set(await bearerFor(auth, ben))
+
+  expect(response.status).toBe(200)
+  expect(response.body).toEqual([])
 })
