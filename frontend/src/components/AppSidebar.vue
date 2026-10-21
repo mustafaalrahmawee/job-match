@@ -134,7 +134,7 @@
 </template>
 
 <script setup lang="ts">
-import { Briefcase, FileText, House, LogOut, MessageSquare, PanelLeft, Pencil, Trash2 } from '@lucide/vue'
+import { Bookmark, Briefcase, FileText, House, LogOut, MessageSquare, PanelLeft, Pencil, Trash2 } from '@lucide/vue'
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
@@ -151,6 +151,7 @@ const NAV = [
   { to: '/coach', label: 'Coach', icon: MessageSquare, exact: false },
   { to: '/cv', label: 'Lebenslauf', icon: FileText, exact: false },
   { to: '/jobs', label: 'Stellen', icon: Briefcase, exact: false },
+  { to: '/jobs/own', label: 'Eigene Stellen', icon: Bookmark, exact: false },
 ]
 
 const auth = useAuthStore()
@@ -169,6 +170,7 @@ const busy = ref(false)
 const dialogError = ref<string | null>(null)
 
 function isActive(item: (typeof NAV)[number]) {
+  if (route.meta.nav) return route.meta.nav === item.to
   return item.exact ? route.path === item.to : route.path.startsWith(item.to)
 }
 
@@ -244,6 +246,7 @@ async function logout() {
   cv.versions = []
   jobs.loaded = false
   jobs.page = 1
+  jobs.ownJobs = []
   Object.assign(jobs.filter, { q: '', role: null, region: null, workTime: null, offerType: null })
   try {
     await auth.logout()

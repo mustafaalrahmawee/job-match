@@ -18,6 +18,7 @@ model User {
   tokens        AuthToken[]
   conversations Conversation[]
   cvVersions    CvVersion[]
+  jobs          Job[]
 
   @@map("users")
 }
@@ -115,6 +116,8 @@ enum OfferType {
 model Job {
   id          Int       @id @default(autoincrement())
   source      JobSource
+  userId      Int?      @map("user_id")
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   externalId  String    @map("external_id") @db.VarChar(64)
   title       String    @db.VarChar(300)
   company     String?   @db.VarChar(300)
@@ -125,11 +128,13 @@ model Job {
   role        String    @db.VarChar(32)
   fullTime    Boolean   @map("full_time")
   partTime    Boolean   @map("part_time")
+  salary      String?   @db.VarChar(200)
   publishedAt DateTime  @map("published_at") @db.Date
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
   @@unique([source, externalId])
   @@index([publishedAt])
+  @@index([userId])
   @@map("jobs")
 }
 

@@ -1,13 +1,13 @@
 import type { ContentBlockParam, MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import type { Conversation, Message, Prisma, PrismaClient } from '../../generated/prisma/client.js'
-import type { SendStream, StreamHandlers, StreamResult } from '../../llm/send.js'
+import type { SendResult, SendStream, StreamHandlers } from '../../llm/send.js'
 import { type ChatSettings, coachChatRequest } from '../../prompts/coach_chat.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
 import type { CvsService } from '../cvs/cvs.service.js'
 
 export type ConversationWithMessages = Conversation & { messages: Message[] }
 
-export type Reply = { message: Message | null; stopReason: StreamResult['stopReason'] }
+export type Reply = { message: Message | null; stopReason: SendResult['stopReason'] }
 
 const STORED_STOP_REASONS = new Set(['end_turn', 'max_tokens', 'model_context_window_exceeded', 'stopped'])
 

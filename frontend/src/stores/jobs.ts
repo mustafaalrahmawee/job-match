@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
 import { fetchApi } from '../api'
-import type { Job, JobDetail, JobFilter, JobList } from '../types'
+import type { Job, JobDetail, JobDraft, JobFilter, JobList, OwnJobInput } from '../types'
 
 export const JOBS_PAGE_SIZE = 20
 
@@ -12,9 +12,15 @@ export const useJobsStore = defineStore('jobs', () => {
   const page = ref(1)
   const loaded = ref(false)
   const job = ref<JobDetail | null>(null)
+  const ownJobs = ref<Job[]>([])
+  const ownTotal = ref(0)
 
   async function load(target = 1, signal?: AbortSignal) {
-    const params = new URLSearchParams({ offset: String((target - 1) * JOBS_PAGE_SIZE), limit: String(JOBS_PAGE_SIZE) })
+    const params = new URLSearchParams({
+      source: 'ba',
+      offset: String((target - 1) * JOBS_PAGE_SIZE),
+      limit: String(JOBS_PAGE_SIZE),
+    })
     if (filter.q.trim()) params.set('q', filter.q.trim())
     if (filter.role) params.set('role', filter.role)
     if (filter.region) params.set('region', filter.region)
@@ -28,11 +34,31 @@ export const useJobsStore = defineStore('jobs', () => {
     loaded.value = true
   }
 
+  async function loadOwn(offset = 0) {
+    const params = new URLSearchParams({ source: 'own', offset: String(offset), limit: String(JOBS_PAGE_SIZE) })
+    const response = await fetchApi(`/jobs?${params.toString()}`)
+    const result = (await response.json()) as JobList
+    ownJobs.value = offset ? [...ownJobs.value, ...result.jobs] : result.jobs
+    ownTotal.value = result.total
+  }
+
   async function loadOne(id: number) {
     job.value = null
     const response = await fetchApi(`/jobs/${id}`)
     job.value = (await response.json()) as JobDetail
   }
 
-  return { jobs, total, filter, page, loaded, job, load, loadOne }
+  async function extract(input: string | File): Promise<JobDraft> {
+    const body = typeof input === 'string' ? { text: input } : new Blob([input], { type: input.type })
+    const response = await fetchApi('/jobs/extraction', { method: 'POST', body })
+    return (await response.json()) as JobDraft
+  }
+
+  async function create(input: OwnJobInput): Promise<JobDetail> {
+    const response = await fetchApi('/jobs', { method: 'POST', body: input })
+    job.value = (await response.json()) as JobDetail
+    return job.value
+  }
+
+  return { jobs, total, filter, page, loaded, job, ownJobs, ownTotal, load, loadOwn, loadOne, extract, create }
 })

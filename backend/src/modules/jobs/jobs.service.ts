@@ -1,8 +1,21 @@
+import { randomUUID } from 'node:crypto'
 import type { Job, OfferType, Prisma, PrismaClient } from '../../generated/prisma/client.js'
+import type { SendMessage, SendResult } from '../../llm/send.js'
 import { CV_ROLES, type CvRole } from '../../prompts/cv_analysis.js'
+import { jobExtractRequest, jobExtractSchema, type JobExtractInput } from '../../prompts/job_extract.js'
 import { BA_MAX_PAGES, BA_PAGE_SIZE, BA_SEARCH_TERMS, POOL_DAYS, type BaClient } from './jobs.ba.js'
-import { NotFoundError } from '../../shared/errors.js'
-import { REGIONS, baJobSchema, type BaJob, type JobsQuery, type Region } from './jobs.schemas.js'
+import { AppError, NotFoundError } from '../../shared/errors.js'
+import {
+  JOB_LIMITS,
+  JOB_TEXT_MAX_CHARS,
+  REGIONS,
+  baJobSchema,
+  type BaJob,
+  type JobDraft,
+  type JobsQuery,
+  type OwnJobInput,
+  type Region,
+} from './jobs.schemas.js'
 
 export type ImportSummary = { imported: number; duplicates: number; filtered: number; failed: number }
 
@@ -11,6 +24,8 @@ export type JobList = { total: number; jobs: Job[]; poolUpdatedAt: Date | null }
 type Outcome = keyof ImportSummary
 
 const DAY_MS = 24 * 60 * 60 * 1000
+
+const OWN_JOB_ROLE: CvRole = 'Andere'
 
 const OFFER_TYPES: Record<BaJob['stellenangebotsart'], OfferType> = {
   ARBEIT: 'work',
@@ -23,6 +38,7 @@ export class JobsService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly ba: BaClient,
+    private readonly sendMessage: SendMessage,
   ) { }
 
   async importPool(now = new Date()): Promise<ImportSummary> {
@@ -58,12 +74,16 @@ export class JobsService {
     return summary
   }
 
-  async list(query: JobsQuery, now = new Date()): Promise<JobList> {
-    const where: Prisma.JobWhereInput = {
+  async list(userId: number, query: JobsQuery, now = new Date()): Promise<JobList> {
+    const pool: Prisma.JobWhereInput = {
       source: 'ba',
       publishedAt: { gte: new Date(new Date(now.getTime() - POOL_DAYS * DAY_MS).toISOString().slice(0, 10)) },
       role: query.role,
       region: query.region,
+    }
+    const own: Prisma.JobWhereInput = { source: 'own', userId }
+    const where: Prisma.JobWhereInput = {
+      AND: [{ OR: query.source === 'ba' ? [pool] : query.source === 'own' ? [own] : [pool, own] }],
       fullTime: query.work_time === 'full' ? true : undefined,
       partTime: query.work_time === 'part' ? true : undefined,
       offerType: query.offer_type,
@@ -88,10 +108,62 @@ export class JobsService {
     return { total, jobs, poolUpdatedAt: lastImport?.createdAt ?? null }
   }
 
-  async get(id: number): Promise<Job> {
-    const job = await this.prisma.job.findUnique({ where: { id } })
+  async get(userId: number, id: number): Promise<Job> {
+    const job = await this.prisma.job.findFirst({ where: { id, OR: [{ source: 'ba' }, { userId }] } })
     if (!job) throw new NotFoundError('Job not found')
     return job
+  }
+
+  async extract(input: JobExtractInput): Promise<JobDraft> {
+    let result: SendResult
+    try {
+      result = await this.sendMessage(jobExtractRequest(input))
+    } catch (error) {
+      console.error(error)
+      throw new AppError(502, 'extract_failed')
+    }
+    const text = result.content.find((block) => block.type === 'text')
+    if (result.stopReason !== 'end_turn' || !text) throw new AppError(502, 'extract_failed')
+    let json: unknown
+    try {
+      json = JSON.parse(text.text)
+    } catch {
+      throw new AppError(502, 'extract_failed')
+    }
+    const parsed = jobExtractSchema.safeParse(json)
+    if (!parsed.success) throw new AppError(502, 'extract_failed')
+    const extract = parsed.data
+    if (!extract.is_job) throw new AppError(422, 'not_job')
+    return {
+      title: extract.title && extract.title.slice(0, JOB_LIMITS.title),
+      company: extract.company && extract.company.slice(0, JOB_LIMITS.company),
+      city: extract.city && extract.city.slice(0, JOB_LIMITS.city),
+      offer_type: extract.offer_type,
+      full_time: extract.full_time,
+      part_time: extract.part_time,
+      salary: extract.salary && extract.salary.slice(0, JOB_LIMITS.salary),
+      description: input.kind === 'text' ? input.text : (extract.text ?? '').slice(0, JOB_TEXT_MAX_CHARS),
+    }
+  }
+
+  create(userId: number, input: OwnJobInput, now = new Date()): Promise<Job> {
+    return this.prisma.job.create({
+      data: {
+        source: 'own',
+        userId,
+        externalId: randomUUID(),
+        title: input.title,
+        company: input.company,
+        city: input.city,
+        description: input.description,
+        offerType: input.offer_type,
+        role: OWN_JOB_ROLE,
+        fullTime: input.full_time,
+        partTime: input.part_time,
+        salary: input.salary,
+        publishedAt: new Date(now.toISOString().slice(0, 10)),
+      },
+    })
   }
 
   private async importOne(job: BaJob, role: CvRole, since: string, known: Set<string>): Promise<Outcome> {

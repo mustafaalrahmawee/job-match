@@ -2,7 +2,10 @@ import { useAuthStore } from './stores/auth'
 import type { ApiOptions } from './types'
 
 export class ApiError extends Error {
-  constructor(readonly status: number) {
+  constructor(
+    readonly status: number,
+    readonly detail: unknown = null,
+  ) {
     super(`API-Fehler ${status}`)
   }
 }
@@ -23,6 +26,14 @@ export async function fetchApi(path: string, { method = 'GET', body, signal }: A
     body: body === undefined || isFile ? body : JSON.stringify(body),
     signal,
   })
-  if (!response.ok) throw new ApiError(response.status)
+  if (!response.ok) {
+    let detail: unknown = null
+    try {
+      detail = ((await response.json()) as { detail?: unknown }).detail ?? null
+    } catch {
+      detail = null
+    }
+    throw new ApiError(response.status, detail)
+  }
   return response
 }

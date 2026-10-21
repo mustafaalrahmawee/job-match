@@ -7,6 +7,8 @@ import HomeView from './views/HomeView.vue'
 import JobsView from './views/JobsView.vue'
 import JobView from './views/JobView.vue'
 import LoginView from './views/LoginView.vue'
+import OwnJobView from './views/OwnJobView.vue'
+import OwnJobsView from './views/OwnJobsView.vue'
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -20,6 +22,9 @@ export const router = createRouter({
         { path: 'coach/:id(\\d+)?', component: CoachView },
         { path: 'cv', component: CvView },
         { path: 'jobs', component: JobsView },
+        { path: 'jobs/own', component: OwnJobsView, meta: { nav: '/jobs/own' } },
+        { path: 'jobs/new', component: OwnJobView, meta: { nav: '/jobs/own' } },
+        { path: 'jobs/own/:id(\\d+)', component: JobView, meta: { nav: '/jobs/own' } },
         { path: 'jobs/:id(\\d+)', component: JobView },
       ],
     },
