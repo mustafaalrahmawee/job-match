@@ -1,11 +1,11 @@
 <template>
   <PageHeader :title="jobs.job ? [jobs.job.title, jobs.job.company].filter(Boolean).join(' · ') : 'Stelle'">
     <RouterLink
-      to="/jobs"
+      :to="jobs.job?.source === 'own' ? '/jobs/own' : '/jobs'"
       class="flex h-8 items-center gap-2 rounded-md px-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
     >
       <ArrowLeft class="size-4" />
-      <span class="hidden sm:inline">Alle Stellen</span>
+      <span class="hidden sm:inline">{{ jobs.job?.source === 'own' ? 'Eigene Stellen' : 'Alle Stellen' }}</span>
     </RouterLink>
   </PageHeader>
 
@@ -33,9 +33,13 @@
                 <Tag class="size-4" />
                 {{ facts.offer }}
               </span>
+              <span v-if="jobs.job.salary" class="inline-flex items-center gap-1.5">
+                <Banknote class="size-4" />
+                {{ jobs.job.salary }}
+              </span>
               <span class="inline-flex items-center gap-1.5">
                 <CalendarDays class="size-4" />
-                Veröffentlicht am {{ facts.published }}
+                {{ jobs.job.source === 'own' ? 'Gespeichert' : 'Veröffentlicht' }} am {{ facts.published }}
               </span>
             </div>
           </div>
@@ -54,7 +58,9 @@
         <section class="flex flex-col gap-2 rounded-xl border bg-card p-4 shadow-sm">
           <h2 class="text-sm font-semibold">Anzeige</h2>
           <MarkdownText :text="jobs.job.description" class="text-sm text-muted-foreground" />
-          <p class="mt-2 border-t pt-3 text-xs text-muted-foreground">Quelle: Jobsuche der Bundesagentur für Arbeit</p>
+          <p class="mt-2 border-t pt-3 text-xs text-muted-foreground">
+            {{ jobs.job.source === 'own' ? 'Quelle: eigene Stelle' : 'Quelle: Jobsuche der Bundesagentur für Arbeit' }}
+          </p>
         </section>
       </template>
     </div>
@@ -62,7 +68,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, CalendarDays, Clock, ExternalLink, MapPin, Tag } from '@lucide/vue'
+import { ArrowLeft, Banknote, CalendarDays, Clock, ExternalLink, MapPin, Tag } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ApiError } from '../api'

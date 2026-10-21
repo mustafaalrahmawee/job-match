@@ -79,28 +79,8 @@
 
       <section v-else-if="jobs.jobs.length" class="overflow-hidden rounded-xl border bg-card shadow-sm">
         <ul class="divide-y">
-          <li v-for="row in rows" :key="row.id">
-            <RouterLink :to="`/jobs/${row.id}`" class="flex gap-4 px-4 py-3.5 hover:bg-accent">
-              <div class="min-w-0 flex-1">
-                <p class="line-clamp-2 text-sm font-medium">{{ row.title }}</p>
-                <p v-if="row.company" class="mt-0.5 truncate text-sm text-muted-foreground">{{ row.company }}</p>
-                <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  <span class="inline-flex items-center gap-1.5">
-                    <MapPin class="size-3.5" />
-                    {{ row.city }}
-                  </span>
-                  <span v-if="row.time" class="inline-flex items-center gap-1.5">
-                    <Clock class="size-3.5" />
-                    {{ row.time }}
-                  </span>
-                  <span v-if="row.offer" class="inline-flex items-center gap-1.5">
-                    <Tag class="size-3.5" />
-                    {{ row.offer }}
-                  </span>
-                </div>
-              </div>
-              <span class="shrink-0 text-xs text-muted-foreground">{{ row.age }}</span>
-            </RouterLink>
+          <li v-for="job in jobs.jobs" :key="job.id">
+            <JobRow :job="job" />
           </li>
         </ul>
         <nav v-if="pageCount > 1" aria-label="Seiten" class="flex items-center justify-center gap-1 border-t px-4 py-3">
@@ -149,16 +129,16 @@
 </template>
 
 <script setup lang="ts">
-import { Briefcase, ChevronLeft, ChevronRight, Clock, MapPin, Search, SlidersHorizontal, Tag, X } from '@lucide/vue'
+import { Briefcase, ChevronLeft, ChevronRight, Search, SlidersHorizontal, X } from '@lucide/vue'
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { isAbort } from '../api'
+import JobRow from '../components/JobRow.vue'
 import PageHeader from '../components/PageHeader.vue'
 import { useCvStore } from '../stores/cv'
 import { JOBS_PAGE_SIZE, useJobsStore } from '../stores/jobs'
-import { CV_ROLES, OFFER_LABELS, REGION_LABELS } from '../types'
+import { CV_ROLES, REGION_LABELS } from '../types'
 
 const SEARCH_DELAY_MS = 300
-const DAY_MS = 24 * 60 * 60 * 1000
 
 const FILTERS = [
   {
@@ -218,20 +198,6 @@ const pages = computed(() => {
     const gap = entry - (shown[index - 1] ?? entry)
     if (gap === 2) return [entry - 1, entry]
     return gap > 2 ? ['…' as const, entry] : [entry]
-  })
-})
-
-const rows = computed(() => {
-  const now = new Date()
-  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
-  return jobs.jobs.map((job) => {
-    const days = Math.max(0, Math.round((today - Date.parse(job.published_at)) / DAY_MS))
-    return {
-      ...job,
-      offer: OFFER_LABELS[job.offer_type],
-      time: job.full_time ? (job.part_time ? 'Vollzeit, Teilzeit möglich' : 'Vollzeit') : job.part_time ? 'Teilzeit' : null,
-      age: days === 0 ? 'heute' : days === 1 ? 'vor 1 Tag' : `vor ${days} Tagen`,
-    }
   })
 })
 

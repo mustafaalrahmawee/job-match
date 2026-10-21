@@ -105,15 +105,17 @@ export type Region = keyof typeof REGION_LABELS
 
 export type WorkTime = 'full' | 'part'
 
+export type JobSource = 'ba' | 'own'
+
 export type Job = {
   id: number
-  source: 'ba' | 'own'
+  source: JobSource
   title: string
   company: string | null
   city: string
   region: Region | null
   offer_type: OfferType
-  role: CvRole
+  role: CvRole | null
   full_time: boolean
   part_time: boolean
   published_at: string
@@ -129,4 +131,26 @@ export type JobFilter = {
   offerType: OfferType | null
 }
 
-export type JobDetail = Job & { description: string; url: string | null }
+export type JobDetail = Job & { description: string; salary: string | null; url: string | null }
+
+export type JobDraft = {
+  title: string | null
+  company: string | null
+  city: string | null
+  offer_type: OfferType
+  full_time: boolean
+  part_time: boolean
+  salary: string | null
+  description: string
+}
+
+export type OwnJobInput = {
+  title: string
+  company: string
+  city: string
+  offer_type: OfferType
+  full_time: boolean
+  part_time: boolean
+  salary: string
+  description: string
+}

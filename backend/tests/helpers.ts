@@ -6,14 +6,14 @@ import { createApp } from '../src/app.js'
 import { env } from '../src/config/env.js'
 import type { PrismaClient, User } from '../src/generated/prisma/client.js'
 import type { Batches } from '../src/llm/batch.js'
-import type { SendStream, StreamHandlers, StreamResult } from '../src/llm/send.js'
+import type { SendMessage, SendResult, SendStream, StreamHandlers } from '../src/llm/send.js'
 import { AuthService } from '../src/modules/auth/auth.service.js'
 import { BaClient } from '../src/modules/jobs/jobs.ba.js'
 import { createPrisma } from '../src/shared/prisma.js'
 
 export const TOKEN_TTL_DAYS = 30
 
-export type FakeReply = (handlers: StreamHandlers) => Promise<StreamResult>
+export type FakeReply = (handlers: StreamHandlers) => Promise<SendResult>
 
 export type FakeModel = {
   send: SendStream
@@ -21,7 +21,7 @@ export type FakeModel = {
   answer(reply: FakeReply): void
 }
 
-export function streamedText(text: string, stopReason: StreamResult['stopReason'] = 'end_turn'): FakeReply {
+export function streamedText(text: string, stopReason: SendResult['stopReason'] = 'end_turn'): FakeReply {
   return ({ onText }) => {
     for (const word of text.split(/(?<= )/)) onText(word)
     return Promise.resolve({
@@ -42,6 +42,45 @@ export function fakeModel(): FakeModel {
     send: (params, handlers) => {
       requests.push(structuredClone(params))
       return reply(handlers)
+    },
+    answer(next) {
+      reply = next
+    },
+  }
+}
+
+export type FakeMessageReply = () => Promise<SendResult>
+
+export type FakeMessages = {
+  send: SendMessage
+  requests: MessageCreateParamsNonStreaming[]
+  answer(reply: FakeMessageReply): void
+}
+
+export function sentText(text: string, stopReason: SendResult['stopReason'] = 'end_turn'): FakeMessageReply {
+  return () =>
+    Promise.resolve({
+      content: [
+        { type: 'thinking', thinking: 'Notiz', signature: 'sig' },
+        { type: 'text', text, citations: null },
+      ],
+      stopReason,
+      stopDetails: null,
+      inputTokens: 900,
+      outputTokens: 300,
+    })
+}
+
+const NO_REPLY: FakeMessageReply = () => Promise.reject(new Error('No reply set'))
+
+export function fakeMessages(): FakeMessages {
+  let reply = NO_REPLY
+  const requests: MessageCreateParamsNonStreaming[] = []
+  return {
+    requests,
+    send: (params) => {
+      requests.push(structuredClone(params))
+      return reply()
     },
     answer(next) {
       reply = next
@@ -110,14 +149,23 @@ export function useTestDatabase(): {
   app: Express
   auth: AuthService
   model: FakeModel
+  messages: FakeMessages
   batches: FakeBatches
   ba: FakeBa
 } {
   const prisma = createPrisma(env.TEST_DATABASE_URL)
   const model = fakeModel()
+  const messages = fakeMessages()
   const batches = fakeBatches()
   const ba = fakeBa()
-  const app = createApp({ prisma, tokenTtlDays: TOKEN_TTL_DAYS, send: model.send, batches, ba: ba.client })
+  const app = createApp({
+    prisma,
+    tokenTtlDays: TOKEN_TTL_DAYS,
+    sendStream: model.send,
+    sendMessage: messages.send,
+    batches,
+    ba: ba.client,
+  })
   const auth = new AuthService(prisma, TOKEN_TTL_DAYS)
   beforeEach(async () => {
     ba.searches.clear()
@@ -127,6 +175,8 @@ export function useTestDatabase(): {
     await prisma.job.deleteMany()
     await prisma.jobImport.deleteMany()
     model.requests.length = 0
+    messages.requests.length = 0
+    messages.answer(NO_REPLY)
     model.answer(streamedText('Hallo, ich bin dein Coach.'))
     batches.requests.length = 0
     batches.results.clear()
@@ -135,7 +185,7 @@ export function useTestDatabase(): {
     await prisma.user.deleteMany()
   })
   afterAll(() => prisma.$disconnect())
-  return { prisma, app, auth, model, batches, ba }
+  return { prisma, app, auth, model, messages, batches, ba }
 }
 
 export function createAnna(auth: AuthService): Promise<User> {

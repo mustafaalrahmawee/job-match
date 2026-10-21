@@ -155,6 +155,7 @@ test('a job shows its text and the link to the Bundesagentur', async () => {
     id,
     title: 'Stelle 10001-1003781061-S',
     description: '### Aufgaben\n\nVue 3',
+    salary: null,
     url: 'https://www.arbeitsagentur.de/jobsuche/jobdetail/10001-1003781061-S',
   })
 })

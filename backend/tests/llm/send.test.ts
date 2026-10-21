@@ -1,7 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { expect, test } from 'vitest'
-import { createSendStream } from '../../src/llm/send.js'
+import { createSendMessage, createSendStream } from '../../src/llm/send.js'
 import { coachChatRequest } from '../../src/prompts/coach_chat.js'
+import { jobExtractRequest } from '../../src/prompts/job_extract.js'
 
 const EVENTS = [
   {
@@ -94,4 +95,55 @@ test('a failed request is passed on', async () => {
   const send = createSendStream(new Anthropic({ apiKey: 'test', fetch, maxRetries: 0 }))
 
   await expect(send(params, { onText: () => undefined, signal: new AbortController().signal })).rejects.toThrow()
+})
+
+const MESSAGE = {
+  id: 'msg_2',
+  type: 'message',
+  role: 'assistant',
+  model: 'claude-haiku-5-5',
+  content: [
+    { type: 'thinking', thinking: 'Notiz', signature: 'sig' },
+    { type: 'text', text: '{"is_job": true}' },
+  ],
+  stop_reason: 'end_turn',
+  stop_sequence: null,
+  stop_details: null,
+  usage: { input_tokens: 900, output_tokens: 300 },
+}
+
+function messageClient(message: object, status = 200): Anthropic {
+  const fetch = () => Promise.resolve(Response.json(message, { status }))
+  return new Anthropic({ apiKey: 'test', fetch, maxRetries: 0 })
+}
+
+const extractParams = jobExtractRequest({ kind: 'text', text: 'Anzeige' })
+
+test('a single message returns content, stop reason and tokens', async () => {
+  const result = await createSendMessage(messageClient(MESSAGE))(extractParams)
+
+  expect(result).toMatchObject({ stopReason: 'end_turn', stopDetails: null, inputTokens: 900, outputTokens: 300 })
+  expect(result.content).toMatchObject([{ type: 'thinking' }, { type: 'text', text: '{"is_job": true}' }])
+})
+
+test('a refused message passes on its stop details', async () => {
+  const refused = {
+    ...MESSAGE,
+    stop_reason: 'refusal',
+    stop_details: { type: 'refusal', category: 'cyber', explanation: null },
+  }
+
+  const result = await createSendMessage(messageClient(refused))(extractParams)
+
+  expect(result).toMatchObject({ stopReason: 'refusal', stopDetails: { category: 'cyber' } })
+})
+
+test('a message without a stop reason is an error', async () => {
+  await expect(createSendMessage(messageClient({ ...MESSAGE, stop_reason: null }))(extractParams)).rejects.toThrow()
+})
+
+test('a failed single request is passed on', async () => {
+  const failed = { type: 'error', error: { type: 'overloaded_error', message: 'busy' } }
+
+  await expect(createSendMessage(messageClient(failed, 529))(extractParams)).rejects.toThrow()
 })

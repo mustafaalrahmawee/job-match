@@ -8,13 +8,13 @@ import { CoachService } from './coach.service.js'
 
 export type CoachModuleDeps = {
   prisma: PrismaClient
-  send: SendStream
+  sendStream: SendStream
   cvs: CvsService
   authenticate: RequestHandler
 }
 
 export function createCoachModule(deps: CoachModuleDeps): { router: Router; service: CoachService } {
-  const service = new CoachService(deps.prisma, deps.send, deps.cvs)
+  const service = new CoachService(deps.prisma, deps.sendStream, deps.cvs)
   const controller = new CoachController(service)
   const router = coachRoutes(controller, deps.authenticate)
   return { router, service }
