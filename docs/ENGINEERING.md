@@ -1,6 +1,6 @@
 # Was dieses Projekt zeigt
 
-Stand: 21. Oktober 2026
+Stand: 22. Oktober 2026
 
 Die App selbst ist absichtlich gewöhnlich: Login, Chat, Datei-Upload, Listen, Formulare. Das
 Besondere liegt darin, **wie jeder Modellaufruf entworfen, abgesichert und gemessen wird** und wie
@@ -83,11 +83,20 @@ Das Ergebnis dieses Durchlaufs sind die Commits `b4b33fe` (Prompt-Unit) und `62c
   Beispiele (Claude schreibt, glm prüft) und für Code (Claude schreibt, glm prüft).
 - **Was gelten muss, prüft der Code.** Der Prompt bittet; Zod, Enum und Längenprüfung erzwingen.
   Jeder Kopfkommentar einer Unit trennt „Enforced in code“ von „Requested only“.
+- **Die niedrigste Stufe, die die Aufgabe löst.** Die Treppe heißt: Formular und Code, ein
+  Modellaufruf, Modell mit Werkzeug, Workflow, Agent. Jede Funktion bekommt die unterste Stufe, die
+  sie löst, und jede Unit das billigste Modell, das ihre Eval besteht ([EVAL_PLAN.md](EVAL_PLAN.md)
+  §5). Beispiel Coach (UC-11): Stelle speichern und Status setzen gibt es schon als Formular (UC-08,
+  UC-10), sie bleiben Code. Der Coach bekommt nur lesende Werkzeuge, die Bewerbung lesen und die
+  Websuche, weil nur dort das Modell etwas kann, was Code nicht kann: Interviewfragen aus Anzeige und
+  Lücken schreiben und eine Firma recherchieren, bei der die Zahl der Suchen vorher offen ist.
+  Schreibende Werkzeuge im Chat hätten die Oberfläche verdoppelt und das größte Risiko gebracht:
+  eine Anweisung in einer Anzeige oder Webseite hätte Daten der Person ändern können.
 
 ## Was noch nicht gebaut ist
 
 - **Stufe 3 läuft.** Das Blatt zu `match_analysis` ist Entwurf; UC-09 folgt.
-- **Stufe 4 bis 8 fehlen:** Agent-Loop mit Tools und Websuche, Interview-Training, Kontextverwaltung
+- **Stufe 4 bis 8 fehlen:** Coach-Agent mit lesenden Werkzeugen und Websuche, Interview-Training, Kontextverwaltung
   mit Compaction und Caching, RAG über ChromaDB, Anschreiben per Skill und Kalender per MCP. Sie
   sind in [APP_IDEA.md](APP_IDEA.md) geplant und noch nicht Code.
 - **Phase B ist nicht begonnen.** Die Eval-Infrastruktur (`run`, `check`, `review`, Batch) existiert;
