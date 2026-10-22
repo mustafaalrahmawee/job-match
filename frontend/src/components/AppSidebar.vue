@@ -134,9 +134,10 @@
 </template>
 
 <script setup lang="ts">
-import { Bookmark, Briefcase, FileText, Gauge, House, LogOut, MessageSquare, PanelLeft, Pencil, Trash2 } from '@lucide/vue'
+import { Bookmark, Briefcase, ClipboardList, FileText, Gauge, House, LogOut, MessageSquare, PanelLeft, Pencil, Trash2 } from '@lucide/vue'
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useApplicationsStore } from '../stores/applications'
 import { useAuthStore } from '../stores/auth'
 import { useCoachStore } from '../stores/coach'
 import { useCvStore } from '../stores/cv'
@@ -153,8 +154,10 @@ const NAV = [
   { to: '/jobs', label: 'Stellen', icon: Briefcase, exact: false },
   { to: '/jobs/own', label: 'Eigene Stellen', icon: Bookmark, exact: false },
   { to: '/matches', label: 'Matches', icon: Gauge, exact: false },
+  { to: '/applications', label: 'Bewerbungen', icon: ClipboardList, exact: false },
 ]
 
+const applications = useApplicationsStore()
 const auth = useAuthStore()
 const coach = useCoachStore()
 const cv = useCvStore()
@@ -249,6 +252,8 @@ async function logout() {
   jobs.page = 1
   jobs.ownJobs = []
   Object.assign(jobs.filter, { q: '', role: null, region: null, workTime: null, offerType: null })
+  applications.list = []
+  applications.application = null
   try {
     await auth.logout()
   } catch {

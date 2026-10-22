@@ -91,6 +91,34 @@
                 Zur Match-Analyse
               </RouterLink>
             </section>
+
+            <section class="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm">
+              <div class="flex items-center gap-2">
+                <h2 class="flex-1 text-sm font-semibold">Bewerbung</h2>
+                <StatusPill v-if="application" :status="application.status" />
+              </div>
+              <p v-if="applicationError" class="text-sm text-destructive" role="alert">{{ applicationError }}</p>
+              <RouterLink
+                v-if="application"
+                :to="`/applications/${application.id}`"
+                class="flex h-9 items-center justify-center gap-2 rounded-md border bg-background px-3 text-sm font-medium hover:bg-accent"
+              >
+                <ClipboardList class="size-4" />
+                Bewerbung öffnen
+              </RouterLink>
+              <template v-else-if="applicationsLoaded">
+                <p class="text-sm text-muted-foreground">Verfolge Status, Verlauf und Notizen zu dieser Stelle.</p>
+                <button
+                  type="button"
+                  class="flex h-9 items-center justify-center gap-2 rounded-md border bg-background px-3 text-sm font-medium hover:bg-accent disabled:opacity-50"
+                  :disabled="creating"
+                  @click="createApplication"
+                >
+                  <Plus class="size-4" />
+                  {{ creating ? 'Anlegen …' : 'Bewerbung anlegen' }}
+                </button>
+              </template>
+            </section>
           </aside>
 
           <div class="flex min-w-0 flex-col gap-4">
@@ -109,21 +137,29 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Banknote, CalendarDays, Clock, ExternalLink, Gauge, MapPin, Tag } from '@lucide/vue'
+import { ArrowLeft, Banknote, CalendarDays, ClipboardList, Clock, ExternalLink, Gauge, MapPin, Plus, Tag } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ApiError } from '../api'
 import MarkdownText from '../components/MarkdownText.vue'
 import MatchScore from '../components/MatchScore.vue'
 import PageHeader from '../components/PageHeader.vue'
+import StatusPill from '../components/StatusPill.vue'
+import { useApplicationsStore } from '../stores/applications'
 import { useJobsStore } from '../stores/jobs'
 import { useMatchesStore } from '../stores/matches'
 import { OFFER_LABELS, REGION_LABELS } from '../types'
 
 const jobs = useJobsStore()
 const matches = useMatchesStore()
+const applications = useApplicationsStore()
 const route = useRoute()
 const error = ref<string | null>(null)
+const applicationError = ref<string | null>(null)
+const creating = ref(false)
+const applicationsLoaded = ref(false)
+
+const application = computed(() => applications.list.find((item) => item.job.id === jobs.job?.id) ?? null)
 
 const facts = computed(() => {
   const job = jobs.job
@@ -137,6 +173,20 @@ const facts = computed(() => {
   }
 })
 
+async function createApplication() {
+  if (!jobs.job) return
+  creating.value = true
+  applicationError.value = null
+  try {
+    await applications.create(jobs.job.id)
+    await applications.loadList()
+  } catch {
+    applicationError.value = 'Die Bewerbung konnte nicht angelegt werden.'
+  } finally {
+    creating.value = false
+  }
+}
+
 onMounted(async () => {
   const id = Number(route.params.id)
   try {
@@ -146,6 +196,15 @@ onMounted(async () => {
       caught instanceof ApiError && caught.status === 404
         ? 'Diese Stelle gibt es nicht.'
         : 'Die Stelle konnte nicht geladen werden.'
+  }
+})
+
+onMounted(async () => {
+  try {
+    await applications.loadList()
+    applicationsLoaded.value = true
+  } catch {
+    applicationError.value = 'Die Bewerbung zu dieser Stelle konnte nicht geladen werden.'
   }
 })
 </script>

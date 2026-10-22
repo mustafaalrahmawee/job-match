@@ -2,6 +2,7 @@ import express, { Router, type Express } from 'express'
 import type { PrismaClient } from './generated/prisma/client.js'
 import type { Batches } from './llm/batch.js'
 import type { SendMessage, SendStream } from './llm/send.js'
+import { createApplicationsModule } from './modules/applications/applications.module.js'
 import { createAuthModule } from './modules/auth/auth.module.js'
 import { createCoachModule } from './modules/coach/coach.module.js'
 import { createCvsModule } from './modules/cvs/cvs.module.js'
@@ -30,6 +31,7 @@ export function createApp({ prisma, tokenTtlDays, sendStream, sendMessage, batch
   const coach = createCoachModule({ prisma, sendStream, cvs: cvs.service, authenticate })
   const jobs = createJobsModule({ prisma, ba, sendMessage, authenticate })
   const matches = createMatchesModule({ prisma, sendMessage, cvs: cvs.service, jobs: jobs.service, authenticate })
+  const applications = createApplicationsModule({ prisma, jobs: jobs.service, matches: matches.service, authenticate })
 
   const api = Router()
   api.get('/health', async (_req, res) => {
@@ -41,6 +43,7 @@ export function createApp({ prisma, tokenTtlDays, sendStream, sendMessage, batch
   api.use('/cvs', cvs.router)
   api.use('/jobs', jobs.router)
   api.use('/matches', matches.router)
+  api.use('/applications', applications.router)
 
   app.use('/api/v1', api)
   app.use(errorHandler)
