@@ -34,7 +34,7 @@ Modellaufruf nur `/review-loop UC-xx`. Nach jedem fertigen Use Case: Änderungen
 
 ### Stufe 4 · Bewerbungen und Coach-Aktionen
 
-- [ ] `/review-loop UC-10` – Bewerbungen mit Status, Verlauf, Notizen, kein Modell
+- [x] `/review-loop UC-10` – Bewerbungen mit Status, Verlauf, Notizen, kein Modell
 - [ ] `/prompt-unit coach_agent`
 - [ ] `/review-loop UC-11` – Coach handelt im Chat (Tools, Websuche)
 
