@@ -21,6 +21,7 @@ model User {
   jobs          Job[]
   matchResults  MatchResult[]
   matchRuns     MatchRun[]
+  applications  Application[]
 
   @@map("users")
 }
@@ -136,6 +137,7 @@ model Job {
   createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz
   matchResults MatchResult[]
   matchRuns    MatchRun[]
+  applications Application[]
 
   @@unique([source, externalId])
   @@index([publishedAt])
@@ -194,4 +196,50 @@ model MatchRun {
 
   @@index([userId, createdAt])
   @@map("match_runs")
+}
+
+enum ApplicationStatus {
+  saved
+  applied
+  interview
+  offer
+  rejected
+  withdrawn
+}
+
+model Application {
+  id            Int               @id @default(autoincrement())
+  userId        Int               @map("user_id")
+  jobId         Int               @map("job_id")
+  status        ApplicationStatus @default(saved)
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job           Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  statusChanges StatusChange[]
+  notes         Note[]
+
+  @@unique([userId, jobId])
+  @@map("applications")
+}
+
+model StatusChange {
+  id            Int               @id @default(autoincrement())
+  applicationId Int               @map("application_id")
+  status        ApplicationStatus
+  changedAt     DateTime          @default(now()) @map("changed_at") @db.Timestamptz
+  application   Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@map("status_changes")
+}
+
+model Note {
+  id            Int         @id @default(autoincrement())
+  applicationId Int         @map("application_id")
+  content       String
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@map("notes")
 }

@@ -175,3 +175,41 @@ export type MatchOverview = { current: MatchResult | null; archived: MatchResult
 export type MatchListItem = MatchResult & {
   job: { id: number; source: JobSource; title: string; company: string | null; city: string }
 }
+
+export type ApplicationStatus = 'saved' | 'applied' | 'interview' | 'offer' | 'rejected' | 'withdrawn'
+
+export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
+  saved: 'Gespeichert',
+  applied: 'Beworben',
+  interview: 'Interview',
+  offer: 'Zusage',
+  rejected: 'Absage',
+  withdrawn: 'Zurückgezogen',
+}
+
+export const OPEN_STATUSES: ApplicationStatus[] = ['saved', 'applied', 'interview']
+
+export type ApplicationJob = { id: number; source: JobSource; title: string; company: string | null; city: string }
+
+export type ApplicationSummary = {
+  id: number
+  status: ApplicationStatus
+  created_at: string
+  applied_at: string | null
+  changed_at: string
+  notes: number
+  match_score: number | null
+  job: ApplicationJob
+}
+
+export type ApplicationNote = { id: number; content: string; created_at: string }
+
+export type Application = {
+  id: number
+  status: ApplicationStatus
+  created_at: string
+  match_score: number | null
+  job: ApplicationJob & { offer_type: OfferType; full_time: boolean; part_time: boolean }
+  history: { status: ApplicationStatus; changed_at: string }[]
+  notes: ApplicationNote[]
+}

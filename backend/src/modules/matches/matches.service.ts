@@ -50,6 +50,14 @@ export class MatchesService {
     })
   }
 
+  async currentScores(userId: number, jobIds: number[]): Promise<Map<number, number>> {
+    const results = await this.prisma.matchResult.findMany({
+      where: { userId, jobId: { in: jobIds }, cvVersion: { isActive: true } },
+      select: { jobId: true, score: true },
+    })
+    return new Map(results.map((result) => [result.jobId, result.score]))
+  }
+
   async overview(userId: number, jobId: number): Promise<MatchOverview> {
     await this.jobs.get(userId, jobId)
     const results = await this.prisma.matchResult.findMany({

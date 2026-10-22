@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AppLayout from './components/AppLayout.vue'
 import { useAuthStore } from './stores/auth'
+import ApplicationsView from './views/ApplicationsView.vue'
+import ApplicationView from './views/ApplicationView.vue'
 import CoachView from './views/CoachView.vue'
 import CvView from './views/CvView.vue'
 import HomeView from './views/HomeView.vue'
@@ -30,6 +32,8 @@ export const router = createRouter({
         { path: 'jobs/:id(\\d+)', component: JobView },
         { path: 'matches', component: MatchesView },
         { path: 'matches/:jobId(\\d+)', component: MatchView },
+        { path: 'applications', component: ApplicationsView },
+        { path: 'applications/:id(\\d+)', component: ApplicationView },
       ],
     },
   ],
