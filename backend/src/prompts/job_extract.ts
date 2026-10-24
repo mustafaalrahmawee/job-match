@@ -36,6 +36,7 @@ import { OFFER_TYPES } from '../modules/jobs/jobs.schemas.js'
 export const JOB_EXTRACT_MODEL = 'claude-haiku-5-5'
 export const JOB_EXTRACT_EFFORT: OutputConfig['effort'] = 'medium'
 export const JOB_EXTRACT_MAX_TOKENS = 16000
+const DEFAULT_OFFER_TYPE: (typeof OFFER_TYPES)[number] = 'work'
 
 export type Variant = { model?: string; effort?: OutputConfig['effort'] }
 
@@ -80,8 +81,6 @@ const OFFER_TYPE_DESCRIPTIONS: Record<(typeof OFFER_TYPES)[number], string> = {
   apprenticeship: 'eine Ausbildung oder ein duales Studium',
   internship: 'ein Praktikum oder ein Traineeprogramm',
 }
-
-const DEFAULT_OFFER_TYPE: (typeof OFFER_TYPES)[number] = 'work'
 
 export const JOB_EXTRACT_CONTRACT = `Der Bogen ist ein JSON-Objekt mit den folgenden Feldern in dieser Reihenfolge; die App prüft seine Form und zeigt der Person nur einen Bogen, der sie erfüllt.
 
