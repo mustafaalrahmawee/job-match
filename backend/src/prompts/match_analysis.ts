@@ -50,16 +50,6 @@ export const MATCH_ANALYSIS_MODEL = 'claude-sonnet-5-5'
 export const MATCH_ANALYSIS_EFFORT: OutputConfig['effort'] = 'medium'
 export const MATCH_ANALYSIS_MAX_TOKENS = 16000
 
-export type Variant = { model?: string; effort?: OutputConfig['effort'] }
-
-export type MatchJob = {
-  source: (typeof JOB_SOURCES)[number]
-  title: string
-  company: string | null
-  city: string
-  description: string
-}
-
 export const MATCH_CV_SECTIONS = [
   'Zielrolle',
   'Stationen',
@@ -99,6 +89,16 @@ export const MATCH_SCORE_BANDS = [
     description: 'der Werdegang liegt in einem anderen Berufsfeld als die Stelle',
   },
 ] as const
+
+export type Variant = { model?: string; effort?: OutputConfig['effort'] }
+
+export type MatchJob = {
+  source: (typeof JOB_SOURCES)[number]
+  title: string
+  company: string | null
+  city: string
+  description: string
+}
 
 const quote = z.string().refine((value) => value.trim() !== '')
 
