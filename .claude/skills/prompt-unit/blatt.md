@@ -39,7 +39,7 @@ Entscheidung:
 
 Prompt-Teil:
 
-## 5. Context Slots — AP-15 bis AP-18, AP-20, AP-23 bis AP-27
+## 5. Context Slots — AP-15 bis AP-18, AP-20, AP-23 bis AP-27, AP-50
 
 Analyse:
 
