@@ -1,6 +1,6 @@
 # Prompt-Blatt: cv_analysis
 
-- **Use Case:** UC-04 Lebenslauf als PDF hochladen (Deutsch oder Englisch); die gespeicherte Analyse ist die Grundlage für UC-06 (Lebenslauf-Abschnitt von `coach_chat`) und die späteren Units
+- **Use Case:** UC-04 Lebenslauf als PDF hochladen (Deutsch oder Englisch); die gespeicherte Analyse ist die Grundlage für UC-06 (Lebenslauf-Abschnitt von `coach_agent`) und die späteren Units
 - **Modell und Effort:** Haiku 5.5 (`claude-haiku-5-5`), Effort `medium` (Schätzung aus EVAL_PLAN §5: „extraction into a schema from a PDF, text layer or scan“, rund 0,001 $ je Aufruf)
 - **Status:** übernommen
 - **Code:** `backend/src/prompts/cv_analysis.ts`
@@ -12,7 +12,7 @@ Jeder Schritt folgt der Reihenfolge in `app-prompting-anchor.md` §6. Unter jede
 Analyse:
 
 - **AP-01 Medium:** mittel – das Problem kommt als PDF bis 5 MB (`CV_MAX_BYTES`, Prüfung auf `%PDF-` in `pdfSchema`), mit Textebene oder als Scan ohne Textebene, ein- oder zweispaltig, auf Deutsch oder Englisch. Die App wandelt nichts um: Das PDF geht als Document-Block an die API, die seine Seiten als Text und Bild liest. **Abstraktion:** mittel – das Übertragen von Stationen, Kenntnissen, Ausbildung und Sprachen ist niedrig wie Korrekturlesen, die Zielrolle aus der festen Liste und Stärken, Schwächen und Tipps verlangen aber Urteil über den ganzen Werdegang. **Kontext:** niedrig – alles steht im Dokument; dazu kommt nur die statische Rollenliste der App, kein Abruf. **Zustand:** keiner – ein Aufruf je Hochladen oder „Erneut versuchen“, ohne Verlauf; die App speichert das Ergebnis auf der Version, das Modell sieht nie ein früheres.
-- **AP-05:** Die Oberfläche ist ein geparstes Objekt: Der Service liest den Text-Block, validiert ihn mit `cvAnalysisSchema` und speichert ihn auf `CvVersion.analysis`. Die Seite Lebenslauf (`CvView.vue`) zeigt die Felder als schlichte Listen und Schlagwörter per Interpolation, ohne Markdown; `coach_chat` schreibt sie mit `cvAside` in beschriftete Listen um; Stellen, Match und Training bauen später auf denselben Feldern auf. Der Rückweg ist also: JSON → Zod → Datenbank → Liste auf der Seite bzw. Kontext anderer Units.
+- **AP-05:** Die Oberfläche ist ein geparstes Objekt: Der Service liest den Text-Block, validiert ihn mit `cvAnalysisSchema` und speichert ihn auf `CvVersion.analysis`. Die Seite Lebenslauf (`CvView.vue`) zeigt die Felder als schlichte Listen und Schlagwörter per Interpolation, ohne Markdown; `cvAside` in dieser Unit schreibt sie für `coach_agent` und `match_analysis` in beschriftete Listen um; Stellen, Match und Training bauen später auf denselben Feldern auf. Der Rückweg ist also: JSON → Zod → Datenbank → Liste auf der Seite bzw. Kontext anderer Units.
 - **AP-06:** Modell und Effort kommen aus der Schätztabelle (Haiku 5.5, `medium`); das kleinste Modell passt zu einer Übertragung in ein Schema, und die geringe Dringlichkeit lässt Zeit für eingebautes Nachdenken. Sichtbares Nachdenken als Text wäre im JSON nicht vorgesehen; Tiefe steuert der Effort.
 - **AP-19:** Dringlichkeit niedrig – die Anfrage geht als Message Batch, die Seite zeigt „Wird analysiert … Das kann ein paar Minuten dauern“ und fragt alle 15 Sekunden nach. Die Analyse ist selbst die Vorbereitung für später: Sie entsteht einmal beim Hochladen, damit Coach, Match und Training das PDF nicht erneut senden.
 

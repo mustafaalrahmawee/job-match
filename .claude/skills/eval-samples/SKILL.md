@@ -1,12 +1,12 @@
 ---
 name: eval-samples
-description: Writes the example cases of a job-match eval unit with the sample-writer subagent and has glm-5.3 review them with pnpm evals review, in at most three rounds. Call with the unit and the number of new cases, e.g. /eval-samples coach_chat 10.
+description: Writes the example cases of a job-match eval unit with the sample-writer subagent and has glm-5.3 review them with pnpm evals review, in at most three rounds. Call with the unit and the number of new cases, e.g. /eval-samples coach_agent 10.
 disable-model-invocation: true
 ---
 
 # Eval samples
 
-Arguments: **$ARGUMENTS**. The first word is the unit (a folder under `backend/evals/` with a `review.md`, e.g. `coach_chat`, `cv_analysis`, `match_analysis`), the second the number of new cases (default 10).
+Arguments: **$ARGUMENTS**. The first word is the unit (a folder under `backend/evals/` with a `review.md`, e.g. `coach_agent`, `cv_analysis`, `match_analysis`), the second the number of new cases (default 10).
 
 You only coordinate. You do not write cases and you do not review them, so the writer never grades its own work (EV-24, EV-25).
 
