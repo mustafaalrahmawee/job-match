@@ -61,6 +61,10 @@ Regeln:
   Schema); Domänen-Service und Eval rufen dieselbe Funktion. Modell und Effort sind Konstanten mit
   dem Wert aus der Schätztabelle, bis eine Eval etwas anderes belegt. Das JSON-Schema für Structured Outputs
   kommt per `z.toJSONSchema()` aus demselben Zod-Schema, das die Antwort validiert.
+- Reihenfolge in `src/prompts/<unit>.ts`: erst Konstanten der Anfrage (Modell, Effort, Thinking,
+  `max_tokens`, Budgets, Grenzen), dann Typen, dann Zod-Schemas samt allem, was daraus entsteht
+  (JSON-Schema, Werkzeug-Definitionen), dann die Prompt-Texte (Frame, Regeln, System, Hinweise,
+  Fehlertexte), dann Hilfsfunktionen (Asides, Ergebnisse), zuletzt die Request-Funktion.
 - Domänen (`auth`, `coach`, `cvs`, `jobs`, `matches`, `applications`, `interviews`, `documents`)
   und Prompt-Units entstehen erst in ihrer Stufe.
 

@@ -41,7 +41,7 @@ What to look at in each step:
 
 Check the assembled unit file and step 12 of the sheet:
 
-- **Sheet and code agree:** every Prompt-Teil appears word for word, in the order of the sheet, and the code adds no prompt text the sheet lacks. The header comment matches steps 1, 2, 5, 9 and 10.
+- **Sheet and code agree:** every Prompt-Teil appears word for word, the file follows the order in `CLAUDE.md`, and the code adds no prompt text the sheet lacks. The header comment matches steps 1, 2, 5, 9 and 10.
 - **The prompt as a whole:** it reads like one document of the named type (AP-02), runs introduction → context → refocus → transition (AP-29), and no two parts contradict each other. The four criteria of step 12 hold for the assembled prompt.
 - **Request:** model and effort constants as the task says, thinking and effort as step 8 decides, `z.toJSONSchema()` of the same schema that validates the answer.
 - **Noise:** anchor IDs or references to the anchor in the prompt text, a forbidden phrase from §9, comments beyond the header.

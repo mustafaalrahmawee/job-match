@@ -38,7 +38,7 @@ The task gives the reviewer's findings. For each one: fix it in the sheet, or in
 Set the status of the sheet to `geprüft`, then build `backend/src/prompts/<unit>.ts` from it and from nothing else. If the sheet lacks something the code needs, say so instead of inventing it.
 
 - The header comment names profile, archetype, surface, every slot with its class and bound, the stop and the enforcement line, taken from steps 1, 2, 5, 9 and 10.
-- Every prompt part is a named constant in the order of the sheet (`FRAME`, `RULES`, …); the system text joins them. Asides are functions. A parsed output uses a Zod schema and `z.toJSONSchema()` of the same schema.
+- Every prompt part is a named constant (`FRAME`, `RULES`, …); the system text joins them. The file follows the order in `CLAUDE.md`: request constants (model, effort, thinking, max_tokens, budgets, limits), then types, then Zod schemas with everything built from them (JSON schema, tool definitions), then the prompt texts (frame, rules, system, hints, error texts), then helper functions (asides, results), the request function last. Asides are functions. A parsed output uses a Zod schema and `z.toJSONSchema()` of the same schema.
 - A `Variant` type and a `<unit>Request(…, variant)` function like the existing units, so the eval can override model and effort later.
 - Then fill step 12 of the sheet: the four criteria, judged on the assembled prompt as a whole.
 
