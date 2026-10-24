@@ -2,8 +2,8 @@ import { existsSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   type Check,
-  type CoachChatGold,
-  coachChatChecks,
+  type CoachAgentGold,
+  coachAgentChecks,
   type CvAnalysisGold,
   cvAnalysisChecks,
   type RunRecord,
@@ -15,8 +15,8 @@ import { EVALS, readJson, RUNS, sampleNames } from './run.js'
 type Unit = { checks(gold: unknown, run: RunRecord): Check[]; thresholds: Record<string, number> }
 
 const UNITS: Record<string, Unit> = {
-  coach_chat: {
-    checks: (gold: CoachChatGold, run) => coachChatChecks(gold, run),
+  coach_agent: {
+    checks: (gold: CoachAgentGold, run) => coachAgentChecks(gold, run),
     thresholds: { end_turn: 1, not_empty: 1, language: 1, max_words: 1, forbidden: 1, expected_mentions: 1 },
   },
   cv_analysis: {

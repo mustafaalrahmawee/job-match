@@ -1,7 +1,7 @@
 import type { MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resources/messages'
 import type { Job, MatchResult, MatchRun, PrismaClient } from '../../generated/prisma/client.js'
 import type { SendMessage, SendResult } from '../../llm/send.js'
-import { cvAside, type CoachCv } from '../../prompts/coach_chat.js'
+import { cvAside, type CoachCv } from '../../prompts/cv_analysis.js'
 import {
   MATCH_CV_SECTIONS,
   MATCH_LIST_LIMITS,

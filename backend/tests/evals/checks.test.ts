@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { coachChatChecks, countWords, detectLanguage, type RunRecord } from '../../evals/checks.js'
+import { coachAgentChecks, countWords, detectLanguage, type RunRecord } from '../../evals/checks.js'
 
 const GOLD = { language: 'de', declines_scope: false, forbidden: ['laut deinem Lebenslauf'], max_words: 20 }
 
@@ -8,7 +8,7 @@ function answer(text: string, stop_reason = 'end_turn'): RunRecord {
 }
 
 function failed(text: string, stop_reason?: string): string[] {
-  return coachChatChecks(GOLD, answer(text, stop_reason))
+  return coachAgentChecks(GOLD, answer(text, stop_reason))
     .filter((result) => !result.ok)
     .map((result) => result.name)
 }
@@ -42,8 +42,8 @@ test('each failure is reported by its own check', () => {
 
 test('expected mentions pass when one term appears as a whole word', () => {
   const gold = { ...GOLD, expected_mentions: ['drei Jahre', '3 Jahre'] }
-  const names = (text: string) => coachChatChecks(gold, answer(text)).filter((r) => !r.ok).map((r) => r.name)
+  const names = (text: string) => coachAgentChecks(gold, answer(text)).filter((r) => !r.ok).map((r) => r.name)
   expect(names('Du arbeitest seit gut 3 Jahren als Entwicklerin.')).toEqual(['expected_mentions'])
   expect(names('Du hast rund drei Jahre Berufserfahrung im Frontend.')).toEqual([])
-  expect(coachChatChecks(GOLD, answer('Hallo')).map((r) => r.name)).not.toContain('expected_mentions')
+  expect(coachAgentChecks(GOLD, answer('Hallo')).map((r) => r.name)).not.toContain('expected_mentions')
 })

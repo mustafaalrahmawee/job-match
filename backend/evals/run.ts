@@ -1,9 +1,9 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { MessageCreateParamsNonStreaming, MessageParam } from '@anthropic-ai/sdk/resources/messages'
+import type { MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resources/messages'
 import { costUsd } from '../src/llm/costs.js'
-import { type ChatSettings, type CoachCv, coachChatRequest, type Variant } from '../src/prompts/coach_chat.js'
+import type { Variant } from '../src/prompts/coach_agent.js'
 import { cvAnalysisRequest } from '../src/prompts/cv_analysis.js'
 import { type BatchRequest, claudeForBatches, collectBatch, createBatch } from './batch.js'
 import { countWords, type RunRecord } from './checks.js'
@@ -14,15 +14,6 @@ export const RUNS = [1, 2, 3]
 const OUTPUT_GUESS = 1500
 
 const REQUESTS: Record<string, (gold: Record<string, unknown>, variant: Variant) => MessageCreateParamsNonStreaming> = {
-  coach_chat: (gold, variant) => {
-    const cv = gold.cv as (Omit<CoachCv, 'asOf'> & { as_of: string }) | null | undefined
-    return coachChatRequest(
-      gold.messages as MessageParam[],
-      { quality: gold.quality, effort: gold.effort } as ChatSettings,
-      cv ? { role: cv.role, analysis: cv.analysis, asOf: cv.as_of } : null,
-      variant,
-    )
-  },
   cv_analysis: (gold, variant) =>
     cvAnalysisRequest(readFileSync(join(EVALS, 'corpus', 'cvs', gold.id as string, 'cv.pdf')).toString('base64'), variant),
 }

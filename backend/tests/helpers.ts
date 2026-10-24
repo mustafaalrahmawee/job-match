@@ -17,34 +17,40 @@ export type FakeReply = (handlers: StreamHandlers) => Promise<SendResult>
 
 export type FakeModel = {
   send: SendStream
-  requests: MessageCreateParamsBase[]
-  answer(reply: FakeReply): void
+  requests: MessageCreateParamsNonStreaming[]
+  answer(...replies: FakeReply[]): void
 }
 
 export function streamedText(text: string, stopReason: SendResult['stopReason'] = 'end_turn'): FakeReply {
-  return ({ onText }) => {
-    for (const word of text.split(/(?<= )/)) onText(word)
-    return Promise.resolve({
-      content: [{ type: 'text', text, citations: null }],
-      stopReason,
-      stopDetails: null,
-      inputTokens: 120,
-      outputTokens: 30,
-    })
+  return streamed({ content: [{ type: 'text', text, citations: null }], stopReason })
+}
+
+export function streamed({
+  content,
+  stopReason,
+  webSearches = 0,
+}: Pick<SendResult, 'content' | 'stopReason'> & { webSearches?: number }): FakeReply {
+  return ({ onText, onBlock }) => {
+    for (const block of content) {
+      if (block.type === 'text') for (const word of block.text.split(/(?<= )/)) onText(word)
+      onBlock(block)
+    }
+    return Promise.resolve({ content, stopReason, stopDetails: null, inputTokens: 120, outputTokens: 30, webSearches })
   }
 }
 
 export function fakeModel(): FakeModel {
-  let reply: FakeReply = streamedText('Hallo, ich bin dein Coach.')
-  const requests: MessageCreateParamsBase[] = []
+  let replies: FakeReply[] = [streamedText('Hallo, ich bin dein Coach.')]
+  const requests: MessageCreateParamsNonStreaming[] = []
   return {
     requests,
     send: (params, handlers) => {
       requests.push(structuredClone(params))
+      const reply = replies.length > 1 ? replies.shift()! : replies[0]
       return reply(handlers)
     },
-    answer(next) {
-      reply = next
+    answer(...next) {
+      replies = next
     },
   }
 }
@@ -68,6 +74,7 @@ export function sentText(text: string, stopReason: SendResult['stopReason'] = 'e
       stopDetails: null,
       inputTokens: 900,
       outputTokens: 300,
+      webSearches: 0,
     })
 }
 
