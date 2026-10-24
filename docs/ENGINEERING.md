@@ -96,8 +96,8 @@ Das Ergebnis dieses Durchlaufs sind die Commits `b4b33fe` (Prompt-Unit) und `62c
 ## Was noch nicht gebaut ist
 
 - **Stufe 3 läuft.** Das Blatt zu `match_analysis` ist Entwurf; UC-09 folgt.
-- **Stufe 4 bis 8 fehlen:** Coach-Agent mit lesenden Werkzeugen und Websuche, Interview-Training, Kontextverwaltung
-  mit Compaction und Caching, RAG über ChromaDB, Anschreiben per Skill und Kalender per MCP. Sie
+- **Stufe 4 bis 7 fehlen:** Coach-Agent mit lesenden Werkzeugen und Websuche, Interview-Training, Kontextverwaltung
+  mit Compaction und Caching, Anschreiben per Skill und Kalender per MCP. Sie
   sind in [APP_IDEA.md](APP_IDEA.md) geplant und noch nicht Code.
 - **Phase B ist nicht begonnen.** Die Eval-Infrastruktur (`run`, `check`, `review`, Batch) existiert;
   Beispielfälle und Läufe wurden am 19. Oktober gelöscht, um in Phase B sauber zu starten. Die
