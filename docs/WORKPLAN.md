@@ -40,7 +40,7 @@ Modellaufruf nur `/review-loop UC-xx`. Nach jedem fertigen Use Case: Änderungen
 
 ### Stufe 5 · Interview-Training
 
-- [ ] `/prompt-unit interview_question`
+- [x] `/prompt-unit interview_question`
 - [ ] `/prompt-unit interview_grade`
 - [ ] `/prompt-unit interview_report`
 - [ ] `/review-loop UC-12` – Training mit Frage, Antwort, Note, Bericht
