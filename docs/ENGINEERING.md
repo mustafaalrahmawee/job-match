@@ -1,6 +1,6 @@
 # Was dieses Projekt zeigt
 
-Stand: 22. Oktober 2026
+Stand: 24. Oktober 2026
 
 Die App selbst ist absichtlich gewöhnlich: Login, Chat, Datei-Upload, Listen, Formulare. Das
 Besondere liegt darin, **wie jeder Modellaufruf entworfen, abgesichert und gemessen wird** und wie
@@ -46,7 +46,7 @@ Entscheidungen davor und danach trifft der Autor:
 | Jeder Stop-Grund hat eine Behandlung | [coach.service.ts](../backend/src/modules/coach/coach.service.ts) | `refusal` wird geloggt und nicht gespeichert, leere Antwort nicht gespeichert – außer an der Grenze der Fortsetzungen (`pause_turn`), damit Schrittzeilen und der Hinweis der App bleiben –, unbekannter Grund wirft einen Fehler |
 | Claude Code als Werkzeug mit Rollen | [prompt-unit/SKILL.md](../.claude/skills/prompt-unit/SKILL.md), [agents/](../.claude/agents/) | der Schreiber (Opus) schreibt, der Prüfer (Fable) prüft, der Koordinator schreibt nichts selbst; höchstens zwei Runden, dann entscheidet der Mensch |
 | Review durch ein fremdes Modell, nur über Dateien | [review-loop/SKILL.md](../.claude/skills/review-loop/SKILL.md), [zai-review.sh](../.claude/skills/review-loop/zai-review.sh) | Claude Code baut, ein headless Claude Code auf z.ai (glm-5.3) prüft; der Prüfer darf nur lesen, suchen und Tests laufen lassen; Funde, Fixes und Re-Review stehen in `.review/` |
-| Backend-Architektur, die sich testen lässt | [app.ts](../backend/src/app.ts), [CLAUDE.md](../CLAUDE.md) | ein Composition Root, Module je Domäne, Services mit Abhängigkeiten im Konstruktor, feste Fehlerabbildung; 136 Vitest-Fälle mit Supertest gegen eine eigene Testdatenbank |
+| Backend-Architektur, die sich testen lässt | [app.ts](../backend/src/app.ts), [CLAUDE.md](../CLAUDE.md) | ein Composition Root, Module je Domäne, Services mit Abhängigkeiten im Konstruktor, feste Fehlerabbildung; 207 Vitest-Fälle im Backend mit Supertest gegen eine eigene Testdatenbank, 47 im Frontend mit `@vue/test-utils` |
 | Sicherheit im Kleinen | [auth.security.ts](../backend/src/modules/auth/auth.security.ts), [auth.service.ts](../backend/src/modules/auth/auth.service.ts) | argon2, Dummy-Hash gegen Timing-Unterschiede bei unbekannter E-Mail, Token nur als SHA-256 gespeichert; fremde Datensätze antworten mit 404 |
 | Design vor Code | [design/README.md](design/README.md), [design/screens/](design/screens/) | Brand Book, Tokens, ein Screen je Use Case; neue Seiten folgen dem Screen ihres Use Case |
 
@@ -92,17 +92,30 @@ Das Ergebnis dieses Durchlaufs sind die Commits `b4b33fe` (Prompt-Unit) und `62c
   Lücken schreiben und eine Firma recherchieren, bei der die Zahl der Suchen vorher offen ist.
   Schreibende Werkzeuge im Chat hätten die Oberfläche verdoppelt und das größte Risiko gebracht:
   eine Anweisung in einer Anzeige oder Webseite hätte Daten der Person ändern können.
+- **Workflow statt Agent beim Interview-Training (UC-12).** Entschieden vor dem Bau. Der Weg steht
+  fest: Stelle und Schwierigkeit wählen, Frage, schriftliche Antwort, Note mit Feedback, nächste
+  Frage, am Ende der Bericht. An der Checkliste nach Barry Zhang (Anthropic) scheitert der Agent
+  schon bei der ersten Frage, denn der Ablauf lässt sich als Entscheidungsbaum aufmalen. Eine
+  Schleife brächte nur zusätzliche Aufrufe, und die Note muss vorhersagbar sein, weil die Eval
+  Bänder und Reihenfolge prüft ([EVAL_PLAN.md](EVAL_PLAN.md) §4). Deshalb bestimmt der Code die
+  Schritte und ruft drei Units ohne Werkzeuge: `interview_question`, `interview_grade`,
+  `interview_report`. Stelle, Match und frühere Fragen lädt der Code nach `userId` und legt sie als
+  Daten in den Prompt. Pausieren und Fortsetzen folgt aus der Datenbank: Status der Session und
+  gespeicherte Runden zeigen, was als Nächstes kommt. Der Coach (UC-11) ist der Gegenfall: Dort ist
+  offen, welche Bewerbung gemeint ist und wie viele Suchen nötig sind, deshalb ein Agent.
 
 ## Was noch nicht gebaut ist
 
-- **Stufe 3 läuft.** Das Blatt zu `match_analysis` ist Entwurf; UC-09 folgt.
-- **Stufe 4 bis 7 fehlen:** Coach-Agent mit lesenden Werkzeugen und Websuche, Interview-Training, Kontextverwaltung
-  mit Compaction und Caching, Anschreiben per Skill und Kalender per MCP. Sie
-  sind in [APP_IDEA.md](APP_IDEA.md) geplant und noch nicht Code.
+- **Stufe 1 bis 4 sind gebaut** (UC-01 bis UC-11), zuletzt der Coach-Agent mit lesenden
+  Werkzeugen und Websuche. Der Stand je Use Case steht in [WORKPLAN.md](WORKPLAN.md).
+- **Stufe 5 ist als Nächstes dran:** Interview-Training (UC-12). Die Entscheidung für einen
+  Workflow ist getroffen; Prompt-Blätter und Code fehlen noch.
+- **Stufe 6, 7 und Go-live fehlen:** Kontextverwaltung mit Compaction und Caching, Anschreiben per
+  Skill und Kalender per MCP, Registrieren und Konto. Sie sind in [APP_IDEA.md](APP_IDEA.md)
+  geplant und noch nicht Code.
 - **Phase B ist nicht begonnen.** Die Eval-Infrastruktur (`run`, `check`, `review`, Batch) existiert;
   Beispielfälle und Läufe wurden am 19. Oktober gelöscht, um in Phase B sauber zu starten. Die
   Modellwahl je Unit ist bis dahin eine begründete Schätzung, keine Messung.
-- **Frontend-Tests** gibt es noch nicht.
 
 ## Leseweg für 15 Minuten
 
