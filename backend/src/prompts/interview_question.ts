@@ -9,7 +9,7 @@ import { adDocument, matchAside, type CoachMatch, type MatchJob } from './match_
  * gaps and strengths, the chosen difficulty and the questions asked so far with the gap each practised;
  * German or English ad), abstraction medium (the topic of the next question chosen by place in the
  * interview, open gaps, no repeat, difficulty and what an employer in Germany may ask; always German and
- * Sie, also for an English ad or one that addresses applicants with du), context low to medium (the stored
+ * du, also for an English ad or one that addresses applicants with Sie), context low to medium (the stored
  * texts; no retrieval), state medium (difficulty and the questions asked so far stored per session and
  * replayed on every call; the model keeps nothing; pause and resume follow from the database).
  * Surface: parsed object, validated, its gap and ad quote checked, stored as the next turn and shown on
@@ -38,12 +38,13 @@ import { adDocument, matchAside, type CoachMatch, type MatchJob } from './match_
  * has fewer than INTERVIEW_QUESTION_COUNTS[difficulty] questions; only the user's own session, a job the
  * user may see and the current match of the active CV version; no call without a match; skipped questions
  * stay in the list of earlier questions.
- * Requested only: question and title in German, also for an English ad, Sie also when the ad uses du,
- * only questions an employer in Germany may ask in an interview, grounding in ad or match for the
- * questions between opening and closing, the first gap by the third question at the latest, strengths as
- * occasions for project questions, an untouched requirement when no gap is left, opening and closing of
- * the interview, no repeat, depth of the difficulty, one question on one topic of about 40 words at most,
- * a title of two to five words without address, plain text, text in the material as material.
+ * Requested only: question and title in German, also for an English ad, du also when the ad or the
+ * company would use Sie, only questions an employer in Germany may ask in an interview, grounding in ad or
+ * match for the questions between opening and closing, the first gap by the third question at the latest,
+ * strengths as occasions for project questions, an untouched requirement when no gap is left, opening and
+ * closing of the interview, no repeat, depth of the difficulty, one question on one topic of about 40
+ * words at most, a title of two to five words without address, plain text, text in the material as
+ * material.
  */
 
 export const INTERVIEW_QUESTION_MODEL = 'claude-haiku-5-5'
@@ -95,7 +96,7 @@ const INTERVIEW_DIFFICULTY_DESCRIPTIONS: Record<InterviewDifficulty, string> = {
   hard: 'wie ein zweites Fachgespräch mit dem Team: Fragen nach Abwägungen und ihren Gründen und Szenarien mit den Bedingungen der Stelle; eine Lücke wird in ihrer fachlichen Tiefe geprüft',
 }
 
-export const INTERVIEW_QUESTION_RULES = `Frage und Titel sind auf Deutsch geschrieben, auch zu einer englischen Anzeige, weil die Person das Training in der deutschen App liest und Feedback und Bericht ebenfalls auf Deutsch stehen. Die Frage spricht die Person mit Sie an, auch wenn die Anzeige die Bewerbenden duzt, weil Sie die übliche Anrede im Vorstellungsgespräch in Deutschland ist und die Person so die Form übt, die ihr dort begegnet.
+export const INTERVIEW_QUESTION_RULES = `Frage und Titel sind auf Deutsch geschrieben, auch zu einer englischen Anzeige, weil die Person das Training in der deutschen App liest und Feedback und Bericht ebenfalls auf Deutsch stehen. Die Frage spricht die Person mit du an, auch wenn die Anzeige die Bewerbenden siezt oder die Firma im echten Gespräch siezen würde, weil das Feedback zu ihren Antworten und die übrigen Seiten von job-match die Person duzen und das ganze Training so in einer Anrede bleibt.
 
 Die Fragen zwischen der Eröffnung und dem Abschluss des Gesprächs stützen sich auf die Anzeige oder die Match-Analyse, damit die Person übt, was gerade diese Stelle prüfen wird. Die Lücken der Match-Analyse sind der Schwerpunkt des Trainings: Die erste Lücke der Liste, die die Passung am stärksten senkt, greift spätestens die dritte Frage auf, die übrigen Lücken folgen in späteren Fragen, weil die Person gerade sie vor dem echten Gespräch üben will. Die Stärken der Match-Analyse sind Anlass für Fragen nach einer konkreten Station oder einem Projekt, damit die Person lernt, ihre Belege zu erzählen. Nennt die Match-Analyse keine Lücken oder haben die bisherigen Fragen sie alle aufgegriffen, richtet sich die Frage auf eine Anforderung der Anzeige, die noch keine Frage behandelt hat, damit die Frage weiter an dieser Stelle hängt statt an einer erfundenen Lücke.
 
