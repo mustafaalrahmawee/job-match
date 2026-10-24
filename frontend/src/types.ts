@@ -8,7 +8,21 @@ export type SseHandler = (event: string, data: unknown) => void
 
 export type Role = 'user' | 'assistant'
 
-export type ApiMessage = { id: number; role: Role; text: string; stop_reason: string | null }
+export type CoachStep =
+  | { kind: 'application'; application_id: number; title: string; company: string | null }
+  | { kind: 'application_failed' }
+  | { kind: 'web_search'; query: string; sources: number | null }
+
+export type Source = { url: string; title: string | null }
+
+export type ApiMessage = {
+  id: number
+  role: Role
+  text: string
+  steps: CoachStep[]
+  sources: Source[]
+  stop_reason: string | null
+}
 
 export type Conversation = { id: number; title: string; messages: ApiMessage[] }
 
@@ -22,7 +36,14 @@ export type Delta = { text: string }
 
 export type Done = { message: ApiMessage | null; stop_reason: string }
 
-export type ChatMessage = { key: string; role: Role; text: string; stopReason: string | null }
+export type ChatMessage = {
+  key: string
+  role: Role
+  text: string
+  steps: CoachStep[]
+  sources: Source[]
+  stopReason: string | null
+}
 
 export const CV_ROLES = [
   'Frontend',

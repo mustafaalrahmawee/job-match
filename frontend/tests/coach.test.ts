@@ -22,7 +22,7 @@ function sseResponse(body: string): Response {
 }
 
 const DONE = {
-  message: { id: 2, role: 'assistant', text: 'Hallo Anna', stop_reason: 'end_turn' },
+  message: { id: 2, role: 'assistant', text: 'Hallo Anna', steps: [], sources: [], stop_reason: 'end_turn' },
   stop_reason: 'end_turn',
 }
 
@@ -77,6 +77,36 @@ test('the first message creates a conversation and streams the answer', async ()
   expect(coach.canRetry).toBe(false)
 })
 
+test('steps appear while the coach works and the saved answer brings its sources', async () => {
+  const step = { kind: 'web_search', query: 'Kreditwerk Berlin', sources: 2 }
+  const source = { url: 'https://kreditwerk.de', title: 'Kreditwerk' }
+  let push: (text: string) => void = () => undefined
+  let close: () => void = () => undefined
+  const fetch = vi.fn(() => {
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        push = (text) => controller.enqueue(new TextEncoder().encode(text))
+        close = () => controller.close()
+      },
+    })
+    return Promise.resolve(new Response(body))
+  })
+  vi.stubGlobal('fetch', fetch)
+  const coach = useCoachStore()
+  coach.conversationId = 7
+
+  const sending = coach.send('Was macht Kreditwerk?')
+  await vi.waitFor(() => expect(fetch).toHaveBeenCalled())
+  push(sse(['step', step]))
+  await vi.waitFor(() => expect(coach.messages.at(-1)!.steps).toEqual([step]))
+  expect(coach.messages.at(-1)!.text).toBe('')
+  push(sse(['done', { ...DONE, message: { ...DONE.message, steps: [step], sources: [source] } }]))
+  close()
+  await sending
+
+  expect(coach.messages.at(-1)).toMatchObject({ text: 'Hallo Anna', steps: [step], sources: [source] })
+})
+
 test('an error event drops the answer and offers a retry', async () => {
   const fetch = vi
     .fn()
@@ -126,8 +156,16 @@ test('loading a conversation shows its history', async () => {
     id: 3,
     title: 'Hallo',
     messages: [
-      { id: 1, role: 'user', text: 'Hallo', stop_reason: null, created_at: '' },
-      { id: 2, role: 'assistant', text: 'Hi', stop_reason: 'end_turn', created_at: '' },
+      { id: 1, role: 'user', text: 'Hallo', steps: [], sources: [], stop_reason: null, created_at: '' },
+      {
+        id: 2,
+        role: 'assistant',
+        text: '',
+        steps: [{ kind: 'web_search', query: 'Kreditwerk', sources: 0 }],
+        sources: [],
+        stop_reason: 'pause_turn',
+        created_at: '',
+      },
     ],
   }
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(body))))
@@ -136,7 +174,10 @@ test('loading a conversation shows its history', async () => {
   await coach.load(3)
 
   expect(coach.conversationId).toBe(3)
-  expect(coach.messages.map((m) => m.text)).toEqual(['Hallo', 'Hi'])
+  expect(coach.messages.map((m) => [m.text, m.stopReason, m.steps.length])).toEqual([
+    ['Hallo', null, 0],
+    ['', 'pause_turn', 1],
+  ])
 })
 
 test('the open conversation is remembered until a new one starts', async () => {
