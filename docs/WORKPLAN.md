@@ -35,8 +35,8 @@ Modellaufruf nur `/review-loop UC-xx`. Nach jedem fertigen Use Case: Änderungen
 ### Stufe 4 · Bewerbungen und Coach-Aktionen
 
 - [x] `/review-loop UC-10` – Bewerbungen mit Status, Verlauf, Notizen, kein Modell
-- [ ] `/prompt-unit coach_agent`
-- [ ] `/review-loop UC-11` – Coach handelt im Chat (Tools, Websuche)
+- [x] `/prompt-unit coach_agent`
+- [x] `/review-loop UC-11` – Coach schlägt im Chat nach (lesende Werkzeuge, Websuche); ersetzt `coach_chat`
 
 ### Stufe 5 · Interview-Training
 
@@ -47,7 +47,7 @@ Modellaufruf nur `/review-loop UC-xx`. Nach jedem fertigen Use Case: Änderungen
 
 ### Stufe 6 · Lange Gespräche
 
-- [ ] `/review-loop UC-13` – Kontextverwaltung, Caching, Kosten im Log; keine neue Unit
+- [ ] `/review-loop UC-13` – Kontextverwaltung, Caching, Kosten im Log; keine neue Unit; Caching für den ganzen Coach in einem Entwurf, auch für die Runden eines Turns
 
 ### Stufe 7 · Die fünf besten Stellen
 
@@ -66,18 +66,17 @@ Modellaufruf nur `/review-loop UC-xx`. Nach jedem fertigen Use Case: Änderungen
 
 ## Phase B · Messen
 
-Erst wenn die App vollständig ist. Je Unit in dieser Reihenfolge; `coach_chat` und `cv_analysis` haben
-Suite und Läufe schon, dort fehlt nur der Judge.
+Erst wenn die App vollständig ist. Je Unit in dieser Reihenfolge; die Suite von `coach_agent` enthält auch die
+Fälle ohne Werkzeug aus UC-02, UC-03 und UC-06 (EVAL_PLAN §4).
 
 | Unit | Befehle |
 | --- | --- |
-| `coach_chat` | `/eval-setup coach_chat` · `/eval-samples coach_chat 12` · `/eval-run coach_chat v1` |
 | `cv_analysis` | `/eval-setup cv_analysis` · `/eval-samples cv_analysis 25` · `/eval-run cv_analysis v1` |
 | `job_extract` | `/eval-setup job_extract` · `/eval-samples job_extract 15` · `/eval-run job_extract v1` |
 | `match_analysis` | `/eval-setup match_analysis` · `/eval-samples match_analysis 30` · `/eval-run match_analysis v1` · erste Judge-Kalibrierung |
 | `coach_agent` | `/eval-setup coach_agent` · `/eval-samples coach_agent 20` · `/eval-run coach_agent v1` |
 | `interview_grade`, `interview_question`, `interview_report` | je `/eval-setup`, `/eval-samples`, `/eval-run`; dann `pnpm evals mock interview v1` |
-| `coach_chat`, `interview_grade` lang | lange Verläufe unter `samples/long/`, `/eval-run` |
+| `coach_agent`, `interview_grade` lang | lange Verläufe unter `samples/long/`, `/eval-run` |
 | `job_recommendation` | `/eval-setup` · `/eval-samples … 20` · `/eval-run … v1` |
 | `cover_letter` | `/eval-setup` · `/eval-samples … 10` · `/eval-run … v1` |
 
