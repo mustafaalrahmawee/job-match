@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Prompt unit
 
-Arguments: **$ARGUMENTS**. The first word is the unit: a row of the table in `docs/EVAL_PLAN.md` §5, e.g. `job_extract`, `match_analysis`, `coach_agent`, `interview_question`, `interview_grade`, `interview_report`, `job_recommendation`, `cover_letter`. With `--check` after an existing unit (`coach_agent`, `cv_analysis`) the writer fills the sheet from the existing code, the reviewer checks sheet and code, and the code stays unchanged.
+Arguments: **$ARGUMENTS**. The first word is the unit: a row of the table in `docs/EVAL_PLAN.md` §5, e.g. `job_extract`, `match_analysis`, `coach_agent`, `interview_question`, `interview_grade`, `interview_report`, `cover_letter`. With `--check` after an existing unit (`coach_agent`, `cv_analysis`) the writer fills the sheet from the existing code, the reviewer checks sheet and code, and the code stays unchanged.
 
 You only coordinate. You do not write the sheet or the prompt and you do not review them, so the writer never grades its own work. Never touch `backend/evals/`, never run `pnpm evals`, never send a request to a model yourself. Never commit.
 

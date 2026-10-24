@@ -4,7 +4,7 @@ Die App wird Stufe für Stufe mit **Express + TypeScript** (Backend) und **Vue 3
 (Frontend) gebaut. Fachliche Idee, Domänenmodell, Use Cases je Stufe:
 [docs/APP_IDEA.md](docs/APP_IDEA.md). Nur die aktuelle Stufe umsetzen.
 
-Reihenfolge: **Phase A** baut alle Use Cases (Stufe 1 bis 8, Go-live) ohne Evals; Modell und Effort
+Reihenfolge: **Phase A** baut alle Use Cases (Stufe 1 bis 7, Go-live) ohne Evals; Modell und Effort
 jeder Prompt-Unit kommen aus der Schätztabelle in [docs/EVAL_PLAN.md](docs/EVAL_PLAN.md) §5 und
 stehen als Konstanten in `src/prompts/<unit>.ts`. **Phase B** misst danach Unit für Unit und darf
 Modell, Effort und Prompt ändern. In Phase A wird nichts unter `backend/evals/` angefasst. Die

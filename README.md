@@ -37,8 +37,7 @@ Unit für Unit mit Evals und passt Modell, Effort und Prompt an.
 - **Backend** (`backend/`): Node.js 22, TypeScript (strict, ESM), Express 5, Zod 4, Prisma 7
   (`@prisma/adapter-pg`), Anthropic-SDK, argon2; Paketmanager **pnpm**; Tests mit Vitest + Supertest,
   Lint mit ESLint
-- **Datenbank:** PostgreSQL 17 (Docker Compose, Host-Port 5433), einzige Quelle der Wahrheit;
-  Vektorsuche ab Stufe 7 mit ChromaDB als reinem Suchindex
+- **Datenbank:** PostgreSQL 17 (Docker Compose, Host-Port 5433), einzige Quelle der Wahrheit
 - **Frontend** (`frontend/`): Vue 3, Vite, TypeScript, Pinia, Vue Router, Tailwind CSS v4 (Theme in
   `src/assets/main.css`), Inter; Paketmanager **pnpm**; Tests mit Vitest
 

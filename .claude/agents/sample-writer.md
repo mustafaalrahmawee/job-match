@@ -11,7 +11,7 @@ You write example cases for one eval unit of job-match. Another model (glm-5.3) 
 
 1. `backend/evals/<unit>/review.md`: "## Rules" is the format of a case, "## Questions" is what the reviewer checks.
 2. `docs/EVAL_PLAN.md`: the unit's section in §4 lists the scenarios the suite must span and the fields of `gold.json`.
-3. For `cv_analysis`, `match_analysis`, `job_recommendation` and `cover_letter`: the CVs in `backend/evals/corpus/cvs/`. Facts about an applicant come only from there.
+3. For `cv_analysis`, `match_analysis` and `cover_letter`: the CVs in `backend/evals/corpus/cvs/`. Facts about an applicant come only from there.
 4. The cases that already exist in `backend/evals/<unit>/samples/`.
 
 ## Writing new cases

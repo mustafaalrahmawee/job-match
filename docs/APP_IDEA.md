@@ -44,7 +44,7 @@ The core of the domain is the chain CV version → analysis (once, stored) → a
 
 ## Use Cases
 
-Sixteen use cases, ordered by stage; after stage 3 (UC-01 to UC-09) the app is already presentable.
+Fifteen use cases, ordered by stage; after stage 3 (UC-01 to UC-09) the app is already presentable.
 
 Work happens in two phases. **Phase A** builds every use case, stage by stage, without evals: each prompt unit gets a model and an effort from the estimate table in `EVAL_PLAN.md` §5, written as constants. **Phase B** starts once the app is complete and online: one eval per prompt unit, which may change model, effort and prompt.
 
@@ -63,13 +63,12 @@ Work happens in two phases. **Phase A** builds every use case, stage by stage, w
 | UC-11 | Applicant | Let the coach look things up in the chat | Coach reads an own application (ad and match) to write interview questions and researches a company via web search with sources; read-only tools, saving a job and setting a status stay in the UI; steps visible in the UI | 4 |
 | UC-12 | Applicant | Train an interview in writing | Question, written answer, grade with feedback, next question; final report; pause and resume | 5 |
 | UC-13 | Applicant | Run long trainings and chats | No context overflow; stable prefix cached; cost per request visible in the logs | 6 |
-| UC-14 | Applicant | Ask for the five best jobs | Hybrid search in the pool (vector search and Postgres full text, merged by rank), filtered by role and offer type (no apprenticeship or internship for a CV with work experience); model explains each pick with a reference to the job | 7 |
-| UC-15 | Applicant | Generate a cover letter and put an interview date in the calendar | Word file for the job and the active version; calendar entry via MCP | 8 |
-| UC-16 | Applicant | Register, change the password, delete the account, download own data | Public registration; deletion removes everything; usage limit per account | Go-live |
+| UC-14 | Applicant | Generate a cover letter and put an interview date in the calendar | Word file for the job and the active version; calendar entry via MCP | 7 |
+| UC-15 | Applicant | Register, change the password, delete the account, download own data | Public registration; deletion removes everything; usage limit per account | Go-live |
 
 ## Core Flow: Analysing the CV
 
-UC-04 is the most important flow; the role, the match, the recommendations, the training and the coach all depend on the stored analysis.
+UC-04 is the most important flow; the role, the match, the training and the coach all depend on the stored analysis.
 
 1. The applicant uploads the PDF.
 2. The app checks size and type and stores it as the new active version; the previous version is archived.
@@ -94,8 +93,7 @@ Every stage introduces one topic; the table shows where each one naturally appea
 | Tools, agent loop | Read-only coach tools (read an application, server tool web search) with own loop and stop conditions; writing stays in forms, the lowest level that solves the task | UC-11 |
 | Workflow vs. agent | Interview training as fixed flow or agent; decision written down before building | UC-12 |
 | Context management | Compaction for long sessions, token counting before sending | UC-13 |
-| RAG | Embeddings in ChromaDB behind the `VectorStore` interface, Postgres stays the source of truth; hybrid with Postgres full text so exact tool names count, both rankings merged by Reciprocal Rank Fusion; "top 5 jobs" with reasons | UC-14 |
-| Agent Skills, Files API, MCP | Cover letter as Word file; calendar via MCP | UC-15 |
+| Agent Skills, Files API, MCP | Cover letter as Word file; calendar via MCP | UC-14 |
 | Eval | Phase B: example suite per prompt unit; model and effort first estimated (phase A), then confirmed or changed by measurement; glm-5.3 as independent judge | all AI features |
 
 ## Out of Scope

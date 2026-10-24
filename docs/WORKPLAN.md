@@ -49,19 +49,14 @@ Modellaufruf nur `/review-loop UC-xx`. Nach jedem fertigen Use Case: Änderungen
 
 - [ ] `/review-loop UC-13` – Kontextverwaltung, Caching, Kosten im Log; keine neue Unit; Caching für den ganzen Coach in einem Entwurf, auch für die Runden eines Turns
 
-### Stufe 7 · Die fünf besten Stellen
-
-- [ ] `/prompt-unit job_recommendation`
-- [ ] `/review-loop UC-14` – Vektorsuche und Begründungen
-
-### Stufe 8 · Anschreiben und Kalender
+### Stufe 7 · Anschreiben und Kalender
 
 - [ ] `/prompt-unit cover_letter`
-- [ ] `/review-loop UC-15` – Word-Datei und Kalendereintrag über MCP
+- [ ] `/review-loop UC-14` – Word-Datei und Kalendereintrag über MCP
 
 ### Go-live
 
-- [ ] `/review-loop UC-16` – Registrieren, Passwort, Konto löschen, Datenexport, Nutzungslimit
+- [ ] `/review-loop UC-15` – Registrieren, Passwort, Konto löschen, Datenexport, Nutzungslimit
 - [ ] App online stellen
 
 ## Phase B · Messen
@@ -77,7 +72,6 @@ Fälle ohne Werkzeug aus UC-02, UC-03 und UC-06 (EVAL_PLAN §4).
 | `coach_agent` | `/eval-setup coach_agent` · `/eval-samples coach_agent 20` · `/eval-run coach_agent v1` |
 | `interview_grade`, `interview_question`, `interview_report` | je `/eval-setup`, `/eval-samples`, `/eval-run`; dann `pnpm evals mock interview v1` |
 | `coach_agent`, `interview_grade` lang | lange Verläufe unter `samples/long/`, `/eval-run` |
-| `job_recommendation` | `/eval-setup` · `/eval-samples … 20` · `/eval-run … v1` |
 | `cover_letter` | `/eval-setup` · `/eval-samples … 10` · `/eval-run … v1` |
 
 Bei jedem `/eval-run`: erst die Kostenschätzung lesen, dann zustimmen. Ein Modellwechsel nach einer

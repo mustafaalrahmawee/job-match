@@ -56,9 +56,8 @@ Four roles, kept apart so no model writes, takes or grades its own test.
 | UC-11 | Coach looks things up in the chat | `coach_agent` | `evals check` tool ladder; judge Intent, Execution |
 | UC-12 | Interview training | `interview_question`, `interview_grade`, `interview_report` | `evals check` bands and order; judge feedback and report |
 | UC-13 | Long trainings and chats | regression on `coach_agent` | `evals check` no overflow, cache hit, planted fact |
-| UC-14 | Five best jobs | `job_recommendation` | `evals check` role filter, retrieval hit, job cited; judge |
-| UC-15 | Cover letter and calendar | `cover_letter` | `evals check` on the Word file; judge; Vitest with a fake MCP server |
-| UC-16 | Register, delete, export | – | Vitest |
+| UC-14 | Cover letter and calendar | `cover_letter` | `evals check` on the Word file; judge; Vitest with a fake MCP server |
+| UC-15 | Register, delete, export | – | Vitest |
 
 In phase A a use case with a unit is finished when the app works with the estimated model and the Vitest column passes. In phase B it is finished only when the suite exists, ran once on the merged state, and the run is committed under `runs/<fassung>/`.
 
@@ -139,14 +138,7 @@ UC-10 has no model call. The coach is read-only: saving a job and setting a stat
 
 No new unit. `coach_agent` and `interview_grade` get histories of 40–60 turns under `samples/long/`. UC-13 decides caching for the whole coach in one design, including the rounds of the agent loop within a turn. Checks: no context-length error; token count before sending below the limit; `cache_read_input_tokens` > 0 from the second request on; cost per request in the log; a fact planted in turn 2 is answered right in turn 50 after compaction; largest prompt below 100,000 input tokens. Threshold: all cases, all runs.
 
-### Stage 7 · `job_recommendation` (UC-14)
-
-- **Samples:** 20–30 cases over the pool fixture `backend/evals/corpus/jobs.json` (100–200 jobs). The writer plants three to five fitting jobs per CV plus distractors, among them apprenticeships and internships of the same role. gold: `cv_case`, `role`, `expected_job_ids`, `forbidden_job_ids`.
-- **Checks:** no job of another role among the five · no apprenticeship or internship among the five for a CV with work experience · ≥ 3 `expected_job_ids` in the top-k · every reason cites one of the five ids. Judge Truth, Relevance.
-- **First decision:** the role filter; then retrieval hit. A change to embedding model, top-k or the fusion with full text reruns retrieval hit alone.
-- **Threshold:** role filter 100 %, retrieval hit all, job cited 100 %. **Chosen:** ⬜
-
-### Stage 8 · `cover_letter` (UC-15)
+### Stage 7 · `cover_letter` (UC-14)
 
 - **Samples:** 10–15 cases (CV case, ad, match result). gold: `cv_case`, `ad`, `match`, `expected_strengths`, `absent`, `language`.
 - **Checks:** `.docx` opens; language of the ad; title and company present; ≤ 350 words; no placeholder · ≥ 2 `expected_strengths` appear; no `absent` term. Judge Truth, Relevance.
@@ -169,10 +161,9 @@ Prices per million tokens (Claude API, October 2026): Haiku 5.5 0.10 $ in / 0.50
 | `interview_question` | 5 | Haiku 5.5 | `medium` | one question from job, match and earlier questions | 0.001 $ |
 | `interview_grade` | 5 | Sonnet 5.5 | `medium` | a score and feedback the applicant learns from | 0.01 $ |
 | `interview_report` | 5 | Sonnet 5.5 | `medium` | summary over a whole session | 0.02 $ |
-| `job_recommendation` | 7 | Sonnet 5.5 | `low` | five short reasons over retrieved jobs; retrieval does the hard part | 0.01 $ |
-| `cover_letter` | 8 | Sonnet 5.5 | `medium` | a letter the applicant sends | 0.02 $ |
+| `cover_letter` | 7 | Sonnet 5.5 | `medium` | a letter the applicant sends | 0.02 $ |
 
-The embedding model for UC-14 is not a Claude model and is picked in stage 7 when the vector store is built. A unit that turns out wrong in daily use during phase A may move one step up (Haiku to Sonnet) without a suite; the change is noted here with the reason.
+A unit that turns out wrong in daily use during phase A may move one step up (Haiku to Sonnet) without a suite; the change is noted here with the reason.
 
 ### Phase B: the measurement
 
@@ -228,7 +219,6 @@ Please provide a thorough analysis and then conclude your answer with
 | Model swap for a unit | `evals run <unit> <fassung> <model> <effort>` over all cases |
 | Agent loop, tool definition, attempt budget | `coach_agent` suite plus the tool-pass unit tests |
 | Compaction, cached prefix, token counting | `samples/long/` on `coach_agent` and `interview_grade` |
-| Embedding model, top-k, fusion with full text | retrieval hit, role and offer-type filter of `job_recommendation`; no judge |
 | Judge prompt or judge model | `evals calibrate`; before the first calibration the diff of `judge.txt` is read |
 
 ## 8. Files and Commands
@@ -236,7 +226,7 @@ Please provide a thorough analysis and then conclude your answer with
 ```
 backend/evals/
   cli.ts, run.ts, check.ts, checks.ts, review.ts, batch.ts
-  corpus/cvs/<case>/, corpus/ads/<case>/, corpus/jobs.json
+  corpus/cvs/<case>/, corpus/ads/<case>/
   <unit>/
     samples/<case>/gold.json
     review.md                   rules, questions, every review round
