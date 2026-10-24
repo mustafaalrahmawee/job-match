@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref, shallowRef, watch } from 'vue'
 import { ApiError, fetchApi } from '../api'
 import { readEvents } from '../sse'
-import type { ChatMessage, Conversation, ConversationSummary, Delta, Done, Effort, Quality, Role } from '../types'
+import type { ApiMessage, ChatMessage, CoachStep, Conversation, ConversationSummary, Delta, Done, Effort, Quality, Role } from '../types'
 
 const BASE = '/coach/conversations'
 const LAST_KEY = 'coach_conversation'
@@ -12,9 +12,16 @@ const TITLE_LENGTH = 60
 
 let nextKey = 0
 
-function chatMessage(role: Role, text: string, stopReason: string | null = null): ChatMessage {
+function chatMessage(role: Role, text: string, saved?: ApiMessage): ChatMessage {
   nextKey += 1
-  return { key: `m${nextKey}`, role, text, stopReason }
+  return {
+    key: `m${nextKey}`,
+    role,
+    text,
+    steps: saved?.steps ?? [],
+    sources: saved?.sources ?? [],
+    stopReason: saved?.stop_reason ?? null,
+  }
 }
 
 export const useCoachStore = defineStore('coach', () => {
@@ -70,7 +77,7 @@ export const useCoachStore = defineStore('coach', () => {
     const response = await fetchApi(`${BASE}/${id}`)
     const body = (await response.json()) as Conversation
     conversationId.value = body.id
-    messages.value = body.messages.map((m) => chatMessage(m.role, m.text, m.stop_reason))
+    messages.value = body.messages.map((m) => chatMessage(m.role, m.text, m))
   }
 
   async function create(title: string): Promise<number> {
@@ -110,12 +117,16 @@ export const useCoachStore = defineStore('coach', () => {
       })
       await readEvents(response.body!, (event, data) => {
         if (event === 'delta') answer.text += (data as Delta).text
+        if (event === 'step') answer.steps.push(data as CoachStep)
         if (event === 'error') throw new ApiError(500)
         if (event === 'done') {
           const done = data as Done
           answer.stopReason = done.stop_reason
-          if (done.message) answer.text = done.message.text
-          else messages.value = messages.value.filter((m) => m !== answer)
+          if (done.message) {
+            answer.text = done.message.text
+            answer.steps = done.message.steps
+            answer.sources = done.message.sources
+          } else messages.value = messages.value.filter((m) => m !== answer)
         }
       })
       return answer.stopReason

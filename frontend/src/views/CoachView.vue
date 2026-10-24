@@ -44,12 +44,51 @@
             <Sparkles class="size-3.5" />
           </div>
           <div class="min-w-0 flex-1 pt-0.5 text-sm">
+            <ul v-if="message.steps.length" class="mb-3 flex flex-col gap-1.5">
+              <li
+                v-for="(step, index) in message.steps"
+                :key="index"
+                class="flex items-center gap-2 rounded-md border bg-muted px-2.5 py-1.5 text-xs text-muted-foreground"
+              >
+                <CircleAlert
+                  v-if="step.kind === 'application_failed' || (step.kind === 'web_search' && step.sources === null)"
+                  class="size-3.5 shrink-0"
+                />
+                <Check v-else class="size-3.5 shrink-0 text-success" />
+                <span v-if="step.kind === 'application'" class="min-w-0 truncate">
+                  Bewerbung gelesen: {{ step.title }}{{ step.company ? ` · ${step.company}` : '' }}
+                </span>
+                <span v-else-if="step.kind === 'application_failed'">Bewerbung konnte nicht gelesen werden</span>
+                <span v-else class="min-w-0 truncate">
+                  Websuche: „{{ step.query }}“ ·
+                  {{
+                    step.sources === null
+                      ? 'fehlgeschlagen'
+                      : `${step.sources} ${step.sources === 1 ? 'Quelle' : 'Quellen'} gelesen`
+                  }}
+                </span>
+              </li>
+            </ul>
             <MarkdownText v-if="message.text" :text="message.text" />
-            <span v-else class="inline-flex gap-1 py-2" aria-label="Coach schreibt">
+            <span
+              v-else-if="coach.streaming && message === coach.messages.at(-1)"
+              class="inline-flex gap-1 py-2"
+              aria-label="Coach schreibt"
+            >
               <span class="size-1.5 animate-pulse rounded-full bg-muted-foreground" />
               <span class="size-1.5 animate-pulse rounded-full bg-muted-foreground [animation-delay:150ms]" />
               <span class="size-1.5 animate-pulse rounded-full bg-muted-foreground [animation-delay:300ms]" />
             </span>
+            <div v-if="message.sources.length" class="mt-3 text-xs text-muted-foreground">
+              <p class="font-medium">Quellen</p>
+              <ol class="mt-1 flex flex-col gap-0.5">
+                <li v-for="source in message.sources" :key="source.url" class="truncate">
+                  <a :href="source.url" target="_blank" rel="noopener noreferrer" class="text-brand underline">
+                    {{ source.title || source.url }}
+                  </a>
+                </li>
+              </ol>
+            </div>
             <p v-if="message.stopReason && NOTES[message.stopReason]" class="mt-1 text-xs text-muted-foreground">
               {{ NOTES[message.stopReason] }}
             </p>
@@ -95,7 +134,7 @@
 </template>
 
 <script setup lang="ts">
-import { RotateCcw, Sparkles, SquarePen } from '@lucide/vue'
+import { Check, CircleAlert, RotateCcw, Sparkles, SquarePen } from '@lucide/vue'
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiError, isAbort } from '../api'
@@ -117,6 +156,7 @@ const NOTES: Record<string, string> = {
   stopped: 'Angehalten',
   max_tokens: 'Die Antwort wurde gekürzt.',
   model_context_window_exceeded: 'Die Antwort wurde gekürzt, weil das Gespräch zu lang ist.',
+  pause_turn: 'Die Websuche ist nicht fertig geworden. Stell deine Frage noch einmal.',
 }
 
 watch(
@@ -139,7 +179,7 @@ watch(
 )
 
 watch(
-  () => [coach.messages.length, coach.messages.at(-1)?.text],
+  () => [coach.messages.length, coach.messages.at(-1)?.text, coach.messages.at(-1)?.steps.length],
   async () => {
     await nextTick()
     scroller.value?.scrollTo({ top: scroller.value.scrollHeight })
