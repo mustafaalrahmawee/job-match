@@ -10,7 +10,7 @@ import type {
 import { z } from 'zod'
 import type { ApplicationStatus } from '../modules/applications/applications.schemas.js'
 import { cvAside, type CoachCv } from './cv_analysis.js'
-import { adText, type MatchAnalysis, type MatchJob } from './match_analysis.js'
+import { adText, matchAside, type CoachMatch, type MatchJob } from './match_analysis.js'
 
 /**
  * Prompt unit coach_agent: advice conversation with tools, agent loop on a multi-turn chat.
@@ -82,8 +82,6 @@ export type CoachApplication = {
 }
 
 export type CoachAgentContext = { cv: Omit<CoachCv, 'asOf'> | null; applications: CoachApplication[]; asOf: string }
-
-export type CoachMatch = Pick<MatchAnalysis, 'score' | 'gaps' | 'strengths'> & { createdAt: Date }
 
 export type CoachToolError = keyof typeof COACH_AGENT_ERRORS
 
@@ -181,11 +179,6 @@ function applicationsAside(applications: CoachApplication[], asOf: string): stri
   const rest = applications.length - shown.length
   const more = rest > 0 ? `\n- ${rest} ältere Bewerbungen hier nicht aufgeführt` : ''
   return `<bewerbungen quelle="Bewerbungen der Person in job-match, zuletzt geänderte zuerst" stand="${asOf}">\n${lines}${more}\n</bewerbungen>`
-}
-
-function matchAside({ score, gaps, strengths, createdAt }: CoachMatch): string {
-  const list = (items: { text: string }[]) => items.map((item) => `- ${item.text}`).join('\n') || '- keine'
-  return `<match quelle="Match-Analyse in job-match zur aktiven Lebenslauf-Version" stand="${createdAt.toISOString().slice(0, 10)}">\nScore: ${score} von 100\n\nLücken:\n${list(gaps)}\n\nStärken:\n${list(strengths)}\n</match>`
 }
 
 export function applicationResult(
