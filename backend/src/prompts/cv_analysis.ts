@@ -8,7 +8,7 @@ import { z } from 'zod'
  * judgement of strengths, weaknesses and tips), context low (the document and the static role list),
  * state none (one call per upload or retry; the app stores the result on the CV version).
  * Surface: parsed object, validated and stored on the CV version, shown as plain lists on the CV page
- * and reused as context by coach_chat and the later units.
+ * and reused as context by coach_agent and the later units.
  * Urgency: low (Message Batch; the CV page polls the status every 15 seconds).
  * Model: claude-haiku-5-5, effort medium, adaptive thinking.
  * Slots: system text (static boilerplate: frame and rules, not cached); CV PDF (dynamic, direct: the
@@ -158,4 +158,25 @@ export function cvAnalysisRequest(pdfBase64: string, variant: Variant = {}): Mes
       },
     ],
   }
+}
+
+export type CoachCv = { role: CvRole | null; analysis: CvAnalysis; asOf: string }
+
+export function cvAside({ role, analysis, asOf }: CoachCv, only?: readonly string[]): string {
+  const sections: [string, string[]][] = [
+    ['Zielrolle', [role ?? `${analysis.suggested_role} (vorgeschlagen, noch nicht bestätigt)`]],
+    ['Stationen', analysis.positions.map((p) => `${p.title}, ${p.employer}, ${p.start ?? 'unbekannt'} bis ${p.end ?? 'heute'}`)],
+    ['Kenntnisse', analysis.skills],
+    ['Ausbildung', analysis.education.map((e) => [e.degree, e.institution, e.year].filter(Boolean).join(', '))],
+    ['Höchster Abschluss', analysis.highest_degree ? [analysis.highest_degree] : []],
+    ['Sprachen', analysis.languages.map((l) => (l.level ? `${l.name} (${l.level})` : l.name))],
+    ['Stärken', analysis.strengths],
+    ['Schwächen', analysis.weaknesses],
+    ['Tipps', analysis.tips],
+  ]
+  const body = sections
+    .filter(([title]) => !only || only.includes(title))
+    .map(([title, items]) => `${title}:\n${items.map((item) => `- ${item}`).join('\n') || '- keine Angabe'}`)
+    .join('\n\n')
+  return `<lebenslauf quelle="Analyse der aktiven Lebenslauf-Version in job-match" stand="${asOf}">\n${body}\n</lebenslauf>`
 }

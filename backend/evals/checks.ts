@@ -10,7 +10,7 @@ export type RunRecord = {
   error: string | null
 }
 
-export type CoachChatGold = {
+export type CoachAgentGold = {
   language: string
   declines_scope: boolean
   forbidden: string[]
@@ -48,7 +48,7 @@ export function detectLanguage(text: string): string {
   return ISO_639_1[code] ?? code
 }
 
-export function coachChatChecks(gold: CoachChatGold, run: RunRecord): Check[] {
+export function coachAgentChecks(gold: CoachAgentGold, run: RunRecord): Check[] {
   const words = countWords(run.text)
   const language = detectLanguage(run.text)
   const lower = run.text.toLowerCase()

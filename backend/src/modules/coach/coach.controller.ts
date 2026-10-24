@@ -1,17 +1,18 @@
-import type { ContentBlockParam } from '@anthropic-ai/sdk/resources/messages'
+import type { TextBlock } from '@anthropic-ai/sdk/resources/messages'
 import type { RequestHandler, Response } from 'express'
-import type { StreamHandlers } from '../../llm/send.js'
+import type { Message } from '../../generated/prisma/client.js'
 import { authOf } from '../../shared/auth.middleware.js'
 import {
   chatSettingsSchema,
   conversationIdSchema,
   conversationTitleSchema,
   sendMessageSchema,
+  type CoachStep,
   type ConversationOutput,
   type ConversationSummaryOutput,
   type MessageOutput,
 } from './coach.schemas.js'
-import type { CoachService, Reply } from './coach.service.js'
+import type { CoachService, Reply, ReplyHandlers } from './coach.service.js'
 
 export class CoachController {
   constructor(private readonly coach: CoachService) { }
@@ -40,16 +41,11 @@ export class CoachController {
   show: RequestHandler = async (req, res) => {
     const id = conversationIdSchema.parse(req.params.id)
     const conversation = await this.coach.getConversation(authOf(req).user.id, id)
-    const messages: MessageOutput[] = conversation.messages.map((message) => ({
-      id: message.id,
-      role: message.role,
-      text: (message.content as unknown as ContentBlockParam[])
-        .map((block) => (block.type === 'text' ? block.text : ''))
-        .join(''),
-      stop_reason: message.stopReason,
-      created_at: message.createdAt,
-    }))
-    res.json({ id: conversation.id, title: conversation.title, messages } satisfies ConversationOutput)
+    res.json({
+      id: conversation.id,
+      title: conversation.title,
+      messages: conversation.messages.map(messageOutput),
+    } satisfies ConversationOutput)
   }
 
   rename: RequestHandler = async (req, res) => {
@@ -86,7 +82,26 @@ export class CoachController {
   }
 }
 
-async function streamReply(res: Response, run: (handlers: StreamHandlers) => Promise<Reply>): Promise<void> {
+function messageOutput(message: Message): MessageOutput {
+  const blocks = message.content as unknown as TextBlock[]
+  const sources = new Map<string, string | null>()
+  for (const citation of blocks.flatMap((block) => block.citations ?? [])) {
+    if (citation.type === 'web_search_result_location' && !sources.has(citation.url)) {
+      sources.set(citation.url, citation.title)
+    }
+  }
+  return {
+    id: message.id,
+    role: message.role,
+    text: blocks.map((block) => (block.type === 'text' ? block.text : '')).join(''),
+    steps: (message.steps as CoachStep[] | null) ?? [],
+    sources: [...sources].map(([url, title]) => ({ url, title })),
+    stop_reason: message.stopReason,
+    created_at: message.createdAt,
+  }
+}
+
+async function streamReply(res: Response, run: (handlers: ReplyHandlers) => Promise<Reply>): Promise<void> {
   const abort = new AbortController()
   res.on('close', () => {
     if (!res.writableFinished) abort.abort()
@@ -99,17 +114,10 @@ async function streamReply(res: Response, run: (handlers: StreamHandlers) => Pro
   try {
     const reply = await run({
       onText: (text) => res.write(`event: delta\ndata: ${JSON.stringify({ text })}\n\n`),
+      onStep: (step) => res.write(`event: step\ndata: ${JSON.stringify(step)}\n\n`),
       signal: abort.signal,
     })
-    const message: MessageOutput | null = reply.message && {
-      id: reply.message.id,
-      role: reply.message.role,
-      text: (reply.message.content as unknown as ContentBlockParam[])
-        .map((block) => (block.type === 'text' ? block.text : ''))
-        .join(''),
-      stop_reason: reply.message.stopReason,
-      created_at: reply.message.createdAt,
-    }
+    const message = reply.message && messageOutput(reply.message)
     res.write(`event: done\ndata: ${JSON.stringify({ message, stop_reason: reply.stopReason })}\n\n`)
   } catch (error) {
     console.error(error)

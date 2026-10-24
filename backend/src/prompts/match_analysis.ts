@@ -1,7 +1,7 @@
 import type { ContentBlockParam, MessageCreateParamsNonStreaming, OutputConfig } from '@anthropic-ai/sdk/resources/messages'
 import { z } from 'zod'
 import { JOB_SOURCES, JOB_TEXT_MAX_CHARS } from '../modules/jobs/jobs.schemas.js'
-import { cvAside, type CoachCv } from './coach_chat.js'
+import { cvAside, type CoachCv } from './cv_analysis.js'
 
 /**
  * Prompt unit match_analysis: structured document, single call.
@@ -20,7 +20,7 @@ import { cvAside, type CoachCv } from './coach_chat.js'
  * Model: claude-sonnet-5-5, effort medium, adaptive thinking.
  * Slots: system text (static boilerplate: frame and rules, not cached); CV (dynamic, indirect: ready
  * analysis of the active version with its role from CvsService.readyAnalysis plus the request date,
- * rewritten by cvAside from coach_chat into labelled lists in a <lebenslauf> aside, limited to the
+ * rewritten by cvAside from cv_analysis into labelled lists in a <lebenslauf> aside, limited to the
  * evidence sections in MATCH_CV_SECTIONS (no weaknesses or tips of the analysis), bounded by
  * CV_LIST_LIMITS, first text block of the user turn); ad (dynamic, direct: the chosen job from
  * JobsService.get as a plain-text document block titled with its source, built by adDocument from adText:

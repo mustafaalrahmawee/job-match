@@ -28,10 +28,17 @@ export function createApp({ prisma, tokenTtlDays, sendStream, sendMessage, batch
   const auth = createAuthModule({ prisma, tokenTtlDays })
   const authenticate = requireAuth(auth.service)
   const cvs = createCvsModule({ prisma, batches, authenticate })
-  const coach = createCoachModule({ prisma, sendStream, cvs: cvs.service, authenticate })
   const jobs = createJobsModule({ prisma, ba, sendMessage, authenticate })
   const matches = createMatchesModule({ prisma, sendMessage, cvs: cvs.service, jobs: jobs.service, authenticate })
   const applications = createApplicationsModule({ prisma, jobs: jobs.service, matches: matches.service, authenticate })
+  const coach = createCoachModule({
+    prisma,
+    sendStream,
+    cvs: cvs.service,
+    applications: applications.service,
+    matches: matches.service,
+    authenticate,
+  })
 
   const api = Router()
   api.get('/health', async (_req, res) => {

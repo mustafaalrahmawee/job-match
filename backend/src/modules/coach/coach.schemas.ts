@@ -21,10 +21,20 @@ export const sendMessageSchema = chatSettingsSchema.extend({
 
 export type SendMessageInput = z.infer<typeof sendMessageSchema>
 
+export const coachStepSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('application'), application_id: z.int(), title: z.string(), company: z.string().nullable() }),
+  z.object({ kind: z.literal('application_failed') }),
+  z.object({ kind: z.literal('web_search'), query: z.string(), sources: z.int().nullable() }),
+])
+
+export type CoachStep = z.infer<typeof coachStepSchema>
+
 export const messageSchema = z.object({
   id: z.int(),
   role: z.enum(['user', 'assistant']),
   text: z.string(),
+  steps: z.array(coachStepSchema),
+  sources: z.array(z.object({ url: z.string(), title: z.string().nullable() })),
   stop_reason: z.string().nullable(),
   created_at: z.date(),
 })
