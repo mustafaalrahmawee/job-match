@@ -71,7 +71,7 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
 - **Budget.** 100 $ API-Budget für das ganze Projekt, 25 $ davon für Evals. Judge und Reviewer
   laufen deshalb auf z.ai mit Pauschale, Beispiele schreibt Claude Code aus dem Abo.
 - **Caching nur bei häufigem Lesen.** Der Lebenslauf-Upload bekommt kein `cache_control`, weil der
-  Prefix nur einmal gelesen wird; lange Chats bekommen es in Stufe 6.
+  Prefix nur einmal gelesen wird; ob der Coach es bekommt, entscheidet eine Messung in Phase B.
 - **Kein Modell bewertet die eigene Arbeit.** Gilt für Prompts (Opus schreibt, Fable prüft), für
   Beispiele (Claude schreibt, glm prüft) und für Code (Claude schreibt, glm prüft).
 - **Was gelten muss, prüft der Code.** Der Prompt bittet; Zod, Enum und Längenprüfung erzwingen.
@@ -99,13 +99,9 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
 
 ## Was noch nicht gebaut ist
 
-- **Stufe 1 bis 4 sind gebaut** (UC-01 bis UC-11), zuletzt der Coach-Agent mit lesenden
-  Werkzeugen und Websuche.
-- **Stufe 5 ist dran:** Interview-Training (UC-12). Die Entscheidung für einen Workflow ist
-  getroffen; `interview_question` und `interview_grade` sind als Units gebaut, `interview_report`
-  und der Use Case selbst fehlen noch.
-- **Stufe 6, 7 und Go-live fehlen:** Kontextverwaltung mit Compaction und Caching, Anschreiben per
-  Skill und Kalender per MCP, Registrieren und Konto. Sie sind geplant und noch nicht Code.
+- **Stufe 1 bis 5 sind gebaut** (UC-01 bis UC-12), zuletzt das Interview-Training als Workflow
+  mit `interview_question`, `interview_grade` und `interview_report`.
+- **Go-live fehlt:** Registrieren und Konto (UC-13). Geplant und noch nicht Code.
 - **Phase B ist nicht begonnen.** Die Eval-Infrastruktur (`run`, `check`, `review`, Batch) existiert;
   Beispielfälle und Läufe wurden am 19. Oktober gelöscht, um in Phase B sauber zu starten. Die
   Modellwahl je Unit ist bis dahin eine begründete Schätzung, keine Messung.

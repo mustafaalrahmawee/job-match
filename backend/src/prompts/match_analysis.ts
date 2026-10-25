@@ -14,7 +14,7 @@ import { cvAside, type CoachCv } from './cv_analysis.js'
  * changes).
  * Surface: parsed object, validated, every quote checked against its source, stored as the match result
  * and shown on the match page: score with bar and label, strengths and gaps side by side, tips below, each
- * entry plain text with its quotes; read later by interview_question and cover_letter.
+ * entry plain text with its quotes; read later by interview_question.
  * Urgency: medium (the applicant waits for the result; one synchronous call, no batch, no streaming;
  * route timeout 120 seconds).
  * Model: claude-sonnet-5-5, effort medium, adaptive thinking.

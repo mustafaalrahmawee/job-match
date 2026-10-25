@@ -26,7 +26,7 @@ import { adText, matchAside, type CoachMatch, type MatchJob } from './match_anal
  * Slots: system text (static boilerplate: frame and rules); CV (dynamic, indirect: COACH_AGENT_CV_RULES
  * plus cvAside with the request date, or COACH_AGENT_NO_CV); tools (static: get_application and
  * web_search with fixed max_uses, the same in every round of a turn); history (dynamic, indirect: earlier
- * turns as text only, earlier messages without text left out, unbounded until UC-13); applications
+ * turns as text only, earlier messages without text left out, unbounded); applications
  * (dynamic, direct: applicationsAside, at most COACH_AGENT_APPLICATIONS_LIMIT lines plus one line for the
  * rest, the status by its name in the app); live message (dynamic, direct, up to 10,000 characters), then
  * COACH_AGENT_REFOCUS; steps of this turn (dynamic, indirect: append-only, bounded by the budgets and the
