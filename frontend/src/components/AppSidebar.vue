@@ -134,7 +134,20 @@
 </template>
 
 <script setup lang="ts">
-import { Bookmark, Briefcase, ClipboardList, FileText, Gauge, House, LogOut, MessageSquare, PanelLeft, Pencil, Trash2 } from '@lucide/vue'
+import {
+  Bookmark,
+  Briefcase,
+  ClipboardList,
+  FileText,
+  Gauge,
+  GraduationCap,
+  House,
+  LogOut,
+  MessageSquare,
+  PanelLeft,
+  Pencil,
+  Trash2,
+} from '@lucide/vue'
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useApplicationsStore } from '../stores/applications'
@@ -155,6 +168,7 @@ const NAV = [
   { to: '/jobs/own', label: 'Eigene Stellen', icon: Bookmark, exact: false },
   { to: '/matches', label: 'Matches', icon: Gauge, exact: false },
   { to: '/applications', label: 'Bewerbungen', icon: ClipboardList, exact: false },
+  { to: '/trainings', label: 'Training', icon: GraduationCap, exact: false },
 ]
 
 const applications = useApplicationsStore()

@@ -49,6 +49,13 @@
               <RotateCcw v-else class="size-3.5" />
               {{ running ? 'Analyse läuft …' : 'Neu analysieren' }}
             </button>
+            <RouterLink
+              :to="`/trainings?job=${jobs.job.id}`"
+              class="flex h-8 shrink-0 items-center justify-center gap-2 rounded-md border bg-background px-3 text-sm font-medium hover:bg-accent"
+            >
+              <GraduationCap class="size-3.5" />
+              Training starten
+            </RouterLink>
           </div>
         </section>
 
@@ -160,7 +167,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Briefcase, Gauge, LoaderCircle, RotateCcw } from '@lucide/vue'
+import { ArrowLeft, Briefcase, Gauge, GraduationCap, LoaderCircle, RotateCcw } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ApiError } from '../api'

@@ -234,3 +234,52 @@ export type Application = {
   history: { status: ApplicationStatus; changed_at: string }[]
   notes: ApplicationNote[]
 }
+
+export type InterviewDifficulty = 'easy' | 'medium' | 'hard'
+
+export const INTERVIEW_DIFFICULTIES: InterviewDifficulty[] = ['easy', 'medium', 'hard']
+
+export const INTERVIEW_DIFFICULTY_LABELS: Record<InterviewDifficulty, string> = {
+  easy: 'Leicht',
+  medium: 'Mittel',
+  hard: 'Hoch',
+}
+
+export type InterviewTurn = {
+  number: number
+  title: string
+  question: string
+  gap: string | null
+  ad_quote: string | null
+  answer: string | null
+  skipped: boolean
+  score: number | null
+  good: string | null
+  better: string | null
+  area: string | null
+  line: string | null
+}
+
+export type InterviewArea = { area: string; average: number }
+
+export type InterviewReport = {
+  score: number
+  strongest: InterviewArea
+  weakest: InterviewArea | null
+  recommendations: string[]
+}
+
+export type Interview = {
+  id: number
+  job: ApplicationJob
+  difficulty: InterviewDifficulty
+  status: 'running' | 'finished'
+  question_count: number
+  pending: boolean
+  match_score: number | null
+  created_at: string
+  updated_at: string
+  finished_at: string | null
+  turns: InterviewTurn[]
+  report: InterviewReport | null
+}

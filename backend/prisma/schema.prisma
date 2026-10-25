@@ -11,10 +11,10 @@ datasource db {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  email         String         @unique @db.VarChar(320)
-  passwordHash  String         @map("password_hash")
-  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  id            Int                @id @default(autoincrement())
+  email         String             @unique @db.VarChar(320)
+  passwordHash  String             @map("password_hash")
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz
   tokens        AuthToken[]
   conversations Conversation[]
   cvVersions    CvVersion[]
@@ -22,6 +22,7 @@ model User {
   matchResults  MatchResult[]
   matchRuns     MatchRun[]
   applications  Application[]
+  interviews    InterviewSession[]
 
   @@map("users")
 }
@@ -119,26 +120,27 @@ enum OfferType {
 }
 
 model Job {
-  id           Int           @id @default(autoincrement())
+  id           Int                @id @default(autoincrement())
   source       JobSource
-  userId       Int?          @map("user_id")
-  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  externalId   String        @map("external_id") @db.VarChar(64)
-  title        String        @db.VarChar(300)
-  company      String?       @db.VarChar(300)
-  city         String        @db.VarChar(200)
-  region       String?       @db.VarChar(32)
+  userId       Int?               @map("user_id")
+  user         User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  externalId   String             @map("external_id") @db.VarChar(64)
+  title        String             @db.VarChar(300)
+  company      String?            @db.VarChar(300)
+  city         String             @db.VarChar(200)
+  region       String?            @db.VarChar(32)
   description  String
-  offerType    OfferType     @map("offer_type")
-  role         String        @db.VarChar(32)
-  fullTime     Boolean       @map("full_time")
-  partTime     Boolean       @map("part_time")
-  salary       String?       @db.VarChar(200)
-  publishedAt  DateTime      @map("published_at") @db.Date
-  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  offerType    OfferType          @map("offer_type")
+  role         String             @db.VarChar(32)
+  fullTime     Boolean            @map("full_time")
+  partTime     Boolean            @map("part_time")
+  salary       String?            @db.VarChar(200)
+  publishedAt  DateTime           @map("published_at") @db.Date
+  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz
   matchResults MatchResult[]
   matchRuns    MatchRun[]
   applications Application[]
+  interviews   InterviewSession[]
 
   @@unique([source, externalId])
   @@index([publishedAt])
@@ -243,4 +245,56 @@ model Note {
 
   @@index([applicationId])
   @@map("notes")
+}
+
+enum InterviewDifficulty {
+  easy
+  medium
+  hard
+}
+
+enum InterviewStatus {
+  running
+  finished
+}
+
+model InterviewSession {
+  id           Int                 @id @default(autoincrement())
+  userId       Int                 @map("user_id")
+  jobId        Int                 @map("job_id")
+  difficulty   InterviewDifficulty
+  status       InterviewStatus     @default(running)
+  report       Json?
+  inputTokens  Int                 @default(0) @map("input_tokens")
+  outputTokens Int                 @default(0) @map("output_tokens")
+  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+  finishedAt   DateTime?           @map("finished_at") @db.Timestamptz
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job          Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  turns        InterviewTurn[]
+
+  @@index([userId, createdAt])
+  @@map("interview_sessions")
+}
+
+model InterviewTurn {
+  id         Int              @id @default(autoincrement())
+  sessionId  Int              @map("session_id")
+  number     Int
+  title      String           @db.VarChar(200)
+  question   String           @db.VarChar(2000)
+  gap        String?
+  adQuote    String?          @map("ad_quote")
+  answer     String?
+  skipped    Boolean          @default(false)
+  score      Int?
+  good       String?          @db.VarChar(1000)
+  better     String?          @db.VarChar(1000)
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  answeredAt DateTime?        @map("answered_at") @db.Timestamptz
+  session    InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, number])
+  @@map("interview_turns")
 }

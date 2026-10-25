@@ -13,6 +13,8 @@ import MatchesView from './views/MatchesView.vue'
 import MatchView from './views/MatchView.vue'
 import OwnJobView from './views/OwnJobView.vue'
 import OwnJobsView from './views/OwnJobsView.vue'
+import TrainingsView from './views/TrainingsView.vue'
+import TrainingView from './views/TrainingView.vue'
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -34,6 +36,8 @@ export const router = createRouter({
         { path: 'matches/:jobId(\\d+)', component: MatchView },
         { path: 'applications', component: ApplicationsView },
         { path: 'applications/:id(\\d+)', component: ApplicationView },
+        { path: 'trainings', component: TrainingsView },
+        { path: 'trainings/:id(\\d+)', component: TrainingView },
       ],
     },
   ],
