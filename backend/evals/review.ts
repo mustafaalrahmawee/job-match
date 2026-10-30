@@ -1,8 +1,9 @@
-import { appendFileSync, existsSync, readdirSync, readFileSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
+import { appendFileSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { dirname, extname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { env } from '../src/config/env.js'
-import { createJudgeClient } from '../src/llm/clients.js'
 
 const EVALS = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(EVALS, '..', '..')
@@ -14,11 +15,11 @@ const CORPUS: Record<string, string> = {
   match_analysis: 'corpus/cvs',
 }
 const TEXT_FILES = new Set(['.json', '.html', '.md', '.txt'])
+const IMAGE_FILES = new Set(['.png', '.jpg', '.jpeg', '.webp'])
 
-export async function review(unit: string, cases: string[], allCases: boolean): Promise<void> {
+export function review(unit: string, cases: string[], allCases: boolean): void {
   const reviewPath = join(EVALS, unit, 'review.md')
   if (!existsSync(reviewPath)) fail(`${reviewPath} is missing`)
-  if (!env.TEST_ANTHROPIC_API_KEY) fail('TEST_ANTHROPIC_API_KEY (z.ai) is missing in backend/.env')
 
   const samples = join(EVALS, unit, 'samples')
   const existing = existsSync(samples) ? directories(samples) : []
@@ -26,7 +27,7 @@ export async function review(unit: string, cases: string[], allCases: boolean): 
 
   if (allCases) {
     const files = [fileTag(PLAN), ...existing.map((c) => textFiles(join(samples, c)))].join('\n\n')
-    const answer = await ask(systemPrompt(unit, reviewText, 'About all cases', false), files)
+    const answer = ask(systemPrompt(unit, reviewText, 'About all cases', false), files)
     append(reviewPath, 'About all cases', answer)
     console.log(answer)
     return
@@ -47,9 +48,10 @@ export async function review(unit: string, cases: string[], allCases: boolean): 
       continue
     }
     console.log(`Reviewing ${name}, round ${round} ...`)
-    const answer = await ask(
+    const answer = ask(
       systemPrompt(unit, reviewText, 'Questions', true),
       `${corpus(corpusDir, name)}Case: ${name}\n\n${textFiles(join(samples, name))}`,
+      [join(corpusDir, name), join(samples, name)].filter((d) => existsSync(d)).flatMap(mediaFiles),
     )
     append(reviewPath, `${name} (round ${round})`, answer)
     rows.push([name, String(round), verdict(answer)])
@@ -70,10 +72,10 @@ function fail(message: string): never {
  * Prompt unit review: analytic report, single call.
  * Profile: text, medium abstraction, context from review.md and the case files, stateless.
  * Surface: lines appended to review.md, verdict word read by verdict(). Urgency: low (nobody waits).
- * Model: EVAL_JUDGE_MODEL at EVAL_JUDGE_EFFORT.
+ * Model: Codex (codex exec, read-only), EVAL_JUDGE_MODEL at EVAL_JUDGE_EFFORT (gpt-6.1-sol, high).
  * Slots: unit and today (boilerplate), rules and questions (static per unit, from review.md),
  * case files and corpus (direct, user turn).
- * Stop: one line per question, stop reason end_turn. Enforced in code: verdict parsed from the
+ * Stop: one line per question, codex exits 0 with a final message. Enforced in code: verdict parsed from the
  * F10 line, unreadable verdict counts as unclear, at most three rounds per case.
  */
 function systemPrompt(
@@ -103,22 +105,28 @@ Questions:
 ${section(reviewText, questionsSection)}`
 }
 
-async function ask(system: string, content: string): Promise<string> {
+function ask(system: string, content: string, media: string[] = []): string {
   const model = env.EVAL_JUDGE_MODEL
-  const response = await createJudgeClient().messages.create(
-    {
-      model,
-      max_tokens: 32000,
-      output_config: { effort: env.EVAL_JUDGE_EFFORT },
-      system,
-      messages: [{ role: 'user', content }],
-    },
-    { timeout: 1_200_000 },
-  )
-  const text = response.content.map((block) => (block.type === 'text' ? block.text : '')).join('')
-  if (response.stop_reason !== 'end_turn' || !text.trim()) {
+  const dir = mkdtempSync(join(tmpdir(), 'evals-review-'))
+  const answerPath = join(dir, 'answer.md')
+  const images = media.filter((path) => IMAGE_FILES.has(extname(path)))
+  const pdfs = media.filter((path) => extname(path) === '.pdf').map((path) => relative(ROOT, path))
+  const args = ['exec', '-', '--sandbox', 'read-only', '--ephemeral', '--skip-git-repo-check']
+  args.push('-C', ROOT, '-o', answerPath, '-c', `model_reasoning_effort=${env.EVAL_JUDGE_EFFORT}`)
+  if (model) args.push('-m', model)
+  if (images.length) args.push('-i', images.join(','))
+  const pdfNote = pdfs.length ? `\n\nRead these PDF files of the case yourself: ${pdfs.join(', ')}` : ''
+  const result = spawnSync('codex', args, {
+    input: `${system}\n\n${content}${pdfNote}`,
+    encoding: 'utf8',
+    timeout: 1_200_000,
+    maxBuffer: 64 * 1024 * 1024,
+  })
+  const text = existsSync(answerPath) ? readFileSync(answerPath, 'utf8') : ''
+  rmSync(dir, { recursive: true, force: true })
+  if (result.status !== 0 || !text.trim()) {
     fail(
-      `${model} stopped with ${response.stop_reason} after ${response.usage.output_tokens} tokens; nothing written`,
+      `codex ended with ${result.error?.message ?? `status ${result.status}`}; nothing written\n${result.stderr.slice(-2000)}`,
     )
   }
   const lines = text
@@ -126,8 +134,7 @@ async function ask(system: string, content: string): Promise<string> {
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
     .map((line) => (line.startsWith('- ') ? line : `- ${line}`))
-  const { usage } = response
-  return `${lines.join('\n')}\n\n(${model}, ${usage.input_tokens} → ${usage.output_tokens} tokens, ${response.stop_reason})`
+  return `${lines.join('\n')}\n\n(codex ${model || 'default'}, effort ${env.EVAL_JUDGE_EFFORT})`
 }
 
 function corpus(corpusDir: string, name: string): string {
@@ -135,6 +142,14 @@ function corpus(corpusDir: string, name: string): string {
   if (existsSync(own)) return `${textFiles(own)}\n\n`
   if (existsSync(corpusDir)) return `${textFiles(corpusDir)}\n\n`
   return ''
+}
+
+function mediaFiles(directory: string): string[] {
+  return readdirSync(directory, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => join(entry.parentPath, entry.name))
+    .filter((path) => extname(path) === '.pdf' || IMAGE_FILES.has(extname(path)))
+    .sort()
 }
 
 function directories(directory: string): string[] {

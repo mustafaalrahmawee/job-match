@@ -10,10 +10,8 @@ const schema = z.object({
   TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
   ANTHROPIC_API_KEY: z.string().default(''),
   ANTHROPIC_BASE_URL: z.string().default('https://api.anthropic.com'),
-  TEST_ANTHROPIC_API_KEY: z.string().default(''),
-  EVAL_JUDGE_BASE_URL: z.string().default('https://api.z.ai/api/anthropic'),
-  EVAL_JUDGE_MODEL: z.string().default('glm-5.3'),
-  EVAL_JUDGE_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).default('max'),
+  EVAL_JUDGE_MODEL: z.string().default('gpt-6.1-sol'),
+  EVAL_JUDGE_EFFORT: z.enum(['minimal', 'low', 'medium', 'high', 'xhigh']).default('high'),
 })
 
 export type Env = z.infer<typeof schema>

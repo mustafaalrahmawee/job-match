@@ -58,7 +58,7 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
 3. **Code der Unit.** Der Schreiber setzt das Blatt in [job_extract.ts](../backend/src/prompts/job_extract.ts)
    um, der Prüfer vergleicht Blatt und Code Wort für Wort.
 4. **Use Case.** Claude Code schreibt Kontext, Backend, Frontend und Tests, dann fordert es das
-   Review an. glm-5.3 auf z.ai prüft gegen die Anforderung, die Projektregeln und das Design und
+   Review an. Codex prüft nur lesend gegen die Anforderung, die Projektregeln und das Design und
    antwortet mit nummerierten Funden.
 5. **Fixes und Abschluss.** Jeder Fund wird am Code geprüft, behoben oder mit Grund abgelehnt;
    Re-Review; der Autor liest die Tabelle, sieht den Diff und committet.
@@ -69,11 +69,11 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
   Schätzen ist billig, Messen kostet Budget; eine Messung an einer halb fertigen App misst das
   Falsche.
 - **Budget.** 100 $ API-Budget für das ganze Projekt, 25 $ davon für Evals. Judge und Reviewer
-  laufen deshalb auf z.ai mit Pauschale, Beispiele schreibt Claude Code aus dem Abo.
+  laufen deshalb auf Codex mit dem ChatGPT-Abo, Beispiele schreibt Claude Code aus dem Abo.
 - **Caching nur bei häufigem Lesen.** Der Lebenslauf-Upload bekommt kein `cache_control`, weil der
   Prefix nur einmal gelesen wird; ob der Coach es bekommt, entscheidet eine Messung in Phase B.
-- **Kein Modell bewertet die eigene Arbeit.** Gilt für Prompts (Opus schreibt, Fable prüft), für
-  Beispiele (Claude schreibt, glm prüft) und für Code (Claude schreibt, glm prüft).
+- **Kein Modell bewertet die eigene Arbeit.** Gilt für Prompts (Opus schreibt, Codex prüft), für
+  Beispiele (Claude schreibt, Codex prüft) und für Code (Claude schreibt, Codex prüft).
 - **Was gelten muss, prüft der Code.** Der Prompt bittet; Zod, Enum und Längenprüfung erzwingen.
   Jeder Kopfkommentar einer Unit trennt „Enforced in code“ von „Requested only“.
 - **Die niedrigste Stufe, die die Aufgabe löst.** Die Treppe heißt: Formular und Code, ein

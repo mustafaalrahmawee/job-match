@@ -25,7 +25,7 @@ if (!unit) {
 }
 
 if (command === 'review') {
-  await review(unit, rest, values.all)
+  review(unit, rest, values.all)
 } else if (command === 'run' && rest[0]) {
   const [fassung, model, effort] = rest
   await run(
