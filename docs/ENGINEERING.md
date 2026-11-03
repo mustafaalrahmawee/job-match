@@ -1,6 +1,6 @@
 # Was dieses Projekt zeigt
 
-Stand: 24. Oktober 2026
+Stand: 3. November 2026
 
 Die App selbst ist absichtlich gewöhnlich: Login, Chat, Datei-Upload, Listen, Formulare. Das
 Besondere liegt darin, **wie jeder Modellaufruf entworfen, abgesichert und gemessen wird** und wie
@@ -14,11 +14,11 @@ mit der Datei, in der man sie prüfen kann. Was noch nicht gebaut ist, steht am 
 Claude Code schreibt den meisten Code; deshalb steht es als Co-Autor in jedem Commit. Die
 Entscheidungen davor und danach trifft der Autor:
 
-- **Die Methode.** Zwei interne Leitfäden legen fest, wie ein Prompt geschrieben und wie eine Eval
-  gebaut wird, destilliert aus Berryman/Ziegler, _Prompt Engineering for LLMs_ (O'Reilly 2025),
-  Kapitel 4 bis 8 und 10, mit angenommenen und abgelehnten Konzepten.
-- **Der Plan.** Domänenmodell, Use Cases je Stufe und ein Eval-Plan je Prompt-Unit mit Schwellen und
-  Modellwahl stehen fest, bevor Code entsteht.
+- **Die Methode.** Interne Leitfäden legen fest, wie ein Prompt geschrieben wird, destilliert aus
+  Berryman/Ziegler, _Prompt Engineering for LLMs_ (O'Reilly 2025), und wie ein Agent oder ein
+  MCP-Server gebaut wird, nach Kyle Stratis, _AI Agents with MCP_ (O'Reilly 2026), jeweils mit
+  angenommenen und abgelehnten Konzepten. Der Leitfaden für Evals entsteht neu.
+- **Der Plan.** Domänenmodell und Use Cases je Stufe stehen fest, bevor Code entsteht.
 - **Die Werkzeuge.** Skills und Subagenten binden Claude Code an diese Methode. Welche Rolle welches
   Modell bekommt und was es darf, ist dort festgelegt.
 - **Jede Entscheidung je Prompt.** Zu jeder Prompt-Unit gibt es ein Blatt mit Analyse und
@@ -49,8 +49,8 @@ Diese Arbeitsdokumente liegen nicht im öffentlichen Repo; auf Nachfrage zeige i
 
 Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
 
-1. **Zeile im Plan.** Der Plan nennt Ergebnis und Stufe, was die Eval später prüft, und schätzt
-   Modell und Effort (Haiku 5.5, `medium`).
+1. **Zeile im Plan.** Der Plan nennt Ergebnis und Stufe und schätzt Modell und Effort (Haiku 5.5,
+   `medium`).
 2. **Prompt-Blatt.** Ein Schreiber-Agent füllt die zwölf Schritte des Prompt-Leitfadens, ein
    Prüfer-Agent meldet Funde gegen den Leitfaden, eine Runde Überarbeitung, dann Pause. Offene
    Punkte entscheidet der Autor, etwa ob das Modell für eine Anzeige ohne Firmennamen raten darf
@@ -58,20 +58,20 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
 3. **Code der Unit.** Der Schreiber setzt das Blatt in [job_extract.ts](../backend/src/prompts/job_extract.ts)
    um, der Prüfer vergleicht Blatt und Code Wort für Wort.
 4. **Use Case.** Claude Code schreibt Kontext, Backend, Frontend und Tests, dann fordert es das
-   Review an. Codex prüft nur lesend gegen die Anforderung, die Projektregeln und das Design und
-   antwortet mit nummerierten Funden.
+   Review an. Codex prüft nur lesend gegen die Anforderung und die Projektregeln und antwortet mit
+   nummerierten Funden.
 5. **Fixes und Abschluss.** Jeder Fund wird am Code geprüft, behoben oder mit Grund abgelehnt;
    Re-Review; der Autor liest die Tabelle, sieht den Diff und committet.
 
 ## Entscheidungen, die vorher getroffen wurden
 
-- **Zwei Phasen.** Erst alle Use Cases mit geschätztem Modell, dann Unit für Unit messen. Grund:
-  Schätzen ist billig, Messen kostet Budget; eine Messung an einer halb fertigen App misst das
-  Falsche.
+- **Erst bauen, dann messen.** Erst alle Use Cases mit geschätztem Modell, dann Unit für Unit
+  messen. Grund: Schätzen ist billig, Messen kostet Budget; eine Messung an einer halb fertigen App
+  misst das Falsche.
 - **Budget.** 100 $ API-Budget für das ganze Projekt, 25 $ davon für Evals. Judge und Reviewer
   laufen deshalb auf Codex mit dem ChatGPT-Abo, Beispiele schreibt Claude Code aus dem Abo.
 - **Caching nur bei häufigem Lesen.** Der Lebenslauf-Upload bekommt kein `cache_control`, weil der
-  Prefix nur einmal gelesen wird; ob der Coach es bekommt, entscheidet eine Messung in Phase B.
+  Prefix nur einmal gelesen wird; ob der Coach es bekommt, entscheidet eine Messung in seiner Eval.
 - **Kein Modell bewertet die eigene Arbeit.** Gilt für Prompts (Opus schreibt, Codex prüft), für
   Beispiele (Claude schreibt, Codex prüft) und für Code (Claude schreibt, Codex prüft).
 - **Was gelten muss, prüft der Code.** Der Prompt bittet; Zod, Enum und Längenprüfung erzwingen.
@@ -101,10 +101,14 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
 
 - **Stufe 1 bis 5 sind gebaut** (UC-01 bis UC-12), zuletzt das Interview-Training als Workflow
   mit `interview_question`, `interview_grade` und `interview_report`.
-- **Go-live fehlt:** Registrieren und Konto (UC-13). Geplant und noch nicht Code.
-- **Phase B ist nicht begonnen.** Die Eval-Infrastruktur (`run`, `check`, `review`, Batch) existiert;
-  Beispielfälle und Läufe wurden am 19. Oktober gelöscht, um in Phase B sauber zu starten. Die
-  Modellwahl je Unit ist bis dahin eine begründete Schätzung, keine Messung.
+- **Als Nächstes werden alle Prompts neu geschrieben,** Unit für Unit nach dem Prompt-Leitfaden.
+- **Stufe 6, MCP, ist geplant und noch nicht Code** (UC-14 bis UC-17): ein lokaler MCP-Server mit
+  lesenden Werkzeugen, Resources und Prompts über die Daten der Person, ein eigener Server für die
+  Jobsuche der Bundesagentur, der Coach als MCP-Client beider Server.
+- **Die Evals sind nicht begonnen.** Die Eval-Infrastruktur (`run`, `check`, `review`, Batch)
+  existiert; Leitfaden, Plan und Beispielfälle entstehen nach Stufe 6 neu. Die Modellwahl je Unit
+  ist bis dahin eine begründete Schätzung, keine Messung.
+- **Go-live fehlt:** Registrieren und Konto (UC-13), der MCP-Server im Netz mit Anmeldung (UC-18).
 
 ## Leseweg für 15 Minuten
 
