@@ -27,7 +27,7 @@ const ANALYSIS: CvAnalysis = {
   is_cv: true,
   language: 'de',
   suggested_role: 'Frontend',
-  positions: [{ employer: 'Pixelwerk GmbH', title: 'Frontend-Entwicklerin', start: '2023-01', end: null }],
+  positions: [{ employer: 'Pixelwerk GmbH', title: 'Frontend-Entwicklerin', start: '2023-01', ongoing: true, end: null }],
   skills: ['Vue', 'TypeScript'],
   education: [],
   highest_degree: null,
@@ -168,7 +168,7 @@ test('the refocus note is neither stored nor shown', async () => {
 
 test('the coach gets the ready analysis of the active CV, its role and the date of the request', async () => {
   await prisma.cvVersion.create({
-    data: { userId: annaId, pdf: new Uint8Array([1]), analysisStatus: 'ready', role: 'Backend', analysis: ANALYSIS },
+    data: { userId: annaId, pdf: new Uint8Array([1]), analyzedAt: new Date(), analysisStatus: 'ready', role: 'Backend', analysis: ANALYSIS },
   })
   const id = await newConversation()
   await send(id, 'Habe ich Kubernetes-Erfahrung?')
@@ -182,9 +182,21 @@ test('the coach gets the ready analysis of the active CV, its role and the date 
 
 test('a CV without a finished analysis, or an inactive one, leaves the coach without a CV', async () => {
   await prisma.cvVersion.create({
-    data: { userId: annaId, pdf: new Uint8Array([1]), isActive: false, analysisStatus: 'ready', analysis: ANALYSIS },
+    data: { userId: annaId, pdf: new Uint8Array([1]), analyzedAt: new Date(), isActive: false, analysisStatus: 'ready', analysis: ANALYSIS },
   })
-  await prisma.cvVersion.create({ data: { userId: annaId, pdf: new Uint8Array([2]), analysisStatus: 'running' } })
+  await prisma.cvVersion.create({ data: { userId: annaId, pdf: new Uint8Array([2]), analyzedAt: new Date(), analysisStatus: 'running' } })
+  const id = await newConversation()
+  await send(id, 'Kennst du meinen Lebenslauf?')
+
+  const text = requestText(model.requests.at(-1)!)
+  expect(text).toContain(COACH_AGENT_NO_CV)
+  expect(text).not.toContain('Pixelwerk GmbH')
+})
+
+test('a ready analysis without a confirmed role leaves the coach without a CV', async () => {
+  await prisma.cvVersion.create({
+    data: { userId: annaId, pdf: new Uint8Array([1]), analyzedAt: new Date(), analysisStatus: 'ready', analysis: ANALYSIS },
+  })
   const id = await newConversation()
   await send(id, 'Kennst du meinen Lebenslauf?')
 
@@ -427,7 +439,7 @@ test('the coach gets the list of own applications with number, status and date',
 test('the coach reads an own application with ad and match and shows the step', async () => {
   const own = await application()
   const cv = await prisma.cvVersion.create({
-    data: { userId: annaId, pdf: new Uint8Array([1]), analysisStatus: 'ready', role: 'Frontend', analysis: ANALYSIS },
+    data: { userId: annaId, pdf: new Uint8Array([1]), analyzedAt: new Date(), analysisStatus: 'ready', role: 'Frontend', analysis: ANALYSIS },
   })
   await prisma.matchResult.create({
     data: {

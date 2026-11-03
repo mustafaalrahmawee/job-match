@@ -1,6 +1,5 @@
 import express, { Router, type Express } from 'express'
 import type { PrismaClient } from './generated/prisma/client.js'
-import type { Batches } from './llm/batch.js'
 import type { SendMessage, SendStream } from './llm/send.js'
 import { createApplicationsModule } from './modules/applications/applications.module.js'
 import { createAuthModule } from './modules/auth/auth.module.js'
@@ -18,17 +17,16 @@ export type AppDeps = {
   tokenTtlDays: number
   sendStream: SendStream
   sendMessage: SendMessage
-  batches: Batches
   ba: BaClient
 }
 
-export function createApp({ prisma, tokenTtlDays, sendStream, sendMessage, batches, ba }: AppDeps): Express {
+export function createApp({ prisma, tokenTtlDays, sendStream, sendMessage, ba }: AppDeps): Express {
   const app = express()
   app.use(express.json())
 
   const auth = createAuthModule({ prisma, tokenTtlDays })
   const authenticate = requireAuth(auth.service)
-  const cvs = createCvsModule({ prisma, batches, authenticate })
+  const cvs = createCvsModule({ prisma, sendMessage, authenticate })
   const jobs = createJobsModule({ prisma, ba, sendMessage, authenticate })
   const matches = createMatchesModule({ prisma, sendMessage, cvs: cvs.service, jobs: jobs.service, authenticate })
   const applications = createApplicationsModule({ prisma, jobs: jobs.service, matches: matches.service, authenticate })

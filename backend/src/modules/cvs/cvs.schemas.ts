@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { CV_ROLES, cvAnalysisSchema } from '../../prompts/cv_analysis.js'
+import { CV_ROLES, cvStoredAnalysisSchema } from '../../prompts/cv_analysis.js'
 
 export const CV_MAX_BYTES = 5 * 1024 * 1024
 
@@ -14,8 +14,8 @@ export const confirmRoleSchema = z.object({ role: z.enum(CV_ROLES) })
 export type ConfirmRoleInput = z.infer<typeof confirmRoleSchema>
 
 export const ANALYSIS_ERRORS = [
-  'submit_failed',
-  'batch_failed',
+  'unavailable',
+  'timeout',
   'refused',
   'too_long',
   'invalid_output',
@@ -30,7 +30,7 @@ export const cvVersionSchema = z.object({
   status: z.enum(['none', 'running', 'ready', 'failed']),
   error: z.enum(ANALYSIS_ERRORS).nullable(),
   role: z.enum(CV_ROLES).nullable(),
-  analysis: cvAnalysisSchema.nullable(),
+  analysis: cvStoredAnalysisSchema.nullable(),
   created_at: z.date(),
 })
 

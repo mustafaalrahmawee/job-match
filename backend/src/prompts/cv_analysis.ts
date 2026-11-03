@@ -50,7 +50,7 @@ export type Variant = { model?: string; effort?: OutputConfig['effort'] }
 
 export type CvRole = (typeof CV_ROLES)[number]
 
-export type CoachCv = { role: CvRole | null; analysis: CvAnalysis; asOf: string }
+export type CoachCv = { role: CvRole; analysis: CvAnalysis; asOf: string }
 
 export const cvAnalysisSchema = z.object({
   is_cv: z.boolean(),
@@ -151,8 +151,14 @@ function checkDate(analyzedAt: Date): string {
 
 export function cvAside({ role, analysis, asOf }: CoachCv, only?: readonly string[]): string {
   const sections: [string, string[]][] = [
-    ['Zielrolle', [role ?? `${analysis.suggested_role} (vorgeschlagen, noch nicht bestätigt)`]],
-    ['Stationen', analysis.positions.map((p) => `${p.title}, ${p.employer}, ${p.start ?? 'unbekannt'} bis ${p.end ?? 'heute'}`)],
+    ['Zielrolle', [role]],
+    [
+      'Stationen',
+      analysis.positions.map(
+        (p) =>
+          `${[p.title, p.employer].filter(Boolean).join(', ') || 'unbekannt'}, ${p.start ?? 'unbekannt'} bis ${p.ongoing ? 'heute' : (p.end ?? 'unbekannt')}`,
+      ),
+    ],
     ['Kenntnisse', analysis.skills],
     ['Ausbildung', analysis.education.map((e) => [e.degree, e.institution, e.year].filter(Boolean).join(', '))],
     ['Höchster Abschluss', analysis.highest_degree ? [analysis.highest_degree] : []],

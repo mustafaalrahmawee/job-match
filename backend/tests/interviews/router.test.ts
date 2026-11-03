@@ -20,7 +20,7 @@ const ANALYSIS: CvAnalysis = {
   is_cv: true,
   language: 'de',
   suggested_role: 'Frontend',
-  positions: [{ employer: 'Mediahaus GmbH', title: 'Frontend-Entwicklerin', start: '01/2023', end: null }],
+  positions: [{ employer: 'Mediahaus GmbH', title: 'Frontend-Entwicklerin', start: '01/2023', ongoing: true, end: null }],
   skills: ['Vue 3', 'TypeScript', 'Docker'],
   education: [],
   highest_degree: null,
@@ -69,7 +69,7 @@ beforeEach(async () => {
     },
   })
   cv = await prisma.cvVersion.create({
-    data: { userId: annaId, pdf: new Uint8Array([1]), analysisStatus: 'ready', role: 'Frontend', analysis: ANALYSIS },
+    data: { userId: annaId, pdf: new Uint8Array([1]), analyzedAt: new Date(), analysisStatus: 'ready', role: 'Frontend', analysis: ANALYSIS },
   })
   await match(cv.id)
   script({})
@@ -355,7 +355,7 @@ test('a paused training resumes where it stopped and follows the current match',
   const id = await startedId()
   await prisma.cvVersion.update({ where: { id: cv.id }, data: { isActive: false } })
   const next = await prisma.cvVersion.create({
-    data: { userId: annaId, pdf: new Uint8Array([2]), analysisStatus: 'ready', role: 'Frontend', analysis: ANALYSIS },
+    data: { userId: annaId, pdf: new Uint8Array([2]), analyzedAt: new Date(), analysisStatus: 'ready', role: 'Frontend', analysis: ANALYSIS },
   })
   const blocked = await answer(id, 'Antwort')
 

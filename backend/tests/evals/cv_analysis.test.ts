@@ -25,8 +25,8 @@ const ANALYSIS: CvAnalysis = {
   language: 'de',
   suggested_role: 'Frontend',
   positions: [
-    { employer: 'Nordlicht Software GmbH', title: 'Frontend-Entwicklerin', start: '2022-03', end: null },
-    { employer: 'Stadtwerke Kiel', title: 'Werkstudentin IT', start: '2020', end: '2022' },
+    { employer: 'Nordlicht Software GmbH', title: 'Frontend-Entwicklerin', start: '2022-03', ongoing: true, end: null },
+    { employer: 'Stadtwerke Kiel', title: 'Werkstudentin IT', start: '2020', ongoing: false, end: '2022' },
   ],
   skills: ['Vue 3', 'TypeScript', 'JavaScript', 'Tailwind CSS', 'Docker'],
   education: [{ degree: 'B.Sc. Informatik', institution: 'Universität Kiel', year: '2022' }],
@@ -41,7 +41,7 @@ const ANALYSIS: CvAnalysis = {
 }
 
 function answer(analysis: Partial<CvAnalysis> | string, stop_reason = 'end_turn'): RunRecord {
-  const text = typeof analysis === 'string' ? analysis : JSON.stringify({ ...ANALYSIS, ...analysis })
+  const text = typeof analysis === 'string' ? analysis : JSON.stringify({ ...ANALYSIS, suspicious_text: [], ...analysis })
   return { text, stop_reason, input_tokens: 0, output_tokens: 0, cost_usd: 0, error: null }
 }
 

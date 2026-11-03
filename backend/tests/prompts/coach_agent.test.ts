@@ -20,7 +20,7 @@ const analysis: CvAnalysis = {
   is_cv: true,
   language: 'de',
   suggested_role: 'Fullstack',
-  positions: [{ employer: 'Pixelpfad Digital GmbH', title: 'Frontend-Entwicklerin', start: '2023-03', end: null }],
+  positions: [{ employer: 'Pixelpfad Digital GmbH', title: 'Frontend-Entwicklerin', start: '2023-03', ongoing: true, end: null }],
   skills: ['Vue 3', 'TypeScript'],
   education: [{ degree: 'B.Sc. Medieninformatik', institution: 'Hochschule Bonn-Rhein-Sieg', year: '2023' }],
   highest_degree: 'B.Sc. Medieninformatik',
@@ -66,11 +66,6 @@ test('with a ready CV the request holds the CV rules and every fact of the analy
   ]) {
     expect(text).toContain(fact)
   }
-})
-
-test('an unconfirmed role still reaches the request as the suggested one', () => {
-  const cv = { role: null, analysis }
-  expect(requestText(coachAgentRequest(messages, [], settings, { ...noCv, cv }))).toContain('Fullstack (vorgeschlagen')
 })
 
 test('earlier turns go as text only, empty ones are left out, and only the last message gets the refocus', () => {

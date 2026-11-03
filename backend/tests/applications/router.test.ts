@@ -88,7 +88,7 @@ async function created(jobId = job.id, auth = headers) {
 
 async function cv(isActive: boolean, role: string) {
   return prisma.cvVersion.create({
-    data: { userId: annaId, pdf: new Uint8Array([1]), isActive, analysisStatus: 'ready', role },
+    data: { userId: annaId, pdf: new Uint8Array([1]), analyzedAt: new Date(), isActive, analysisStatus: 'ready', role },
   })
 }
 

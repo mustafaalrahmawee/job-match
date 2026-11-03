@@ -22,13 +22,22 @@
         {{ error }}
       </p>
 
-      <div v-if="loaded && !cv.version" class="mt-16 flex flex-col items-center gap-3 text-center">
+      <div
+        v-if="analysing || cv.version?.status === 'running'"
+        class="flex items-center gap-3 rounded-xl border bg-card p-4 text-sm shadow-sm"
+        role="status"
+      >
+        <LoaderCircle class="size-4 animate-spin text-brand" />
+        <span class="flex-1">Wird analysiert … Das dauert meist unter einer Minute.</span>
+      </div>
+
+      <div v-if="loaded && !cv.version && !analysing" class="mt-16 flex flex-col items-center gap-3 text-center">
         <div class="flex size-10 items-center justify-center rounded-full bg-brand/10 text-brand">
           <FileText class="size-5" />
         </div>
         <h2 class="text-lg font-semibold tracking-tight">Noch kein Lebenslauf hinterlegt</h2>
         <p class="max-w-md text-sm text-muted-foreground">
-          Lade deinen Lebenslauf als PDF hoch (Deutsch oder Englisch, höchstens 5 MB). Er wird einmal analysiert.
+          Lade deinen Lebenslauf als PDF hoch (Deutsch oder Englisch, höchstens 5 Seiten und 5 MB). Er wird einmal analysiert.
         </p>
         <button
           type="button"
@@ -53,10 +62,11 @@
               </span>
             </div>
             <p class="text-sm text-muted-foreground">
-              Vorgeschlagen: <span class="font-medium text-foreground">{{ analysis.suggested_role }}</span>. Stellen,
-              Match und Coach arbeiten mit der Rolle, die du bestätigst.
+              Vorgeschlagen: <span class="font-medium text-foreground">{{ analysis.suggested_role }}</span>. Mit der
+              Bestätigung gibst du diese Analyse für Stellen, Match und Coach frei; sie arbeiten dann mit der Rolle, die
+              du bestätigst.
             </p>
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-2">
               <select
                 v-model="role"
                 aria-label="Zielrolle"
@@ -70,7 +80,7 @@
                 :disabled="busy || role === cv.version.role"
                 @click="confirmRole"
               >
-                Bestätigen
+                Bestätigen und freigeben
               </button>
             </div>
           </section>
@@ -121,16 +131,7 @@
 
         <div class="flex flex-col gap-4">
           <div
-            v-if="cv.version.status === 'running'"
-            class="flex items-center gap-3 rounded-xl border bg-card p-4 text-sm shadow-sm"
-            role="status"
-          >
-            <LoaderCircle class="size-4 animate-spin text-brand" />
-            <span class="flex-1">Wird analysiert … Das kann ein paar Minuten dauern.</span>
-          </div>
-
-          <div
-            v-else-if="cv.version.status !== 'ready'"
+            v-if="!analysing && cv.version.status !== 'ready' && cv.version.status !== 'running'"
             class="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm"
             role="alert"
           >
@@ -162,9 +163,10 @@
               <h2 class="text-sm font-semibold">Stationen</h2>
               <ul class="flex flex-col gap-2 text-sm">
                 <li v-for="(position, index) in analysis.positions" :key="index">
-                  <p class="font-medium">{{ position.title }}</p>
+                  <p class="font-medium">{{ position.title ?? 'Bezeichnung nicht angegeben' }}</p>
                   <p class="text-muted-foreground">
-                    {{ position.employer }} · {{ position.start ?? '?' }} – {{ position.end ?? 'heute' }}
+                    {{ position.employer ?? 'Arbeitgeber nicht angegeben' }} · {{ position.start ?? '?' }} –
+                    {{ position.ongoing ? 'heute' : (position.end ?? '?') }}
                   </p>
                 </li>
               </ul>
@@ -188,9 +190,17 @@
                 <h2 class="text-sm font-semibold">Ausbildung</h2>
                 <ul class="flex flex-col gap-2 text-sm">
                   <li v-for="(entry, index) in analysis.education" :key="index">
-                    <p class="font-medium">{{ entry.degree }}</p>
+                    <p class="flex flex-wrap items-center gap-2 font-medium">
+                      {{ entry.degree ?? 'Abschluss nicht angegeben' }}
+                      <span
+                        v-if="entry.degree && entry.degree === analysis.highest_degree"
+                        class="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand"
+                      >
+                        Höchster Abschluss
+                      </span>
+                    </p>
                     <p class="text-muted-foreground">
-                      {{ entry.institution }}<template v-if="entry.year"> · {{ entry.year }}</template>
+                      {{ entry.institution ?? 'Einrichtung nicht angegeben' }}<template v-if="entry.year"> · {{ entry.year }}</template>
                     </p>
                   </li>
                 </ul>
@@ -260,9 +270,16 @@ const REASONS: Record<string, string> = {
   refused: 'Die Analyse wurde abgelehnt.',
   too_long: 'Der Lebenslauf ist zu lang für die Analyse.',
   invalid_output: 'Die Analyse hat kein gültiges Ergebnis geliefert.',
-  batch_failed: 'Die Analyse ist fehlgeschlagen.',
-  submit_failed: 'Die Analyse konnte nicht gestartet werden.',
+  unavailable: 'Die Analyse ist gerade nicht erreichbar.',
+  timeout: 'Die Analyse hat zu lange gedauert.',
 }
+
+const UPLOAD_ERRORS: Record<string, string> = {
+  too_many_pages: 'Das PDF hat mehr als 5 Seiten. Bitte lade nur deinen Lebenslauf hoch.',
+  unreadable: 'Das PDF lässt sich nicht lesen. Bitte speichere es ohne Passwort neu und lade es noch einmal hoch.',
+}
+
+const LIMIT_REACHED = 'Du hast heute schon 5 Analysen gestartet. Versuche es morgen wieder.'
 
 const FINAL_ERRORS = ['not_cv', 'language']
 
@@ -276,12 +293,13 @@ const STATES: Record<AnalysisStatus, string> = {
 const DATE_FORMAT: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'short' }
 
 const MAX_BYTES = 5 * 1024 * 1024
-const POLL_MS = 15000
+const POLL_MS = 5000
 
 const cv = useCvStore()
 const picker = useTemplateRef('picker')
 const loaded = ref(false)
 const busy = ref(false)
+const analysing = ref(false)
 const error = ref<string | null>(null)
 const role = ref<CvRole>('Andere')
 const deleting = ref<CvVersionSummary | null>(null)
@@ -336,16 +354,20 @@ async function pick(event: Event) {
     return
   }
   busy.value = true
+  analysing.value = true
   try {
     await cv.upload(file)
   } catch (failure) {
     const status = failure instanceof ApiError ? failure.status : 0
+    const code = failure instanceof ApiError && typeof failure.detail === 'string' ? failure.detail : ''
     if (status === 413) error.value = 'Die Datei ist größer als 5 MB.'
-    else if (status === 422) error.value = 'Die Datei ist kein gültiges PDF.'
+    else if (status === 422) error.value = UPLOAD_ERRORS[code] ?? 'Die Datei ist kein gültiges PDF.'
+    else if (status === 429) error.value = LIMIT_REACHED
     else error.value = 'Hochladen hat nicht geklappt.'
     return
   } finally {
     busy.value = false
+    analysing.value = false
   }
   await reloadVersions()
 }
@@ -353,12 +375,15 @@ async function pick(event: Event) {
 async function retry() {
   error.value = null
   busy.value = true
+  analysing.value = true
   try {
     await cv.retry()
-  } catch {
-    error.value = 'Der neue Versuch hat nicht geklappt.'
+  } catch (failure) {
+    const status = failure instanceof ApiError ? failure.status : 0
+    error.value = status === 429 ? LIMIT_REACHED : 'Der neue Versuch hat nicht geklappt.'
   } finally {
     busy.value = false
+    analysing.value = false
   }
 }
 

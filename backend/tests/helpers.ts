@@ -1,11 +1,9 @@
-import type { MessageBatchResult } from '@anthropic-ai/sdk/resources/messages/batches'
 import type { MessageCreateParamsBase, MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resources/messages'
 import type { Express } from 'express'
 import { afterAll, beforeEach } from 'vitest'
 import { createApp } from '../src/app.js'
 import { env } from '../src/config/env.js'
 import type { PrismaClient, User } from '../src/generated/prisma/client.js'
-import type { Batches } from '../src/llm/batch.js'
 import type { SendMessage, SendResult, SendStream, StreamHandlers } from '../src/llm/send.js'
 import { AuthService } from '../src/modules/auth/auth.service.js'
 import { BaClient } from '../src/modules/jobs/jobs.ba.js'
@@ -95,33 +93,6 @@ export function fakeMessages(): FakeMessages {
   }
 }
 
-export type FakeBatches = Batches & {
-  requests: { batchId: string; customId: string; params: MessageCreateParamsNonStreaming }[]
-  results: Map<string, MessageBatchResult>
-  lookups: number
-  failSubmit: boolean
-}
-
-export function fakeBatches(): FakeBatches {
-  const batches: FakeBatches = {
-    requests: [],
-    results: new Map(),
-    lookups: 0,
-    failSubmit: false,
-    submit(customId, params) {
-      if (batches.failSubmit) return Promise.reject(new Error('Batch API down'))
-      const batchId = `batch-${batches.requests.length + 1}`
-      batches.requests.push({ batchId, customId, params: structuredClone(params) })
-      return Promise.resolve(batchId)
-    },
-    result(batchId) {
-      batches.lookups += 1
-      return Promise.resolve(batches.results.get(batchId) ?? null)
-    },
-  }
-  return batches
-}
-
 export type FakeBa = {
   client: BaClient
   searches: Map<string, unknown>
@@ -157,20 +128,17 @@ export function useTestDatabase(): {
   auth: AuthService
   model: FakeModel
   messages: FakeMessages
-  batches: FakeBatches
   ba: FakeBa
 } {
   const prisma = createPrisma(env.TEST_DATABASE_URL)
   const model = fakeModel()
   const messages = fakeMessages()
-  const batches = fakeBatches()
   const ba = fakeBa()
   const app = createApp({
     prisma,
     tokenTtlDays: TOKEN_TTL_DAYS,
     sendStream: model.send,
     sendMessage: messages.send,
-    batches,
     ba: ba.client,
   })
   const auth = new AuthService(prisma, TOKEN_TTL_DAYS)
@@ -185,14 +153,10 @@ export function useTestDatabase(): {
     messages.requests.length = 0
     messages.answer(NO_REPLY)
     model.answer(streamedText('Hallo, ich bin dein Coach.'))
-    batches.requests.length = 0
-    batches.results.clear()
-    batches.lookups = 0
-    batches.failSubmit = false
     await prisma.user.deleteMany()
   })
   afterAll(() => prisma.$disconnect())
-  return { prisma, app, auth, model, messages, batches, ba }
+  return { prisma, app, auth, model, messages, ba }
 }
 
 export function createAnna(auth: AuthService): Promise<User> {

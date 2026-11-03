@@ -22,7 +22,7 @@ const ANALYSIS: CvAnalysis = {
   is_cv: true,
   language: 'de',
   suggested_role: 'Frontend',
-  positions: [{ employer: 'Mediahaus GmbH', title: 'Frontend-Entwicklerin', start: '01/2023', end: null }],
+  positions: [{ employer: 'Mediahaus GmbH', title: 'Frontend-Entwicklerin', start: '01/2023', ongoing: true, end: null }],
   skills: ['Vue 3', 'TypeScript', 'Docker'],
   education: [],
   highest_degree: null,
@@ -81,7 +81,7 @@ function poolJob(description: string) {
 
 function readyCv(isActive = true) {
   return prisma.cvVersion.create({
-    data: { userId: annaId, pdf: new Uint8Array([1]), isActive, analysisStatus: 'ready', role: 'Frontend', analysis: ANALYSIS },
+    data: { userId: annaId, pdf: new Uint8Array([1]), analyzedAt: new Date(), isActive, analysisStatus: 'ready', role: 'Frontend', analysis: ANALYSIS },
   })
 }
 
@@ -110,7 +110,7 @@ test('a match analysis needs a login', async () => {
 
 test('without a ready analysis of the active CV nothing is sent', async () => {
   await readyCv(false)
-  await prisma.cvVersion.create({ data: { userId: annaId, pdf: new Uint8Array([2]), analysisStatus: 'running' } })
+  await prisma.cvVersion.create({ data: { userId: annaId, pdf: new Uint8Array([2]), analyzedAt: new Date(), analysisStatus: 'running' } })
 
   const response = await run()
 
@@ -118,6 +118,18 @@ test('without a ready analysis of the active CV nothing is sent', async () => {
   expect(response.body).toEqual({ detail: 'no_cv' })
   expect(messages.requests).toHaveLength(0)
   expect(await prisma.matchRun.count()).toBe(0)
+})
+
+test('a ready analysis without a confirmed role is not used for a match', async () => {
+  await prisma.cvVersion.create({
+    data: { userId: annaId, pdf: new Uint8Array([1]), analyzedAt: new Date(), analysisStatus: 'ready', analysis: ANALYSIS },
+  })
+
+  const response = await run()
+
+  expect(response.status).toBe(409)
+  expect(response.body).toEqual({ detail: 'no_cv' })
+  expect(messages.requests).toHaveLength(0)
 })
 
 test('an own job of another user behaves as if it did not exist', async () => {
@@ -366,7 +378,7 @@ test('a result is archived when the active version changes and comes back with i
   const second = await prisma.$transaction(async (tx) => {
     await tx.cvVersion.update({ where: { id: first.id }, data: { isActive: false } })
     return tx.cvVersion.create({
-      data: { userId: annaId, pdf: new Uint8Array([2]), analysisStatus: 'ready', role: 'Frontend', analysis: ANALYSIS },
+      data: { userId: annaId, pdf: new Uint8Array([2]), analyzedAt: new Date(), analysisStatus: 'ready', role: 'Frontend', analysis: ANALYSIS },
     })
   })
   const archived = (await overview()).body as { current: null; archived: { archived: boolean; cv_version: { id: number } }[] }

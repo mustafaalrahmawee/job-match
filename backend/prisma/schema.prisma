@@ -21,6 +21,7 @@ model User {
   jobs          Job[]
   matchResults  MatchResult[]
   matchRuns     MatchRun[]
+  cvRuns        CvRun[]
   applications  Application[]
   interviews    InterviewSession[]
 
@@ -92,7 +93,8 @@ model CvVersion {
   analysis         Json?
   analysisStatus   AnalysisStatus @default(none) @map("analysis_status")
   analysisError    String?        @map("analysis_error") @db.VarChar(32)
-  batchId          String?        @map("batch_id") @db.VarChar(64)
+  suspiciousText   Json?          @map("suspicious_text")
+  analyzedAt       DateTime       @map("analyzed_at") @db.Timestamptz
   model            String?        @db.VarChar(64)
   effort           String?        @db.VarChar(16)
   inputTokens      Int?           @map("input_tokens")
@@ -105,6 +107,16 @@ model CvVersion {
 
   @@index([userId])
   @@map("cv_versions")
+}
+
+model CvRun {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("cv_runs")
 }
 
 enum JobSource {

@@ -1,44 +1,62 @@
-import type { Message } from '@anthropic-ai/sdk/resources/messages'
-import type { MessageBatchResult } from '@anthropic-ai/sdk/resources/messages/batches'
-import type { CvVersion, PrismaClient } from '../../generated/prisma/client.js'
-import type { Batches } from '../../llm/batch.js'
+import { APIError } from '@anthropic-ai/sdk'
+import type { MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resources/messages'
+import { PDFDocument } from 'pdf-lib'
+import type { CvVersion, Prisma, PrismaClient } from '../../generated/prisma/client.js'
+import type { SendMessage, SendResult } from '../../llm/send.js'
 import {
-  CV_LIST_LIMITS,
+  CV_MAX_PAGES,
   cvAnalysisRequest,
+  cvAnalysisResult,
   cvAnalysisSchema,
   type CvAnalysis,
   type CvRole,
+  type SuspiciousText,
 } from '../../prompts/cv_analysis.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
 import type { AnalysisError } from './cvs.schemas.js'
 
-export type CvVersionInfo = Omit<CvVersion, 'pdf'>
+export type CvVersionInfo = Omit<CvVersion, 'pdf' | 'suspiciousText'>
 
-export type CvVersionSummaryInfo = Omit<CvVersion, 'pdf' | 'analysis'>
+export type CvVersionSummaryInfo = Omit<CvVersion, 'pdf' | 'analysis' | 'suspiciousText'>
 
-type Outcome = { analysis: CvAnalysis } | { error: AnalysisError }
+type Outcome =
+  | { analysis: CvAnalysis; suspiciousText: SuspiciousText; hits: number }
+  | { error: AnalysisError; suspiciousText?: SuspiciousText; hits?: number }
+
+export const CV_ANALYSES_PER_DAY = 5
+export const CV_ANALYSIS_TIMEOUT_MS = 180_000
+
+const HIDDEN = { pdf: true, suspiciousText: true } as const
 
 const CV_LANGUAGES = new Set(['de', 'en'])
 
 export class CvsService {
   constructor(
     private readonly prisma: PrismaClient,
-    private readonly batches: Batches,
+    private readonly sendMessage: SendMessage,
   ) { }
 
-  async upload(userId: number, pdf: Buffer): Promise<CvVersionInfo> {
+  async upload(userId: number, pdf: Buffer, now = new Date()): Promise<CvVersionInfo> {
+    const pages = await pageCount(pdf)
+    if (!pages) throw new AppError(422, 'unreadable')
+    if (pages > CV_MAX_PAGES) throw new AppError(422, 'too_many_pages')
+    const params = analysisRequest(pdf, now)
     const version = await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`
+      if (params) await claimRun(tx, userId, now)
       await tx.cvVersion.updateMany({ where: { userId, isActive: true }, data: { isActive: false } })
-      return tx.cvVersion.create({ data: { userId, pdf: new Uint8Array(pdf), analysisStatus: 'running' } })
+      return tx.cvVersion.create({
+        data: { userId, pdf: new Uint8Array(pdf), analyzedAt: now, ...start(params) },
+        omit: HIDDEN,
+      })
     })
-    return this.submit(version.id, version.pdf)
+    return params ? this.analyse(version.id, params, now) : version
   }
 
   list(userId: number): Promise<CvVersionSummaryInfo[]> {
     return this.prisma.cvVersion.findMany({
       where: { userId },
-      omit: { pdf: true, analysis: true },
+      omit: { ...HIDDEN, analysis: true },
       orderBy: { id: 'desc' },
     })
   }
@@ -49,7 +67,7 @@ export class CvsService {
       const exists = await tx.cvVersion.count({ where: { id, userId } })
       if (!exists) throw new NotFoundError('CV not found')
       await tx.cvVersion.updateMany({ where: { userId, isActive: true }, data: { isActive: false } })
-      return tx.cvVersion.update({ where: { id }, data: { isActive: true }, omit: { pdf: true } })
+      return tx.cvVersion.update({ where: { id }, data: { isActive: true }, omit: HIDDEN })
     })
   }
 
@@ -63,38 +81,52 @@ export class CvsService {
     })
   }
 
-  async active(userId: number): Promise<CvVersionInfo> {
+  async active(userId: number, now = new Date()): Promise<CvVersionInfo> {
     const version = await this.prisma.cvVersion.findFirst({
       where: { userId, isActive: true },
-      omit: { pdf: true },
+      omit: HIDDEN,
       orderBy: { id: 'desc' },
     })
     if (!version) throw new NotFoundError('No CV uploaded')
-    if (version.analysisStatus !== 'running' || !version.batchId) return version
-    return this.refresh(version, version.batchId)
+    if (version.analysisStatus !== 'running') return version
+    if (now.getTime() - version.analyzedAt.getTime() < CV_ANALYSIS_TIMEOUT_MS) return version
+    await this.prisma.cvVersion.updateMany({
+      where: { id: version.id, analysisStatus: 'running', analyzedAt: version.analyzedAt },
+      data: { analysisStatus: 'failed', analysisError: 'timeout' },
+    })
+    return this.prisma.cvVersion.findUniqueOrThrow({ where: { id: version.id }, omit: HIDDEN })
   }
 
-  async readyAnalysis(userId: number): Promise<{ id: number; role: CvRole | null; analysis: CvAnalysis } | null> {
+  async readyAnalysis(userId: number): Promise<{ id: number; role: CvRole; analysis: CvAnalysis } | null> {
     const version = await this.prisma.cvVersion.findFirst({
-      where: { userId, isActive: true, analysisStatus: 'ready' },
+      where: { userId, isActive: true, analysisStatus: 'ready', role: { not: null } },
       select: { id: true, role: true, analysis: true },
     })
-    if (!version?.analysis) return null
-    return { id: version.id, role: version.role as CvRole | null, analysis: version.analysis as CvAnalysis }
+    if (!version?.analysis || !version.role) return null
+    return { id: version.id, role: version.role as CvRole, analysis: version.analysis as CvAnalysis }
   }
 
-  async retry(userId: number, id: number): Promise<CvVersionInfo> {
-    const { count } = await this.prisma.cvVersion.updateMany({
-      where: { id, userId, isActive: true, analysisStatus: { in: ['none', 'failed'] } },
-      data: { analysisStatus: 'running', analysisError: null, batchId: null },
+  async retry(userId: number, id: number, now = new Date()): Promise<CvVersionInfo> {
+    const { version, params } = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`
+      const found = await tx.cvVersion.findFirst({
+        where: { id, userId },
+        select: { pdf: true, isActive: true, analysisStatus: true },
+      })
+      if (!found) throw new NotFoundError('CV not found')
+      if (!found.isActive || !['none', 'failed'].includes(found.analysisStatus)) {
+        throw new AppError(409, 'The CV cannot be analysed again')
+      }
+      const params = analysisRequest(found.pdf, now)
+      if (params) await claimRun(tx, userId, now)
+      const version = await tx.cvVersion.update({
+        where: { id },
+        data: { analyzedAt: now, ...start(params) },
+        omit: HIDDEN,
+      })
+      return { version, params }
     })
-    if (!count) {
-      const exists = await this.prisma.cvVersion.count({ where: { id, userId } })
-      if (!exists) throw new NotFoundError('CV not found')
-      throw new AppError(409, 'The CV cannot be analysed again')
-    }
-    const { pdf } = await this.prisma.cvVersion.findUniqueOrThrow({ where: { id }, select: { pdf: true } })
-    return this.submit(id, pdf)
+    return params ? this.analyse(id, params, now) : version
   }
 
   async confirmRole(userId: number, id: number, role: CvRole): Promise<CvVersionInfo> {
@@ -107,65 +139,77 @@ export class CvsService {
       if (!exists) throw new NotFoundError('CV not found')
       throw new AppError(409, 'The CV has no analysis yet')
     }
-    return this.prisma.cvVersion.findUniqueOrThrow({ where: { id }, omit: { pdf: true } })
+    return this.prisma.cvVersion.findUniqueOrThrow({ where: { id }, omit: HIDDEN })
   }
 
-  private async submit(id: number, pdf: Uint8Array): Promise<CvVersionInfo> {
-    const params = cvAnalysisRequest(Buffer.from(pdf).toString('base64'))
-    let batchId: string
+  private async analyse(id: number, params: MessageCreateParamsNonStreaming, analyzedAt: Date): Promise<CvVersionInfo> {
+    const signal = AbortSignal.timeout(Math.max(0, analyzedAt.getTime() + CV_ANALYSIS_TIMEOUT_MS - Date.now()))
+    let outcome: Outcome
+    let usage = {}
     try {
-      batchId = await this.batches.submit(`cv-${id}`, params)
+      const result = await this.sendMessage(params, { signal })
+      usage = { model: params.model, inputTokens: result.inputTokens, outputTokens: result.outputTokens }
+      outcome = evaluate(result)
     } catch (error) {
       console.error(error)
-      return this.prisma.cvVersion.update({
-        where: { id },
-        data: { analysisStatus: 'failed', analysisError: 'submit_failed' },
-        omit: { pdf: true },
-      })
+      const tooLong =
+        error instanceof APIError && (error.status === 413 || (error.status === 400 && /too long/i.test(error.message)))
+      outcome = { error: signal.aborted ? 'timeout' : tooLong ? 'too_long' : 'unavailable' }
     }
-    return this.prisma.cvVersion.update({
-      where: { id },
-      data: { batchId, effort: params.output_config?.effort },
-      omit: { pdf: true },
-    })
-  }
-
-  private async refresh(version: CvVersionInfo, batchId: string): Promise<CvVersionInfo> {
-    let result: MessageBatchResult | null
-    try {
-      result = await this.batches.result(batchId, `cv-${version.id}`)
-    } catch (error) {
-      console.error(error)
-      return version
-    }
-    if (!result) return version
-    const outcome: Outcome = result.type === 'succeeded' ? evaluate(result.message) : { error: 'batch_failed' }
-    const usage =
-      result.type === 'succeeded'
-        ? {
-          model: result.message.model,
-          inputTokens: result.message.usage.input_tokens,
-          outputTokens: result.message.usage.output_tokens,
-          cacheReadTokens: result.message.usage.cache_read_input_tokens,
-          cacheWriteTokens: result.message.usage.cache_creation_input_tokens,
-        }
-        : {}
+    if (outcome.hits) console.warn(`CV version ${id}: ${outcome.hits} entries removed or cleaned before storing`)
     await this.prisma.cvVersion.updateMany({
-      where: { id: version.id, analysisStatus: 'running', batchId },
-      data:
-        'analysis' in outcome
-          ? { ...usage, analysisStatus: 'ready', analysis: outcome.analysis }
-          : { ...usage, analysisStatus: 'failed', analysisError: outcome.error },
+      where: { id, analysisStatus: 'running', analyzedAt },
+      data: {
+        ...usage,
+        ...(outcome.suspiciousText?.length ? { suspiciousText: outcome.suspiciousText } : {}),
+        ...('analysis' in outcome
+          ? { analysisStatus: 'ready', analysis: outcome.analysis }
+          : { analysisStatus: 'failed', analysisError: outcome.error }),
+      },
     })
-    return this.prisma.cvVersion.findUniqueOrThrow({ where: { id: version.id }, omit: { pdf: true } })
+    const version = await this.prisma.cvVersion.findUnique({ where: { id }, omit: HIDDEN })
+    if (!version) throw new NotFoundError('CV not found')
+    return version
   }
 }
 
-function evaluate(message: Message): Outcome {
-  if (message.stop_reason === 'refusal') return { error: 'refused' }
-  if (message.stop_reason === 'max_tokens') return { error: 'too_long' }
-  const text = message.content.find((block) => block.type === 'text')
-  if (message.stop_reason !== 'end_turn' || !text) return { error: 'invalid_output' }
+async function pageCount(pdf: Buffer): Promise<number> {
+  try {
+    const doc = await PDFDocument.load(pdf, { ignoreEncryption: true, updateMetadata: false })
+    return doc.isEncrypted ? 0 : doc.getPageCount()
+  } catch {
+    return 0
+  }
+}
+
+function analysisRequest(pdf: Uint8Array, analyzedAt: Date): MessageCreateParamsNonStreaming | null {
+  try {
+    return cvAnalysisRequest(Buffer.from(pdf).toString('base64'), analyzedAt)
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('Prompt over budget')) return null
+    throw error
+  }
+}
+
+function start(params: MessageCreateParamsNonStreaming | null) {
+  return params
+    ? { analysisStatus: 'running' as const, analysisError: null, effort: params.output_config?.effort }
+    : { analysisStatus: 'failed' as const, analysisError: 'too_long' }
+}
+
+async function claimRun(tx: Prisma.TransactionClient, userId: number, now: Date): Promise<void> {
+  const today = await tx.cvRun.count({
+    where: { userId, createdAt: { gte: new Date(now.toISOString().slice(0, 10)) } },
+  })
+  if (today >= CV_ANALYSES_PER_DAY) throw new AppError(429, 'limit_reached')
+  await tx.cvRun.create({ data: { userId, createdAt: now } })
+}
+
+function evaluate(result: SendResult): Outcome {
+  if (result.stopReason === 'refusal') return { error: 'refused' }
+  if (result.stopReason === 'max_tokens') return { error: 'too_long' }
+  const text = result.content.find((block) => block.type === 'text')
+  if (result.stopReason !== 'end_turn' || !text) return { error: 'invalid_output' }
   let json: unknown
   try {
     json = JSON.parse(text.text)
@@ -174,19 +218,8 @@ function evaluate(message: Message): Outcome {
   }
   const parsed = cvAnalysisSchema.safeParse(json)
   if (!parsed.success) return { error: 'invalid_output' }
-  const analysis = parsed.data
-  if (!analysis.is_cv) return { error: 'not_cv' }
-  if (!CV_LANGUAGES.has(analysis.language.toLowerCase())) return { error: 'language' }
-  return {
-    analysis: {
-      ...analysis,
-      positions: analysis.positions.slice(0, CV_LIST_LIMITS.positions),
-      skills: analysis.skills.slice(0, CV_LIST_LIMITS.skills),
-      education: analysis.education.slice(0, CV_LIST_LIMITS.education),
-      languages: analysis.languages.slice(0, CV_LIST_LIMITS.languages),
-      strengths: analysis.strengths.slice(0, CV_LIST_LIMITS.strengths),
-      weaknesses: analysis.weaknesses.slice(0, CV_LIST_LIMITS.weaknesses),
-      tips: analysis.tips.slice(0, CV_LIST_LIMITS.tips),
-    },
-  }
+  const { analysis, suspiciousText, hits } = cvAnalysisResult(parsed.data)
+  if (!analysis.is_cv) return { error: 'not_cv', suspiciousText, hits }
+  if (!CV_LANGUAGES.has(analysis.language.toLowerCase())) return { error: 'language', suspiciousText, hits }
+  return { analysis, suspiciousText, hits }
 }

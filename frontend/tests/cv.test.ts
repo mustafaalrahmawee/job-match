@@ -1,7 +1,9 @@
+import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { ApiError } from '../src/api'
 import { useCvStore } from '../src/stores/cv'
+import CvView from '../src/views/CvView.vue'
 
 const VERSION = { id: 3, status: 'running', error: null, role: null, analysis: null, created_at: '2026-10-15T10:00:00Z' }
 
@@ -124,4 +126,96 @@ test('a failed delete keeps the version and throws', async () => {
 
   await expect(cv.remove(2)).rejects.toBeInstanceOf(ApiError)
   expect(cv.versions).toHaveLength(1)
+})
+
+const ANALYSIS = {
+  language: 'de',
+  suggested_role: 'Frontend',
+  positions: [
+    { employer: 'Pixelwerk GmbH', title: 'Frontend-Entwicklerin', start: '01/2023', ongoing: true, end: null },
+    { employer: null, title: null, start: '2020', ongoing: false, end: null },
+  ],
+  skills: ['Vue'],
+  education: [
+    { degree: 'M.Sc. Informatik', institution: 'TU Berlin', year: '2024' },
+    { degree: 'B.Sc. Informatik', institution: null, year: '2022' },
+  ],
+  highest_degree: 'M.Sc. Informatik',
+  languages: [],
+  strengths: [],
+  weaknesses: [],
+  tips: [],
+}
+
+function mountWith(active: Response, ...next: Response[]) {
+  const fetch = vi.fn((url: string, init?: RequestInit) => {
+    if (init?.method === 'POST' || init?.method === 'PATCH') return Promise.resolve(next.shift()!)
+    return Promise.resolve(url === '/api/v1/cvs' ? json([]) : active.clone())
+  })
+  vi.stubGlobal('fetch', fetch)
+  return mount(CvView, { global: { plugins: [createPinia()] } })
+}
+
+async function choose(wrapper: ReturnType<typeof mountWith>) {
+  const input = wrapper.find('input[type="file"]')
+  Object.defineProperty(input.element, 'files', {
+    value: [new File(['%PDF-1.7'], 'lebenslauf.pdf', { type: 'application/pdf' })],
+  })
+  await input.trigger('change')
+  await flushPromises()
+}
+
+test('the page shows ongoing and open positions, missing fields and the highest degree', async () => {
+  const wrapper = mountWith(json({ ...VERSION, status: 'ready', analysis: ANALYSIS }))
+  await flushPromises()
+
+  const text = wrapper.text()
+  expect(text).toContain('Pixelwerk GmbH · 01/2023 – heute')
+  expect(text).toContain('Bezeichnung nicht angegeben')
+  expect(text).toContain('Arbeitgeber nicht angegeben · 2020 – ?')
+  expect(text).toContain('Einrichtung nicht angegeben')
+  expect(text).not.toContain('null')
+  expect(wrapper.findAll('li').filter((li) => li.text().includes('Höchster Abschluss')).map((li) => li.text())).toEqual([
+    expect.stringContaining('M.Sc. Informatik'),
+  ])
+  expect(text).toContain('Bestätigen und freigeben')
+  expect(text).toContain('für Stellen, Match und Coach frei')
+})
+
+test('the hint above the upload names five pages', async () => {
+  const wrapper = mountWith(json({ detail: 'No CV uploaded' }, 404))
+  await flushPromises()
+
+  expect(wrapper.text()).toContain('höchstens 5 Seiten und 5 MB')
+})
+
+test.each([
+  [json({ detail: 'too_many_pages' }, 422), 'Das PDF hat mehr als 5 Seiten. Bitte lade nur deinen Lebenslauf hoch.'],
+  [
+    json({ detail: 'unreadable' }, 422),
+    'Das PDF lässt sich nicht lesen. Bitte speichere es ohne Passwort neu und lade es noch einmal hoch.',
+  ],
+  [json({ detail: [{ message: 'The file is not a PDF' }] }, 422), 'Die Datei ist kein gültiges PDF.'],
+  [json({ detail: 'limit_reached' }, 429), 'Du hast heute schon 5 Analysen gestartet. Versuche es morgen wieder.'],
+])('a rejected upload shows its own message', async (response, message) => {
+  const wrapper = mountWith(json({ detail: 'No CV uploaded' }, 404), response)
+  await flushPromises()
+
+  await choose(wrapper)
+
+  expect(wrapper.find('[role="alert"]').text()).toBe(message)
+})
+
+test('a retry over the daily limit shows the limit message', async () => {
+  const wrapper = mountWith(
+    json({ ...VERSION, status: 'failed', error: 'unavailable' }),
+    json({ detail: 'limit_reached' }, 429),
+  )
+  await flushPromises()
+  expect(wrapper.text()).toContain('Die Analyse ist gerade nicht erreichbar.')
+
+  await wrapper.findAll('button').find((button) => button.text() === 'Erneut versuchen')!.trigger('click')
+  await flushPromises()
+
+  expect(wrapper.text()).toContain('Du hast heute schon 5 Analysen gestartet. Versuche es morgen wieder.')
 })

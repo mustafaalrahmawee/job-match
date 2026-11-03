@@ -1,6 +1,5 @@
 import { createApp } from './app.js'
 import { env } from './config/env.js'
-import { createBatches } from './llm/batch.js'
 import { createClaudeClient } from './llm/clients.js'
 import { createSendMessage, createSendStream } from './llm/send.js'
 import { BaClient } from './modules/jobs/jobs.ba.js'
@@ -13,7 +12,6 @@ const app = createApp({
   tokenTtlDays: env.TOKEN_TTL_DAYS,
   sendStream: createSendStream(claude),
   sendMessage: createSendMessage(claude),
-  batches: createBatches(claude),
   ba: new BaClient(fetch),
 })
 

@@ -66,9 +66,9 @@ export type AnalysisStatus = 'none' | 'running' | 'ready' | 'failed'
 export type CvAnalysis = {
   language: string
   suggested_role: CvRole
-  positions: { employer: string; title: string; start: string | null; end: string | null }[]
+  positions: { employer: string | null; title: string | null; start: string | null; ongoing: boolean; end: string | null }[]
   skills: string[]
-  education: { degree: string; institution: string; year: string | null }[]
+  education: { degree: string | null; institution: string | null; year: string | null }[]
   highest_degree: string | null
   languages: { name: string; level: string | null }[]
   strengths: string[]
