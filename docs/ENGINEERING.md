@@ -1,6 +1,6 @@
 # Was dieses Projekt zeigt
 
-Stand: 3. November 2026
+Stand: 4. November 2026
 
 Die App selbst ist absichtlich gewöhnlich: Login, Chat, Datei-Upload, Listen, Formulare. Das
 Besondere liegt darin, **wie jeder Modellaufruf entworfen, abgesichert und gemessen wird** und wie
@@ -102,13 +102,13 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
 - **Stufe 1 bis 5 sind gebaut** (UC-01 bis UC-12), zuletzt das Interview-Training als Workflow
   mit `interview_question`, `interview_grade` und `interview_report`.
 - **Als Nächstes werden alle Prompts neu geschrieben,** Unit für Unit nach dem Prompt-Leitfaden.
-- **Stufe 6, MCP, ist geplant und noch nicht Code** (UC-14 bis UC-17): ein lokaler MCP-Server mit
-  lesenden Werkzeugen, Resources und Prompts über die Daten der Person, ein eigener Server für die
+- **Stufe 6, MCP, ist geplant und noch nicht Code** (UC-14 bis UC-17): ein MCP-Server über
+  Streamable HTTP mit lesenden Werkzeugen, Resources und Prompts über die Daten der Person, ein eigener Server für die
   Jobsuche der Bundesagentur, der Coach als MCP-Client beider Server.
 - **Die Evals sind nicht begonnen.** Die Eval-Infrastruktur (`run`, `check`, `review`, Batch)
   existiert; Leitfaden, Plan und Beispielfälle entstehen nach Stufe 6 neu. Die Modellwahl je Unit
   ist bis dahin eine begründete Schätzung, keine Messung.
-- **Go-live fehlt:** Registrieren und Konto (UC-13), der MCP-Server im Netz mit Anmeldung (UC-18).
+- **Go-live fehlt:** Registrieren und Konto (UC-13), der MCP-Server öffentlich im Netz mit OAuth-Anmeldung (UC-18).
 
 ## Leseweg für 15 Minuten
 
