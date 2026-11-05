@@ -177,7 +177,7 @@ test('an own job can be deleted after a confirmation that names what goes with i
   await wrapper.findAll('button').find((button) => button.text() === 'Löschen')!.trigger('click')
   await flushPromises()
   const dialog = wrapper.findComponent(AppDialog)
-  for (const word of ['Match-Analysen', 'Bewerbung', 'Notizen', 'Interview-Trainings']) expect(dialog.text()).toContain(word)
+  for (const word of ['Match-Analysen', 'Bewerbung', 'Notizen']) expect(dialog.text()).toContain(word)
   expect(fetch.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
 
   await dialog.find('form').trigger('submit')

@@ -244,7 +244,7 @@
     @cancel="deleting = null"
   >
     <p class="text-sm text-muted-foreground">
-      Die Version wird mit ihrer Analyse und ihren Match-Ergebnissen gelöscht. Bewerbungen, Chats und Trainings bleiben.
+      Die Version wird mit ihrer Analyse und ihren Match-Ergebnissen gelöscht. Bewerbungen und Chats bleiben.
     </p>
   </AppDialog>
 </template>

@@ -85,22 +85,10 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
   Firma recherchieren, bei der die Zahl der Suchen vorher offen ist. Schreibende Werkzeuge im Chat
   hätten die Oberfläche verdoppelt und das größte Risiko gebracht: eine Anweisung in einer Anzeige
   oder Webseite hätte Daten der Person ändern können.
-- **Workflow statt Agent beim Interview-Training (UC-12).** Entschieden vor dem Bau. Der Weg steht
-  fest: Stelle und Schwierigkeit wählen, Frage, schriftliche Antwort, Note mit Feedback, nächste
-  Frage, am Ende der Bericht. An der Checkliste nach Barry Zhang (Anthropic) scheitert der Agent
-  schon bei der ersten Frage, denn der Ablauf lässt sich als Entscheidungsbaum aufmalen. Eine
-  Schleife brächte nur zusätzliche Aufrufe, und die Note muss vorhersagbar sein, weil die Eval
-  Bänder und Reihenfolge prüft. Deshalb bestimmt der Code die Schritte und ruft drei Units ohne
-  Werkzeuge: `interview_question`, `interview_grade`, `interview_report`. Stelle, Match und frühere
-  Fragen lädt der Code nach `userId` und legt sie als Daten in den Prompt. Pausieren und Fortsetzen
-  folgt aus der Datenbank: Status der Session und gespeicherte Runden zeigen, was als Nächstes
-  kommt. Der Coach (UC-11) ist der Gegenfall: Dort ist offen, welche Bewerbung gemeint ist und wie
-  viele Suchen nötig sind, deshalb ein Agent.
 
 ## Was noch nicht gebaut ist
 
-- **Stufe 1 bis 5 sind gebaut** (UC-01 bis UC-12), zuletzt das Interview-Training als Workflow
-  mit `interview_question`, `interview_grade` und `interview_report`.
+- **Stufe 1 bis 4 sind gebaut** (UC-01 bis UC-11), zuletzt der Coach mit lesenden Werkzeugen.
 - **Als Nächstes werden alle Prompts neu geschrieben,** Unit für Unit nach dem Prompt-Leitfaden.
 - **Stufe 6, MCP, ist geplant und noch nicht Code** (UC-14 bis UC-17): ein MCP-Server über
   Streamable HTTP mit lesenden Werkzeugen, Resources und Prompts über die Daten der Person, ein eigener Server für die

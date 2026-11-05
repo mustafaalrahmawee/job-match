@@ -155,7 +155,7 @@
     @cancel="deleting = false"
   >
     <p class="text-sm text-muted-foreground">
-      Mit der Stelle verschwinden auch ihre Match-Analysen, die Bewerbung samt Verlauf und Notizen und die Interview-Trainings dazu. Das lässt sich nicht rückgängig machen.
+      Mit der Stelle verschwinden auch ihre Match-Analysen und die Bewerbung samt Verlauf und Notizen. Das lässt sich nicht rückgängig machen.
     </p>
   </AppDialog>
 </template>

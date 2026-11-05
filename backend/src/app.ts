@@ -5,7 +5,6 @@ import { createApplicationsModule } from './modules/applications/applications.mo
 import { createAuthModule } from './modules/auth/auth.module.js'
 import { createCoachModule } from './modules/coach/coach.module.js'
 import { createCvsModule } from './modules/cvs/cvs.module.js'
-import { createInterviewsModule } from './modules/interviews/interviews.module.js'
 import type { BaClient } from './modules/jobs/jobs.ba.js'
 import { createJobsModule } from './modules/jobs/jobs.module.js'
 import { createMatchesModule } from './modules/matches/matches.module.js'
@@ -38,13 +37,6 @@ export function createApp({ prisma, tokenTtlDays, sendStream, sendMessage, ba }:
     matches: matches.service,
     authenticate,
   })
-  const interviews = createInterviewsModule({
-    prisma,
-    sendMessage,
-    jobs: jobs.service,
-    matches: matches.service,
-    authenticate,
-  })
 
   const api = Router()
   api.get('/health', async (_req, res) => {
@@ -57,7 +49,6 @@ export function createApp({ prisma, tokenTtlDays, sendStream, sendMessage, ba }:
   api.use('/jobs', jobs.router)
   api.use('/matches', matches.router)
   api.use('/applications', applications.router)
-  api.use('/interviews', interviews.router)
 
   app.use('/api/v1', api)
   app.use(errorHandler)

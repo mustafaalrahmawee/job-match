@@ -24,7 +24,6 @@ model User {
   cvRuns        CvRun[]
   extractRuns   ExtractRun[]
   applications  Application[]
-  interviews    InterviewSession[]
 
   @@map("users")
 }
@@ -163,7 +162,6 @@ model Job {
   matchResults MatchResult[]
   matchRuns    MatchRun[]
   applications Application[]
-  interviews   InterviewSession[]
 
   @@unique([source, externalId])
   @@index([publishedAt])
@@ -270,56 +268,4 @@ model Note {
 
   @@index([applicationId])
   @@map("notes")
-}
-
-enum InterviewDifficulty {
-  easy
-  medium
-  hard
-}
-
-enum InterviewStatus {
-  running
-  finished
-}
-
-model InterviewSession {
-  id           Int                 @id @default(autoincrement())
-  userId       Int                 @map("user_id")
-  jobId        Int                 @map("job_id")
-  difficulty   InterviewDifficulty
-  status       InterviewStatus     @default(running)
-  report       Json?
-  inputTokens  Int                 @default(0) @map("input_tokens")
-  outputTokens Int                 @default(0) @map("output_tokens")
-  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime            @updatedAt @map("updated_at") @db.Timestamptz
-  finishedAt   DateTime?           @map("finished_at") @db.Timestamptz
-  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  job          Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  turns        InterviewTurn[]
-
-  @@index([userId, createdAt])
-  @@map("interview_sessions")
-}
-
-model InterviewTurn {
-  id         Int              @id @default(autoincrement())
-  sessionId  Int              @map("session_id")
-  number     Int
-  title      String           @db.VarChar(200)
-  question   String           @db.VarChar(2000)
-  gap        String?
-  adQuote    String?          @map("ad_quote")
-  answer     String?
-  skipped    Boolean          @default(false)
-  score      Int?
-  good       String?          @db.VarChar(1000)
-  better     String?          @db.VarChar(1000)
-  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz
-  answeredAt DateTime?        @map("answered_at") @db.Timestamptz
-  session    InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  @@unique([sessionId, number])
-  @@map("interview_turns")
 }

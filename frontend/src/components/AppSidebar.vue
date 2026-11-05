@@ -140,7 +140,6 @@ import {
   ClipboardList,
   FileText,
   Gauge,
-  GraduationCap,
   House,
   LogOut,
   MessageSquare,
@@ -168,7 +167,6 @@ const NAV = [
   { to: '/jobs/own', label: 'Eigene Stellen', icon: Bookmark, exact: false },
   { to: '/matches', label: 'Matches', icon: Gauge, exact: false },
   { to: '/applications', label: 'Bewerbungen', icon: ClipboardList, exact: false },
-  { to: '/trainings', label: 'Training', icon: GraduationCap, exact: false },
 ]
 
 const applications = useApplicationsStore()

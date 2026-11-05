@@ -49,14 +49,6 @@
               <RotateCcw v-else class="size-3.5" />
               {{ running ? 'Analyse läuft …' : 'Neu analysieren' }}
             </button>
-            <RouterLink
-              v-if="matches.current.confirmed_at"
-              :to="`/trainings?job=${jobs.job.id}`"
-              class="flex h-8 shrink-0 items-center justify-center gap-2 rounded-md border bg-background px-3 text-sm font-medium hover:bg-accent"
-            >
-              <GraduationCap class="size-3.5" />
-              Training starten
-            </RouterLink>
           </div>
         </section>
 
@@ -78,7 +70,7 @@
           v-if="matches.current && !matches.current.confirmed_at"
           class="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm sm:flex-row sm:items-center"
         >
-          <p class="flex-1 text-sm">Lies den Abgleich. Coach und Training nutzen ihn erst, wenn du ihn freigibst.</p>
+          <p class="flex-1 text-sm">Lies den Abgleich. Der Coach nutzt ihn erst, wenn du ihn freigibst.</p>
           <button
             type="button"
             class="flex h-8 shrink-0 items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
@@ -205,7 +197,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Briefcase, Gauge, GraduationCap, LoaderCircle, RotateCcw } from '@lucide/vue'
+import { ArrowLeft, Briefcase, Gauge, LoaderCircle, RotateCcw } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ApiError } from '../api'
