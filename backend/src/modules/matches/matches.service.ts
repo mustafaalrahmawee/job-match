@@ -4,13 +4,15 @@ import type { SendMessage, SendResult } from '../../llm/send.js'
 import { cvAside, type CoachCv } from '../../prompts/cv_analysis.js'
 import {
   MATCH_CV_SECTIONS,
-  MATCH_LIST_LIMITS,
   adText,
   matchAnalysisRequest,
+  matchAnalysisResult,
   matchAnalysisSchema,
+  missingFacts,
   type MatchAnalysis,
+  type MatchAnalysisOutput,
 } from '../../prompts/match_analysis.js'
-import { AppError } from '../../shared/errors.js'
+import { AppError, NotFoundError } from '../../shared/errors.js'
 import type { CvsService } from '../cvs/cvs.service.js'
 import { JOB_TEXT_MAX_CHARS } from '../jobs/jobs.schemas.js'
 import type { JobsService } from '../jobs/jobs.service.js'
@@ -94,28 +96,43 @@ export class MatchesService {
         }
         usage.inputTokens += result.inputTokens
         usage.outputTokens += result.outputTokens
-        const analysis = parse(result)
-        const missing = missingQuotes(analysis, cv, job)
-        if (!missing.length) {
-          const data = { score: analysis.score, strengths: analysis.strengths, gaps: analysis.gaps, tips: analysis.tips }
+        const { analysis, suspiciousText, hits } = matchAnalysisResult(parse(result))
+        if (hits || suspiciousText.length) {
+          console.warn(`Match for job ${job.id}, attempt ${attempt}: ${hits} check hits, ${suspiciousText.length} suspicious passages`)
+        }
+        const missing = missingQuotes(analysis, cv, job) + missingFacts(analysis, cv, job)
+        if (!missing) {
+          const data = { ...analysis, suspiciousText, createdAt: new Date() }
           const [saved] = await this.prisma.$transaction([
             this.prisma.matchResult.upsert({
               where: { cvVersionId_jobId: { cvVersionId: ready.id, jobId } },
               create: { userId, cvVersionId: ready.id, jobId, ...data },
-              update: { ...data, createdAt: new Date() },
+              update: { ...data, confirmedAt: null },
               include: VERSION,
             }),
             this.prisma.matchRun.update({ where: { id: run.id }, data: { ...usage, status: 'ready' } }),
           ])
           return saved
         }
-        for (const quote of missing) console.warn(`Match for job ${job.id}, attempt ${attempt}: ${quote}`)
+        console.warn(`Match for job ${job.id}, attempt ${attempt}: ${missing} quotes or facts not found`)
         if (attempt >= MATCH_MAX_ATTEMPTS) throw new AppError(502, 'quotes_not_found')
       }
     } catch (error) {
+      if (error instanceof AppError) console.warn(`Match for job ${job.id}: ${error.message}`)
       await this.prisma.matchRun.updateMany({ where: { id: run.id }, data: { ...usage, status: 'failed' } })
       throw error
     }
+  }
+
+  async confirm(userId: number, id: number, createdAt: Date, now = new Date()): Promise<MatchResultInfo> {
+    const { count } = await this.prisma.matchResult.updateMany({
+      where: { id, userId, createdAt, cvVersion: { isActive: true } },
+      data: { confirmedAt: now },
+    })
+    const result = await this.prisma.matchResult.findFirst({ where: { id, userId }, include: VERSION })
+    if (!result) throw new NotFoundError()
+    if (!count) throw new AppError(409, 'stale')
+    return result
   }
 
   private start(userId: number, jobId: number, params: MessageCreateParamsNonStreaming, now: Date): Promise<MatchRun> {
@@ -136,7 +153,7 @@ export class MatchesService {
   }
 }
 
-function parse(result: SendResult): MatchAnalysis {
+function parse(result: SendResult): MatchAnalysisOutput {
   if (result.stopReason === 'refusal') throw new AppError(502, 'refused')
   if (result.stopReason === 'max_tokens') throw new AppError(502, 'too_long')
   const text = result.content.find((block) => block.type === 'text')
@@ -149,26 +166,21 @@ function parse(result: SendResult): MatchAnalysis {
   }
   const parsed = matchAnalysisSchema.safeParse(json)
   if (!parsed.success) throw new AppError(502, 'invalid_output')
-  return {
-    score: parsed.data.score,
-    gaps: parsed.data.gaps.slice(0, MATCH_LIST_LIMITS.gaps),
-    strengths: parsed.data.strengths.slice(0, MATCH_LIST_LIMITS.strengths),
-    tips: parsed.data.tips.slice(0, MATCH_LIST_LIMITS.tips),
-  }
+  return parsed.data
 }
 
-function missingQuotes(analysis: MatchAnalysis, cv: CoachCv, job: Job): string[] {
+function missingQuotes(analysis: MatchAnalysis, cv: CoachCv, job: Job): number {
   const ad = collapse(adText(job))
   const lines = cvAside(cv, MATCH_CV_SECTIONS)
     .split('\n')
     .filter((line) => line.startsWith('- ') && line !== '- keine Angabe')
     .map((line) => collapse(line.slice(2)))
-  return [...analysis.gaps, ...analysis.strengths, ...analysis.tips].flatMap(({ ad_quote, cv_quote }) => [
-    ...(ad_quote !== null && !ad.includes(collapse(ad_quote)) ? [`ad_quote "${ad_quote}" not in the ad`] : []),
-    ...(cv_quote !== null && !lines.some((line) => line.includes(collapse(cv_quote)))
-      ? [`cv_quote "${cv_quote}" not in the CV section`]
-      : []),
-  ])
+  return [...analysis.gaps, ...analysis.strengths, ...analysis.tips]
+    .flatMap(({ ad_quote, cv_quote }) => [
+      ad_quote !== null && !ad.includes(collapse(ad_quote)),
+      cv_quote !== null && !lines.some((line) => line.includes(collapse(cv_quote))),
+    ])
+    .filter(Boolean).length
 }
 
 function collapse(text: string): string {

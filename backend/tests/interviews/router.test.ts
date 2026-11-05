@@ -89,6 +89,7 @@ function match(cvVersionId: number) {
       gaps: [{ ad_quote: 'idealerweise Kubernetes', cv_quote: 'Docker', text: GAP }],
       strengths: [{ ad_quote: 'Vue 3', cv_quote: 'Vue 3', text: 'Vue 3 ist belegt.' }],
       tips: [],
+      confirmedAt: new Date(),
     },
   })
 }
@@ -192,6 +193,16 @@ test('without a current match there is no training and no model call', async () 
 
   expect(response.status).toBe(409)
   expect(response.body).toEqual({ detail: 'no_match' })
+  expect(messages.requests).toHaveLength(0)
+  expect(await prisma.interviewSession.count()).toBe(0)
+})
+
+test('a match that is not confirmed starts no training and no model call', async () => {
+  await prisma.matchResult.updateMany({ data: { confirmedAt: null } })
+  const response = await start()
+
+  expect(response.status).toBe(409)
+  expect(response.body).toEqual({ detail: 'match_not_confirmed' })
   expect(messages.requests).toHaveLength(0)
   expect(await prisma.interviewSession.count()).toBe(0)
 })
@@ -349,6 +360,19 @@ test('a training where every question was skipped ends without a report', async 
 
   expect(session.body).toMatchObject({ status: 'finished', pending: false, report: null })
   expect(kinds()).not.toContain('report')
+})
+
+test('a running training stops at the next question when the match is no longer confirmed', async () => {
+  script({})
+  const started = (await start()).body as { id: number }
+  await prisma.matchResult.updateMany({ data: { confirmedAt: null } })
+  const before = messages.requests.length
+
+  const response = await answer(started.id, 'Mit Docker Compose.')
+
+  expect(response.status).toBe(409)
+  expect(response.body).toEqual({ detail: 'match_not_confirmed' })
+  expect(kinds().slice(before)).not.toContain('question')
 })
 
 test('a paused training resumes where it stopped and follows the current match', async () => {

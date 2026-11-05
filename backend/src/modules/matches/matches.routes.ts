@@ -7,5 +7,6 @@ export function matchesRoutes(controller: MatchesController, authenticate: Reque
   router.get('/', controller.list)
   router.post('/', controller.run)
   router.get('/jobs/:jobId', controller.show)
+  router.post('/:id/confirm', controller.confirm)
   return router
 }

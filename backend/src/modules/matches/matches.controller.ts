@@ -3,6 +3,8 @@ import type { CvRole } from '../../prompts/cv_analysis.js'
 import { MATCH_SCORE_BANDS, type MatchAnalysis } from '../../prompts/match_analysis.js'
 import { authOf } from '../../shared/auth.middleware.js'
 import {
+  matchConfirmSchema,
+  matchIdSchema,
   matchJobIdSchema,
   matchRunSchema,
   type MatchListItemOutput,
@@ -41,6 +43,13 @@ export class MatchesController {
     const result = await this.matches.run(authOf(req).user.id, job_id)
     res.status(201).json(output(result))
   }
+
+  confirm: RequestHandler = async (req, res) => {
+    const id = matchIdSchema.parse(req.params.id)
+    const { created_at } = matchConfirmSchema.parse(req.body)
+    const result = await this.matches.confirm(authOf(req).user.id, id, created_at)
+    res.json(output(result))
+  }
 }
 
 function output(result: MatchResultInfo): MatchOutput {
@@ -52,6 +61,8 @@ function output(result: MatchResultInfo): MatchOutput {
     strengths: result.strengths as MatchAnalysis['strengths'],
     gaps: result.gaps as MatchAnalysis['gaps'],
     tips: result.tips as MatchAnalysis['tips'],
+    suspicious_text: (result.suspiciousText ?? []) as string[],
+    confirmed_at: result.confirmedAt,
     archived: !result.cvVersion.isActive,
     created_at: result.createdAt,
     cv_version: {

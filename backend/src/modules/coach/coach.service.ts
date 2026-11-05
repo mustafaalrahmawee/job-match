@@ -206,12 +206,14 @@ export class CoachService {
       const application = await this.applications.get(userId, input.data.application_id)
       const { current } = await this.matches.overview(userId, application.jobId)
       const changedAt = application.statusChanges[0]?.changedAt ?? application.createdAt
-      const match = current && {
-        score: current.score,
-        gaps: current.gaps as MatchAnalysis['gaps'],
-        strengths: current.strengths as MatchAnalysis['strengths'],
-        createdAt: current.createdAt,
-      }
+      const match = current?.confirmedAt
+        ? {
+            score: current.score,
+            gaps: current.gaps as MatchAnalysis['gaps'],
+            strengths: current.strengths as MatchAnalysis['strengths'],
+            createdAt: current.createdAt,
+          }
+        : null
       const { job } = application
       return [
         { kind: 'application', application_id: application.id, title: job.title, company: job.company },

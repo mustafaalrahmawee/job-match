@@ -183,18 +183,20 @@ model JobImport {
 }
 
 model MatchResult {
-  id          Int       @id @default(autoincrement())
-  userId      Int       @map("user_id")
-  cvVersionId Int       @map("cv_version_id")
-  jobId       Int       @map("job_id")
-  score       Int
-  strengths   Json
-  gaps        Json
-  tips        Json
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  cvVersion   CvVersion @relation(fields: [cvVersionId], references: [id], onDelete: Cascade)
-  job         Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  id             Int       @id @default(autoincrement())
+  userId         Int       @map("user_id")
+  cvVersionId    Int       @map("cv_version_id")
+  jobId          Int       @map("job_id")
+  score          Int
+  strengths      Json
+  gaps           Json
+  tips           Json
+  suspiciousText Json?     @map("suspicious_text")
+  confirmedAt    DateTime? @map("confirmed_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cvVersion      CvVersion @relation(fields: [cvVersionId], references: [id], onDelete: Cascade)
+  job            Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@unique([cvVersionId, jobId])
   @@index([userId, jobId])

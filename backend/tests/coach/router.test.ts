@@ -450,6 +450,7 @@ test('the coach reads an own application with ad and match and shows the step', 
       gaps: [{ ad_quote: 'Kubernetes', cv_quote: null, text: 'Kubernetes fehlt' }],
       strengths: [{ ad_quote: 'Vue 3', cv_quote: 'Vue', text: 'Vue passt' }],
       tips: [],
+      confirmedAt: new Date(),
     },
   })
   const id = await newConversation()
@@ -475,6 +476,34 @@ test('the coach reads an own application with ad and match and shows the step', 
   }
   const show = await request(app).get(`/api/v1/coach/conversations/${id}`).set(headers)
   expect((show.body as { messages: unknown[] }).messages[1]).toMatchObject({ steps: [step], sources: [] })
+})
+
+test('a match that is not confirmed does not reach the coach', async () => {
+  const own = await application()
+  const cv = await prisma.cvVersion.create({
+    data: { userId: annaId, pdf: new Uint8Array([1]), analyzedAt: new Date(), analysisStatus: 'ready', role: 'Frontend', analysis: ANALYSIS },
+  })
+  await prisma.matchResult.create({
+    data: {
+      userId: annaId,
+      cvVersionId: cv.id,
+      jobId: own.jobId,
+      score: 68,
+      gaps: [{ ad_quote: 'Kubernetes', cv_quote: null, text: 'Kubernetes fehlt' }],
+      strengths: [],
+      tips: [],
+    },
+  })
+  const id = await newConversation()
+  model.answer(
+    streamed({ content: [toolUse('toolu_1', { application_id: own.id })], stopReason: 'tool_use' }),
+    streamedText('Fragen aus der Anzeige.'),
+  )
+
+  await send(id, 'Interviewfragen bitte')
+
+  const [result] = toolResults(model.requests[1].messages.at(-1)!)
+  expect(JSON.stringify(result.content)).not.toContain('Kubernetes fehlt')
 })
 
 test('an application without a match says so in the result', async () => {

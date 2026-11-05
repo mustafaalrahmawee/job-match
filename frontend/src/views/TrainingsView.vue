@@ -112,6 +112,7 @@ import { INTERVIEW_DIFFICULTIES, INTERVIEW_DIFFICULTY_LABELS, type InterviewDiff
 
 const START_ERRORS: Record<string, string> = {
   no_match: 'Für das Training braucht es zuerst eine Match-Analyse dieser Stelle.',
+  match_not_confirmed: 'Gib zuerst die Match-Analyse dieser Stelle frei.',
   limit_reached: 'Du hast heute schon drei Trainings gestartet. Morgen geht es weiter.',
   unavailable: 'Dienst gerade nicht erreichbar.',
   timeout: 'Die erste Frage hat zu lange gedauert.',

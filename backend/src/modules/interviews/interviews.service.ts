@@ -255,6 +255,7 @@ export class InterviewsService {
   private async currentMatch(userId: number, jobId: number): Promise<CoachMatch> {
     const { current } = await this.matches.overview(userId, jobId)
     if (!current) throw new AppError(409, 'no_match')
+    if (!current.confirmedAt) throw new AppError(409, 'match_not_confirmed')
     return {
       score: current.score,
       gaps: current.gaps as MatchAnalysis['gaps'],

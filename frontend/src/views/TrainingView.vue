@@ -31,7 +31,7 @@
       >
         <span class="flex-1">{{ stepError.text }}</span>
         <RouterLink
-          v-if="stepError.code === 'no_match' && session"
+          v-if="(stepError.code === 'no_match' || stepError.code === 'match_not_confirmed') && session"
           :to="`/matches/${session.job.id}`"
           class="flex h-8 items-center justify-center rounded-md border bg-background px-3 font-medium hover:bg-accent"
         >
@@ -276,6 +276,7 @@ const ANSWER_MAX_CHARS = 4000
 
 const STEP_ERRORS: Record<string, string> = {
   no_match: 'Für das Training braucht es zuerst eine Match-Analyse dieser Stelle.',
+  match_not_confirmed: 'Gib zuerst die Match-Analyse dieser Stelle frei.',
   no_open_question: 'Diese Frage ist schon beantwortet.',
   busy: 'Das Training wird gerade an anderer Stelle fortgesetzt.',
   unavailable: 'Dienst gerade nicht erreichbar.',

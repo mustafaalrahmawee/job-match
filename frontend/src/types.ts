@@ -182,7 +182,7 @@ export type OwnJobInput = {
 
 export type OwnJobForm = Omit<OwnJobInput, 'offer_type'> & { offer_type: OfferType | null }
 
-export type MatchEntry = { ad_quote: string | null; cv_quote: string | null; text: string }
+export type MatchEntry = { ad_quote: string | null; cv_quote: string | null; text: string; names?: string[] }
 
 export type MatchResult = {
   id: number
@@ -192,6 +192,8 @@ export type MatchResult = {
   strengths: MatchEntry[]
   gaps: MatchEntry[]
   tips: MatchEntry[]
+  suspicious_text: string[]
+  confirmed_at: string | null
   archived: boolean
   created_at: string
   cv_version: { id: number; role: CvRole | null; created_at: string }

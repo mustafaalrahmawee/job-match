@@ -50,6 +50,7 @@
               {{ running ? 'Analyse läuft …' : 'Neu analysieren' }}
             </button>
             <RouterLink
+              v-if="matches.current.confirmed_at"
               :to="`/trainings?job=${jobs.job.id}`"
               class="flex h-8 shrink-0 items-center justify-center gap-2 rounded-md border bg-background px-3 text-sm font-medium hover:bg-accent"
             >
@@ -58,6 +59,43 @@
             </RouterLink>
           </div>
         </section>
+
+        <div
+          v-if="matches.current?.suspicious_text.length"
+          class="flex flex-col gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2.5"
+          role="status"
+        >
+          <h3 class="text-sm font-medium">Auffällige Textstellen in Anzeige oder Lebenslauf</h3>
+          <p class="text-xs text-muted-foreground">
+            Diese Sätze richten sich an eine KI oder ein Programm. Prüfe den Abgleich besonders genau, bevor du ihn freigibst.
+          </p>
+          <ul class="flex list-disc flex-col gap-1 pl-4 text-xs">
+            <li v-for="(entry, index) in matches.current.suspicious_text" :key="index" class="break-words">{{ entry }}</li>
+          </ul>
+        </div>
+
+        <section
+          v-if="matches.current && !matches.current.confirmed_at"
+          class="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm sm:flex-row sm:items-center"
+        >
+          <p class="flex-1 text-sm">Lies den Abgleich. Coach und Training nutzen ihn erst, wenn du ihn freigibst.</p>
+          <button
+            type="button"
+            class="flex h-8 shrink-0 items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            :disabled="confirming || running"
+            @click="confirm"
+          >
+            Abgleich freigeben
+          </button>
+        </section>
+
+        <p
+          v-if="confirmError"
+          class="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm"
+          role="alert"
+        >
+          {{ confirmError }}
+        </p>
 
         <div
           v-if="runError"
@@ -192,6 +230,8 @@ const route = useRoute()
 const error = ref<string | null>(null)
 const running = ref(false)
 const runError = ref<{ code: string; text: string; retry: boolean } | null>(null)
+const confirming = ref(false)
+const confirmError = ref<string | null>(null)
 
 const lists = computed(() => {
   const result = matches.current
@@ -223,6 +263,7 @@ async function analyse() {
   const id = Number(route.params.jobId)
   running.value = true
   runError.value = null
+  confirmError.value = null
   try {
     await matches.run(id)
   } catch (caught) {
@@ -237,6 +278,29 @@ async function analyse() {
     }
   } finally {
     running.value = false
+  }
+}
+
+async function confirm() {
+  const result = matches.current
+  if (!result) return
+  confirming.value = true
+  confirmError.value = null
+  try {
+    await matches.confirm(result)
+  } catch (caught) {
+    if (caught instanceof ApiError && caught.detail === 'stale') {
+      confirmError.value = 'Der Abgleich hat sich geändert. Lies ihn noch einmal, bevor du ihn freigibst.'
+      try {
+        await matches.load(result.job_id)
+      } catch {
+        error.value = 'Die Match-Analyse konnte nicht geladen werden.'
+      }
+    } else {
+      confirmError.value = 'Der Abgleich konnte nicht freigegeben werden.'
+    }
+  } finally {
+    confirming.value = false
   }
 }
 

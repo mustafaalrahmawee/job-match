@@ -29,5 +29,13 @@ export const useMatchesStore = defineStore('matches', () => {
     else current.value = result
   }
 
-  return { current, archived, list, loadList, load, run }
+  async function confirm(result: MatchResult) {
+    const response = await fetchApi(`/matches/${result.id}/confirm`, {
+      method: 'POST',
+      body: { created_at: result.created_at },
+    })
+    current.value = (await response.json()) as MatchResult
+  }
+
+  return { current, archived, list, loadList, load, run, confirm }
 })

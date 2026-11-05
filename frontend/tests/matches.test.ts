@@ -2,8 +2,9 @@ import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { ApiError } from '../src/api'
 import { useMatchesStore } from '../src/stores/matches'
+import type { MatchResult } from '../src/types'
 
-const RESULT = {
+const RESULT: MatchResult = {
   id: 1,
   job_id: 7,
   score: 82,
@@ -11,6 +12,8 @@ const RESULT = {
   strengths: [{ ad_quote: '3+ Jahre Vue', cv_quote: 'Vue 3', text: 'Vue 3 ist belegt.' }],
   gaps: [{ ad_quote: 'idealerweise Kubernetes', cv_quote: null, text: 'Kubernetes fehlt.' }],
   tips: [],
+  suspicious_text: [],
+  confirmed_at: null,
   archived: false,
   created_at: '2026-10-21T10:00:00Z',
   cv_version: { id: 3, role: 'Frontend', created_at: '2026-10-12T10:00:00Z' },
@@ -56,6 +59,21 @@ test('a run posts the job and keeps the new result', async () => {
   expect(init.method).toBe('POST')
   expect(init.body).toBe(JSON.stringify({ job_id: 7 }))
   expect(matches.current).toEqual(RESULT)
+})
+
+test('a confirmation posts the date of the result and keeps the answer', async () => {
+  const confirmed = { ...RESULT, confirmed_at: '2026-10-21T11:00:00Z' }
+  const fetch = vi.fn().mockResolvedValue(json(confirmed))
+  vi.stubGlobal('fetch', fetch)
+  const matches = useMatchesStore()
+
+  await matches.confirm(RESULT)
+
+  const [url, init] = fetch.mock.calls[0] as [string, RequestInit]
+  expect(url).toBe('/api/v1/matches/1/confirm')
+  expect(init.method).toBe('POST')
+  expect(init.body).toBe(JSON.stringify({ created_at: RESULT.created_at }))
+  expect(matches.current).toEqual(confirmed)
 })
 
 test('a result for a version that became inactive meanwhile reloads the overview', async () => {
