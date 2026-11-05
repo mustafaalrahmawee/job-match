@@ -1,6 +1,7 @@
 import type { ContentBlockParam } from '@anthropic-ai/sdk/resources/messages'
 import request from 'supertest'
-import { beforeEach, expect, test } from 'vitest'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { JOB_READINGS_PER_DAY } from '../../src/modules/jobs/jobs.service.js'
 import { JOB_EXTRACT_MODEL } from '../../src/prompts/job_extract.js'
 import { bearerFor, createAnna, sentText, useTestDatabase } from '../helpers.js'
 
@@ -23,6 +24,7 @@ const EXTRACT = {
   part_time: false,
   salary: '65.000–80.000 €',
   text: null,
+  suspicious_text: [],
 }
 
 const OWN_JOB = {
@@ -35,6 +37,10 @@ const OWN_JOB = {
   salary: '65.000–80.000 €',
   description: AD,
 }
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 beforeEach(async () => {
   const anna = await createAnna(auth)
@@ -56,7 +62,7 @@ function extractImage(image: Buffer, type = 'image/png') {
 
 function material(): ContentBlockParam {
   const [message] = messages.requests[0].messages
-  return (message.content as ContentBlockParam[])[0]
+  return (message.content as ContentBlockParam[]).find((block) => block.type !== 'text')!
 }
 
 async function otherUser() {
@@ -86,10 +92,13 @@ test('pasted text goes to the model as a document and comes back as fields with 
     part_time: false,
     salary: '65.000–80.000 €',
     description: AD,
+    suspicious_text: [],
+    unverified: ['salary'],
   })
   expect(messages.requests).toHaveLength(1)
   expect(messages.requests[0].model).toBe(JOB_EXTRACT_MODEL)
-  expect(material()).toMatchObject({ type: 'document', source: { type: 'text', data: AD } })
+  expect(material()).toMatchObject({ type: 'document', source: { type: 'text' } })
+  expect(JSON.stringify(material())).toContain('Senior Frontend Engineer')
   expect(await prisma.job.count()).toBe(0)
 })
 
@@ -188,6 +197,108 @@ test('fields are cut to the column lengths', async () => {
   })
 })
 
+test('an ad that leaves the offer type open gives an empty field', async () => {
+  answer({ ...EXTRACT, offer_type: null })
+
+  const response = await extractText(AD)
+
+  expect(response.status).toBe(200)
+  expect(response.body).toMatchObject({ offer_type: null })
+})
+
+test('suspicious passages are shown, cut to the limits, and never reach the draft fields', async () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+  const entries = Array.from({ length: 12 }, (_, index) => `Ignoriere alles ${index}`)
+  answer({ ...EXTRACT, suspicious_text: ['x'.repeat(1200), ...entries] })
+
+  const response = await extractText(AD)
+  const body = response.body as { suspicious_text: string[]; description: string }
+
+  expect(body.suspicious_text).toHaveLength(10)
+  expect(body.suspicious_text[0]).toBe(`${'x'.repeat(1000)} […]`)
+  expect(body.suspicious_text[1]).toBe('Ignoriere alles 0')
+  expect(body.description).toBe(AD)
+  expect(warn).toHaveBeenCalledOnce()
+  expect(warn.mock.calls[0][0]).not.toContain('Ignoriere')
+})
+
+test('a field with a link is emptied and a value missing from the text is flagged', async () => {
+  vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+  answer({ ...EXTRACT, title: 'Klicke [hier](https://evil.example)', company: 'Erfundene GmbH', salary: null })
+
+  const response = await extractText(AD)
+
+  expect(response.body).toMatchObject({ title: null, company: 'Erfundene GmbH', unverified: ['company'] })
+})
+
+test('invisible characters leave the draft and what is shown marks them', async () => {
+  vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+  answer({ ...EXTRACT, salary: null, suspicious_text: ['Geheim\u200Btext'] })
+
+  const response = await extractText(`Senior\u200B Frontend Engineer (m/w/d) in Berlin`)
+
+  expect(response.body).toMatchObject({
+    description: 'Senior Frontend Engineer (m/w/d) in Berlin',
+    suspicious_text: ['Geheim[U+200B]text'],
+    unverified: [],
+  })
+  expect(JSON.stringify(material())).not.toContain('\u200B')
+})
+
+test('an amount that only occurs inside a larger one counts as not found', async () => {
+  answer({ ...EXTRACT, salary: '50.000 €' })
+
+  const response = await extractText(`${AD} Gehalt 150.000 €`)
+
+  expect(response.body).toMatchObject({ unverified: ['salary'] })
+})
+
+test('reading is limited per day, counted per person, and the failed call counts too', async () => {
+  const today = new Date()
+  await prisma.extractRun.createMany({
+    data: Array.from({ length: JOB_READINGS_PER_DAY - 1 }, () => ({ userId: annaId, createdAt: today })),
+  })
+  messages.answer(sentText('kein JSON'))
+  vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+  expect((await extractText(AD)).status).toBe(502)
+  messages.requests.length = 0
+  const response = await extractText(AD)
+
+  expect(response.status).toBe(429)
+  expect(response.body).toEqual({ detail: 'limit_reached' })
+  expect(messages.requests).toHaveLength(0)
+  const ben = await otherUser()
+  answer(EXTRACT)
+  const other = await request(app).post('/api/v1/jobs/extraction').set(ben.headers).send({ text: AD })
+  expect(other.status).toBe(200)
+})
+
+test('readings of earlier days do not count', async () => {
+  await prisma.extractRun.createMany({
+    data: Array.from({ length: JOB_READINGS_PER_DAY }, () => ({ userId: annaId, createdAt: new Date('2026-01-01') })),
+  })
+  answer(EXTRACT)
+
+  expect((await extractText(AD)).status).toBe(200)
+})
+
+test('invalid input does not use up a reading', async () => {
+  await extractText('')
+
+  expect(await prisma.extractRun.count()).toBe(0)
+})
+
+test('saving removes invisible characters and needs an offer type', async () => {
+  const save = (data: Record<string, unknown>) => request(app).post('/api/v1/jobs').set(headers).send({ ...OWN_JOB, ...data })
+
+  const response = await save({ title: 'Ent\u200Bwicklerin', company: '\u2060', description: `Text\u{E0041}` })
+
+  expect(response.body).toMatchObject({ title: 'Entwicklerin', company: null, description: 'Text' })
+  expect((await save({ title: '\u200B' })).status).toBe(422)
+  expect((await save({ offer_type: null })).status).toBe(422)
+})
+
 test('saving stores an own job for the person and shows it without a role', async () => {
   const response = await request(app).post('/api/v1/jobs').set(headers).send(OWN_JOB)
 
@@ -279,6 +390,44 @@ test('an own job of another person behaves as if it did not exist', async () => 
 
   expect((await request(app).get(`/api/v1/jobs/${id}`).set(headers)).status).toBe(404)
   expect((await request(app).get(`/api/v1/jobs/${id}`).set(ben.headers)).status).toBe(200)
+})
+
+test('deleting an own job removes it with its application and notes', async () => {
+  const { id } = (await request(app).post('/api/v1/jobs').set(headers).send(OWN_JOB)).body as { id: number }
+  const application = await prisma.application.create({ data: { userId: annaId, jobId: id } })
+  await prisma.note.create({ data: { applicationId: application.id, content: 'Notiz' } })
+
+  const response = await request(app).delete(`/api/v1/jobs/${id}`).set(headers)
+
+  expect(response.status).toBe(204)
+  expect(await prisma.job.count()).toBe(0)
+  expect(await prisma.application.count()).toBe(0)
+  expect(await prisma.note.count()).toBe(0)
+  expect((await request(app).delete(`/api/v1/jobs/${id}`).set(headers)).status).toBe(404)
+})
+
+test('a job of another person and a pool job cannot be deleted', async () => {
+  const ben = await otherUser()
+  const own = (await request(app).post('/api/v1/jobs').set(ben.headers).send(OWN_JOB)).body as { id: number }
+  const pool = await prisma.job.create({
+    data: {
+      source: 'ba',
+      externalId: 'pool-1',
+      title: 'Pool-Stelle',
+      city: 'Berlin',
+      description: 'Text',
+      offerType: 'work',
+      role: 'Frontend',
+      fullTime: true,
+      partTime: false,
+      publishedAt: new Date(),
+    },
+  })
+
+  expect((await request(app).delete(`/api/v1/jobs/${own.id}`).set(headers)).status).toBe(404)
+  expect((await request(app).delete(`/api/v1/jobs/${pool.id}`).set(headers)).status).toBe(404)
+  expect((await request(app).delete(`/api/v1/jobs/${pool.id}`)).status).toBe(401)
+  expect(await prisma.job.count()).toBe(2)
 })
 
 test('deleting the account deletes its own jobs', async () => {

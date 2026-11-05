@@ -22,6 +22,7 @@ model User {
   matchResults  MatchResult[]
   matchRuns     MatchRun[]
   cvRuns        CvRun[]
+  extractRuns   ExtractRun[]
   applications  Application[]
   interviews    InterviewSession[]
 
@@ -117,6 +118,16 @@ model CvRun {
 
   @@index([userId, createdAt])
   @@map("cv_runs")
+}
+
+model ExtractRun {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("extract_runs")
 }
 
 enum JobSource {

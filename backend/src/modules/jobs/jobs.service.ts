@@ -2,16 +2,20 @@ import { randomUUID } from 'node:crypto'
 import type { Job, OfferType, Prisma, PrismaClient } from '../../generated/prisma/client.js'
 import type { SendMessage, SendResult } from '../../llm/send.js'
 import { CV_ROLES, type CvRole } from '../../prompts/cv_analysis.js'
-import { jobExtractRequest, jobExtractSchema, type JobExtractInput } from '../../prompts/job_extract.js'
+import {
+  jobExtractRequest,
+  jobExtractResult,
+  jobExtractSchema,
+  type JobExtract,
+  type JobExtractInput,
+} from '../../prompts/job_extract.js'
 import { BA_MAX_PAGES, BA_PAGE_SIZE, BA_SEARCH_TERMS, POOL_DAYS, type BaClient } from './jobs.ba.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
 import {
-  JOB_LIMITS,
-  JOB_TEXT_MAX_CHARS,
   REGIONS,
   baJobSchema,
   type BaJob,
-  type JobDraft,
+  type JobReading,
   type JobsQuery,
   type OwnJobInput,
   type Region,
@@ -26,6 +30,8 @@ type Outcome = keyof ImportSummary
 const DAY_MS = 24 * 60 * 60 * 1000
 
 const OWN_JOB_ROLE: CvRole = 'Andere'
+
+export const JOB_READINGS_PER_DAY = 20
 
 const OFFER_TYPES: Record<BaJob['stellenangebotsart'], OfferType> = {
   ARBEIT: 'work',
@@ -118,7 +124,8 @@ export class JobsService {
     return this.prisma.job.findMany({ where: { id: { in: ids }, OR: [{ source: 'ba' }, { userId }] } })
   }
 
-  async extract(input: JobExtractInput): Promise<JobDraft> {
+  async extract(userId: number, input: JobExtractInput, now = new Date()): Promise<JobReading> {
+    await this.claimReading(userId, now)
     let result: SendResult
     try {
       result = await this.sendMessage(jobExtractRequest(input))
@@ -126,28 +133,17 @@ export class JobsService {
       console.error(error)
       throw new AppError(502, 'extract_failed')
     }
-    const text = result.content.find((block) => block.type === 'text')
-    if (result.stopReason !== 'end_turn' || !text) throw new AppError(502, 'extract_failed')
-    let json: unknown
-    try {
-      json = JSON.parse(text.text)
-    } catch {
+    const output = parseExtract(result)
+    if (!output) {
+      console.warn(`job_extract: no valid output, stop reason ${result.stopReason}`)
       throw new AppError(502, 'extract_failed')
     }
-    const parsed = jobExtractSchema.safeParse(json)
-    if (!parsed.success) throw new AppError(502, 'extract_failed')
-    const extract = parsed.data
-    if (!extract.is_job) throw new AppError(422, 'not_job')
-    return {
-      title: extract.title && extract.title.slice(0, JOB_LIMITS.title),
-      company: extract.company && extract.company.slice(0, JOB_LIMITS.company),
-      city: extract.city && extract.city.slice(0, JOB_LIMITS.city),
-      offer_type: extract.offer_type,
-      full_time: extract.full_time,
-      part_time: extract.part_time,
-      salary: extract.salary && extract.salary.slice(0, JOB_LIMITS.salary),
-      description: input.kind === 'text' ? input.text : (extract.text ?? '').slice(0, JOB_TEXT_MAX_CHARS),
+    const { draft, suspiciousText, unverified, hits } = jobExtractResult(output, input)
+    if (hits || suspiciousText.length) {
+      console.warn(`job_extract: ${hits} check hits, ${suspiciousText.length} suspicious passages`)
     }
+    if (!output.is_job) throw new AppError(422, 'not_job')
+    return { ...draft, suspicious_text: suspiciousText, unverified }
   }
 
   create(userId: number, input: OwnJobInput, now = new Date()): Promise<Job> {
@@ -167,6 +163,22 @@ export class JobsService {
         salary: input.salary,
         publishedAt: new Date(now.toISOString().slice(0, 10)),
       },
+    })
+  }
+
+  async remove(userId: number, id: number): Promise<void> {
+    const { count } = await this.prisma.job.deleteMany({ where: { id, source: 'own', userId } })
+    if (!count) throw new NotFoundError('Job not found')
+  }
+
+  private async claimReading(userId: number, now: Date): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`
+      const today = await tx.extractRun.count({
+        where: { userId, createdAt: { gte: new Date(now.toISOString().slice(0, 10)) } },
+      })
+      if (today >= JOB_READINGS_PER_DAY) throw new AppError(429, 'limit_reached')
+      await tx.extractRun.create({ data: { userId, createdAt: now } })
     })
   }
 
@@ -205,5 +217,16 @@ export class JobsService {
       skipDuplicates: true,
     })
     return count ? 'imported' : 'duplicates'
+  }
+}
+
+function parseExtract(result: SendResult): JobExtract | null {
+  const text = result.content.find((block) => block.type === 'text')
+  if (result.stopReason !== 'end_turn' || !text) return null
+  try {
+    const parsed = jobExtractSchema.safeParse(JSON.parse(text.text))
+    return parsed.success ? parsed.data : null
+  } catch {
+    return null
   }
 }

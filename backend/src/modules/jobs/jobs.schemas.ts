@@ -11,6 +11,8 @@ export const JOB_IMAGE_MAX_BYTES = 5 * 1024 * 1024
 
 export const JOB_LIMITS = { title: 300, company: 300, city: 200, salary: 200 } as const
 
+const INVISIBLE_CHARS = /[\u{E0000}-\u{E007F}\u{200B}-\u{200D}\u{2060}]|[\u{FE00}-\u{FE0F}]/gu
+
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 
 const JPEG_SIGNATURE = Buffer.from([0xff, 0xd8, 0xff])
@@ -100,23 +102,28 @@ export const screenshotSchema = z
     return { kind: 'image' as const, mediaType, data: data.toString('base64') }
   })
 
+const visibleText = (text: string) => text.replace(INVISIBLE_CHARS, '')
+
+const requiredText = (max: number) => z.string().overwrite(visibleText).trim().min(1).max(max)
+
 const optionalText = (max: number) =>
   z
     .string()
+    .overwrite(visibleText)
     .trim()
     .max(max)
     .nullable()
     .transform((value) => value || null)
 
 export const ownJobSchema = z.object({
-  title: z.string().trim().min(1).max(JOB_LIMITS.title),
+  title: requiredText(JOB_LIMITS.title),
   company: optionalText(JOB_LIMITS.company),
-  city: z.string().trim().min(1).max(JOB_LIMITS.city),
+  city: requiredText(JOB_LIMITS.city),
   offer_type: z.enum(OFFER_TYPES),
   full_time: z.boolean(),
   part_time: z.boolean(),
   salary: optionalText(JOB_LIMITS.salary),
-  description: z.string().trim().min(1).max(JOB_TEXT_MAX_CHARS),
+  description: requiredText(JOB_TEXT_MAX_CHARS),
 })
 
 export type OwnJobInput = z.infer<typeof ownJobSchema>
@@ -125,7 +132,7 @@ export const jobDraftSchema = z.object({
   title: z.string().nullable(),
   company: z.string().nullable(),
   city: z.string().nullable(),
-  offer_type: z.enum(OFFER_TYPES),
+  offer_type: z.enum(OFFER_TYPES).nullable(),
   full_time: z.boolean(),
   part_time: z.boolean(),
   salary: z.string().nullable(),
@@ -133,6 +140,13 @@ export const jobDraftSchema = z.object({
 })
 
 export type JobDraft = z.infer<typeof jobDraftSchema>
+
+export const jobReadingSchema = jobDraftSchema.extend({
+  suspicious_text: z.array(z.string()),
+  unverified: z.array(z.enum(['title', 'company', 'city', 'salary'])),
+})
+
+export type JobReading = z.infer<typeof jobReadingSchema>
 
 export const jobOutputSchema = z.object({
   id: z.int(),

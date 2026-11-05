@@ -53,6 +53,15 @@
             <ExternalLink class="size-4" />
             Bei der Bundesagentur ansehen
           </a>
+          <button
+            v-if="jobs.job.source === 'own'"
+            type="button"
+            class="flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border bg-background px-3 text-sm font-medium hover:bg-accent"
+            @click="deleting = true"
+          >
+            <Trash2 class="size-4" />
+            Löschen
+          </button>
         </section>
 
         <div class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
@@ -134,13 +143,29 @@
       </template>
     </div>
   </div>
+
+  <AppDialog
+    :open="deleting"
+    title="Stelle löschen?"
+    confirm-label="Löschen"
+    destructive
+    :disabled="busy"
+    :error="dialogError"
+    @confirm="confirmDelete"
+    @cancel="deleting = false"
+  >
+    <p class="text-sm text-muted-foreground">
+      Mit der Stelle verschwinden auch ihre Match-Analysen, die Bewerbung samt Verlauf und Notizen und die Interview-Trainings dazu. Das lässt sich nicht rückgängig machen.
+    </p>
+  </AppDialog>
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Banknote, CalendarDays, ClipboardList, Clock, ExternalLink, Gauge, MapPin, Plus, Tag } from '@lucide/vue'
+import { ArrowLeft, Banknote, CalendarDays, ClipboardList, Clock, ExternalLink, Gauge, MapPin, Plus, Tag, Trash2 } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ApiError } from '../api'
+import AppDialog from '../components/AppDialog.vue'
 import MarkdownText from '../components/MarkdownText.vue'
 import MatchScore from '../components/MatchScore.vue'
 import PageHeader from '../components/PageHeader.vue'
@@ -154,10 +179,14 @@ const jobs = useJobsStore()
 const matches = useMatchesStore()
 const applications = useApplicationsStore()
 const route = useRoute()
+const router = useRouter()
 const error = ref<string | null>(null)
 const applicationError = ref<string | null>(null)
 const creating = ref(false)
 const applicationsLoaded = ref(false)
+const deleting = ref(false)
+const busy = ref(false)
+const dialogError = ref<string | null>(null)
 
 const application = computed(() => applications.list.find((item) => item.job.id === jobs.job?.id) ?? null)
 
@@ -185,6 +214,22 @@ async function createApplication() {
   } finally {
     creating.value = false
   }
+}
+
+async function confirmDelete() {
+  if (!jobs.job) return
+  busy.value = true
+  dialogError.value = null
+  try {
+    await jobs.remove(jobs.job.id)
+  } catch {
+    dialogError.value = 'Die Stelle konnte nicht gelöscht werden.'
+    return
+  } finally {
+    busy.value = false
+  }
+  deleting.value = false
+  await router.push('/jobs/own')
 }
 
 onMounted(async () => {

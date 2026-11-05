@@ -43,7 +43,6 @@
             id="own-job-text"
             v-model="text"
             rows="14"
-            :maxlength="MAX_CHARS"
             placeholder="Füge hier den Text der Stellenanzeige ein."
             class="w-full resize-y rounded-md border border-input bg-background px-3 py-2.5 text-sm leading-relaxed shadow-xs outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
           />
@@ -75,7 +74,7 @@
           <p class="flex-1 text-xs text-muted-foreground">
             {{
               mode === 'text'
-                ? 'Der Text wird als Daten behandelt, nie als Anweisung an das Modell.'
+                ? 'Das Modell schlägt die Felder vor. Du prüfst sie, bevor du die Stelle speicherst.'
                 : 'Nimm nur den Ausschnitt mit der Anzeige auf, damit der Text lesbar bleibt.'
             }}
           </p>
@@ -99,6 +98,24 @@
           <span class="rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium">Zum Prüfen</span>
         </div>
 
+        <div
+          v-if="suspicious.length"
+          class="flex flex-col gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2.5"
+          role="status"
+        >
+          <h3 class="text-sm font-medium">Auffällige Textstellen in der Anzeige</h3>
+          <p class="text-xs text-muted-foreground">
+            Diese Sätze richten sich an eine KI oder ein Programm. Streiche sie aus der Beschreibung, bevor du speicherst. Die Liste wird nicht gespeichert.
+          </p>
+          <ul class="flex list-disc flex-col gap-1 pl-4 text-xs">
+            <li v-for="(entry, index) in suspicious" :key="index" class="break-words">{{ entry }}</li>
+          </ul>
+        </div>
+
+        <p v-if="unverified.length" class="text-xs text-muted-foreground">
+          Nicht im Anzeigentext gefunden: {{ unverified.map((field) => UNVERIFIED_LABELS[field]).join(', ') }}. Prüfe diese Felder besonders.
+        </p>
+
         <div class="flex flex-col gap-2">
           <label for="own-job-title" class="text-sm font-medium">Titel</label>
           <input id="own-job-title" v-model="draft.title" required :maxlength="LIMITS.title" :class="FIELD" />
@@ -118,7 +135,8 @@
         <div class="grid gap-4 sm:grid-cols-2">
           <div class="flex flex-col gap-2">
             <label for="own-job-offer" class="text-sm font-medium">Angebot</label>
-            <select id="own-job-offer" v-model="draft.offer_type" :class="FIELD">
+            <select id="own-job-offer" v-model="draft.offer_type" required :class="FIELD">
+              <option :value="null" disabled>Bitte wählen</option>
               <option v-for="offer in OFFERS" :key="offer.value" :value="offer.value">{{ offer.label }}</option>
             </select>
           </div>
@@ -186,7 +204,7 @@ import { useRouter } from 'vue-router'
 import { ApiError } from '../api'
 import PageHeader from '../components/PageHeader.vue'
 import { useJobsStore } from '../stores/jobs'
-import type { OfferType, OwnJobInput } from '../types'
+import type { OfferType, OwnJobForm, UnverifiedField } from '../types'
 
 const TABS = [
   { mode: 'text', label: 'Text einfügen' },
@@ -199,6 +217,13 @@ const OFFERS: { value: OfferType; label: string }[] = [
   { value: 'internship', label: 'Praktikum' },
   { value: 'self_employment', label: 'Selbstständigkeit' },
 ]
+
+const UNVERIFIED_LABELS: Record<UnverifiedField, string> = {
+  title: 'Titel',
+  company: 'Firma',
+  city: 'Stadt',
+  salary: 'Gehaltsangabe',
+}
 
 const FIELD =
   'h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus:border-ring focus:ring-3 focus:ring-ring/50'
@@ -215,7 +240,9 @@ const mode = ref<'text' | 'image'>('text')
 const text = ref('')
 const file = ref<File | null>(null)
 const dragging = ref(false)
-const draft = ref<OwnJobInput | null>(null)
+const draft = ref<OwnJobForm | null>(null)
+const suspicious = ref<string[]>([])
+const unverified = ref<UnverifiedField[]>([])
 const reading = ref(false)
 const saving = ref(false)
 const error = ref<string | null>(null)
@@ -262,13 +289,18 @@ async function read() {
       salary: result.salary ?? '',
       description: result.description,
     }
+    suspicious.value = result.suspicious_text
+    unverified.value = result.unverified
   } catch (caught) {
     const status = caught instanceof ApiError ? caught.status : 0
-    if (status === 413) error.value = 'Die Datei ist größer als 5 MB.'
+    if (status === 429) error.value = 'Du hast heute schon 20 Stellen ausgelesen. Morgen geht es weiter.'
+    else if (status === 413) error.value = 'Die Datei ist größer als 5 MB.'
     else if (status === 422 && caught instanceof ApiError && caught.detail === 'not_job')
       error.value = 'Das sieht nicht nach einer einzelnen Stellenanzeige aus. Füge den Text einer Anzeige ein oder lade einen Screenshot davon hoch.'
     else if (status === 422)
       error.value = mode.value === 'text' ? 'Der Text ist leer oder länger als 20.000 Zeichen.' : 'Die Datei ist kein PNG oder JPG.'
+    else if (mode.value === 'image' && caught instanceof ApiError && caught.detail === 'extract_failed')
+      error.value = 'Der Screenshot ließ sich nicht lesen. Schneide ihn kürzer zu oder füge den Text ein.'
     else error.value = 'Die Stelle konnte nicht ausgelesen werden. Versuche es noch einmal.'
   } finally {
     reading.value = false
@@ -277,11 +309,16 @@ async function read() {
 
 async function save() {
   if (!draft.value) return
+  const { offer_type } = draft.value
+  if (!offer_type) {
+    error.value = 'Wähle aus, um welches Angebot es sich handelt.'
+    return
+  }
   error.value = null
   saving.value = true
   let id: number
   try {
-    id = (await jobs.create(draft.value)).id
+    id = (await jobs.create({ ...draft.value, offer_type })).id
   } catch {
     error.value = 'Die Stelle konnte nicht gespeichert werden. Prüfe Titel, Stadt und Beschreibung.'
     return

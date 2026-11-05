@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
 import { fetchApi } from '../api'
-import type { Job, JobDetail, JobDraft, JobFilter, JobList, OwnJobInput } from '../types'
+import type { Job, JobDetail, JobFilter, JobList, JobReading, OwnJobInput } from '../types'
 
 export const JOBS_PAGE_SIZE = 20
 
@@ -48,10 +48,10 @@ export const useJobsStore = defineStore('jobs', () => {
     job.value = (await response.json()) as JobDetail
   }
 
-  async function extract(input: string | File): Promise<JobDraft> {
+  async function extract(input: string | File): Promise<JobReading> {
     const body = typeof input === 'string' ? { text: input } : new Blob([input], { type: input.type })
     const response = await fetchApi('/jobs/extraction', { method: 'POST', body })
-    return (await response.json()) as JobDraft
+    return (await response.json()) as JobReading
   }
 
   async function create(input: OwnJobInput): Promise<JobDetail> {
@@ -60,5 +60,10 @@ export const useJobsStore = defineStore('jobs', () => {
     return job.value
   }
 
-  return { jobs, total, filter, page, loaded, job, ownJobs, ownTotal, load, loadOwn, loadOne, extract, create }
+  async function remove(id: number) {
+    await fetchApi(`/jobs/${id}`, { method: 'DELETE' })
+    job.value = null
+  }
+
+  return { jobs, total, filter, page, loaded, job, ownJobs, ownTotal, load, loadOwn, loadOne, extract, create, remove }
 })

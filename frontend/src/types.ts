@@ -158,12 +158,16 @@ export type JobDraft = {
   title: string | null
   company: string | null
   city: string | null
-  offer_type: OfferType
+  offer_type: OfferType | null
   full_time: boolean
   part_time: boolean
   salary: string | null
   description: string
 }
+
+export type UnverifiedField = 'title' | 'company' | 'city' | 'salary'
+
+export type JobReading = JobDraft & { suspicious_text: string[]; unverified: UnverifiedField[] }
 
 export type OwnJobInput = {
   title: string
@@ -175,6 +179,8 @@ export type OwnJobInput = {
   salary: string
   description: string
 }
+
+export type OwnJobForm = Omit<OwnJobInput, 'offer_type'> & { offer_type: OfferType | null }
 
 export type MatchEntry = { ad_quote: string | null; cv_quote: string | null; text: string }
 

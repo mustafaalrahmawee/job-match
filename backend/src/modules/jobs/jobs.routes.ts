@@ -13,5 +13,6 @@ export function jobsRoutes(controller: JobsController, authenticate: RequestHand
     controller.extract,
   )
   router.get('/:id', controller.show)
+  router.delete('/:id', controller.remove)
   return router
 }

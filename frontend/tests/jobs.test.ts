@@ -164,6 +164,8 @@ const DRAFT = {
   part_time: false,
   salary: null,
   description: 'Text der Anzeige',
+  suspicious_text: [],
+  unverified: [],
 }
 
 test('pasted text is read out as JSON', async () => {
@@ -199,6 +201,20 @@ test('a rejected ad carries the reason from the API', async () => {
 
   await expect(extract).rejects.toBeInstanceOf(ApiError)
   await expect(extract).rejects.toMatchObject({ status: 422, detail: 'not_job' })
+})
+
+test('deleting a job calls the API and empties the detail', async () => {
+  const fetch = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
+  vi.stubGlobal('fetch', fetch)
+  const jobs = useJobsStore()
+  jobs.job = { ...JOB, description: 'Text', salary: null, url: null } as never
+
+  await jobs.remove(7)
+
+  const [url, init] = fetch.mock.calls[0] as [string, RequestInit]
+  expect(url).toBe('/api/v1/jobs/7')
+  expect(init.method).toBe('DELETE')
+  expect(jobs.job).toBeNull()
 })
 
 test('saving posts the checked form and keeps the new job', async () => {

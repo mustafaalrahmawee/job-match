@@ -9,5 +9,5 @@ import { computed } from 'vue'
 
 const props = defineProps<{ text: string }>()
 
-const html = computed(() => DOMPurify.sanitize(marked.parse(props.text, { async: false, breaks: true })))
+const html = computed(() => DOMPurify.sanitize(marked.parse(props.text, { async: false, breaks: true }), { USE_PROFILES: { html: true }, FORBID_TAGS: ['img'] }))
 </script>

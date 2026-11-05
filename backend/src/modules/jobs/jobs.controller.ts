@@ -34,13 +34,18 @@ export class JobsController {
     const input = Buffer.isBuffer(req.body)
       ? screenshotSchema.parse(req.body)
       : { kind: 'text' as const, ...extractTextSchema.parse(req.body) }
-    res.json(await this.jobs.extract(input))
+    res.json(await this.jobs.extract(authOf(req).user.id, input))
   }
 
   create: RequestHandler = async (req, res) => {
     const input = ownJobSchema.parse(req.body)
     const job = await this.jobs.create(authOf(req).user.id, input)
     res.status(201).json(detail(job))
+  }
+
+  remove: RequestHandler = async (req, res) => {
+    await this.jobs.remove(authOf(req).user.id, jobIdSchema.parse(req.params.id))
+    res.status(204).end()
   }
 }
 
