@@ -22,7 +22,7 @@ test('a model without a price fails loudly', () => {
 test('the eval variant overrides model, effort and quality of the coach request', () => {
   const messages = [{ role: 'user' as const, content: 'Hallo' }]
   const settings = { quality: 'normal', effort: 'high' } as const
-  const context = { cv: null, applications: [], asOf: '2026-10-23' }
+  const context = { cv: null, applications: [], researches: [], asOf: '2026-10-23', markId: '9f2c41ab' }
   const variant = { model: 'claude-haiku-5-5', effort: 'low', quality: 'extended' } as const
   const request = coachAgentRequest(messages, [], settings, context, variant)
   expect(request.model).toBe('claude-haiku-5-5')

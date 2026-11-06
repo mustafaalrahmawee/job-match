@@ -48,7 +48,7 @@ const params = coachAgentRequest(
   [{ role: 'user', content: 'Hallo' }],
   [],
   { quality: 'normal', effort: 'medium' },
-  { cv: null, applications: [], asOf: '2026-10-23' },
+  { cv: null, applications: [], researches: [], asOf: '2026-10-23', markId: '9f2c41ab' },
 )
 
 const quiet = { onText: () => undefined, onBlock: () => undefined, signal: new AbortController().signal }

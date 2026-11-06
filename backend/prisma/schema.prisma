@@ -11,10 +11,10 @@ datasource db {
 }
 
 model User {
-  id            Int                @id @default(autoincrement())
-  email         String             @unique @db.VarChar(320)
-  passwordHash  String             @map("password_hash")
-  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  id            Int                  @id @default(autoincrement())
+  email         String               @unique @db.VarChar(320)
+  passwordHash  String               @map("password_hash")
+  createdAt     DateTime             @default(now()) @map("created_at") @db.Timestamptz
   tokens        AuthToken[]
   conversations Conversation[]
   cvVersions    CvVersion[]
@@ -24,6 +24,8 @@ model User {
   cvRuns        CvRun[]
   extractRuns   ExtractRun[]
   applications  Application[]
+  researches    CompanyResearch[]
+  researchRuns  CompanyResearchRun[]
 
   @@map("users")
 }
@@ -41,13 +43,14 @@ model AuthToken {
 }
 
 model Conversation {
-  id        Int       @id @default(autoincrement())
-  userId    Int       @map("user_id")
-  title     String    @db.VarChar(200)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages  Message[]
+  id         Int               @id @default(autoincrement())
+  userId     Int               @map("user_id")
+  title      String            @db.VarChar(200)
+  createdAt  DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages   Message[]
+  researches CompanyResearch[]
 
   @@index([userId])
   @@map("conversations")
@@ -75,6 +78,50 @@ model Message {
 
   @@index([conversationId])
   @@map("messages")
+}
+
+model CompanyResearch {
+  id                Int          @id @default(autoincrement())
+  userId            Int          @map("user_id")
+  conversationId    Int          @map("conversation_id")
+  company           String       @db.VarChar(300)
+  question          String       @db.VarChar(300)
+  content           String
+  sources           Json
+  suspiciousText    String?      @map("suspicious_text")
+  suspiciousSources Json         @map("suspicious_sources")
+  steps             Json
+  queries           Json
+  searchResults     Json         @map("search_results")
+  confirmedAt       DateTime?    @map("confirmed_at") @db.Timestamptz
+  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([conversationId])
+  @@map("company_researches")
+}
+
+enum CompanyResearchRunStatus {
+  running
+  ready
+  failed
+}
+
+model CompanyResearchRun {
+  id           Int                      @id @default(autoincrement())
+  userId       Int                      @map("user_id")
+  status       CompanyResearchRunStatus @default(running)
+  model        String                   @db.VarChar(64)
+  effort       String?                  @db.VarChar(16)
+  inputTokens  Int                      @default(0) @map("input_tokens")
+  outputTokens Int                      @default(0) @map("output_tokens")
+  createdAt    DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  user         User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("company_research_runs")
 }
 
 enum AnalysisStatus {
@@ -142,23 +189,23 @@ enum OfferType {
 }
 
 model Job {
-  id           Int                @id @default(autoincrement())
+  id           Int           @id @default(autoincrement())
   source       JobSource
-  userId       Int?               @map("user_id")
-  user         User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  externalId   String             @map("external_id") @db.VarChar(64)
-  title        String             @db.VarChar(300)
-  company      String?            @db.VarChar(300)
-  city         String             @db.VarChar(200)
-  region       String?            @db.VarChar(32)
+  userId       Int?          @map("user_id")
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  externalId   String        @map("external_id") @db.VarChar(64)
+  title        String        @db.VarChar(300)
+  company      String?       @db.VarChar(300)
+  city         String        @db.VarChar(200)
+  region       String?       @db.VarChar(32)
   description  String
-  offerType    OfferType          @map("offer_type")
-  role         String             @db.VarChar(32)
-  fullTime     Boolean            @map("full_time")
-  partTime     Boolean            @map("part_time")
-  salary       String?            @db.VarChar(200)
-  publishedAt  DateTime           @map("published_at") @db.Date
-  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  offerType    OfferType     @map("offer_type")
+  role         String        @db.VarChar(32)
+  fullTime     Boolean       @map("full_time")
+  partTime     Boolean       @map("part_time")
+  salary       String?       @db.VarChar(200)
+  publishedAt  DateTime      @map("published_at") @db.Date
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz
   matchResults MatchResult[]
   matchRuns    MatchRun[]
   applications Application[]

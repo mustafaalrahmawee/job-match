@@ -21,6 +21,7 @@ function chatMessage(role: Role, text: string, saved?: ApiMessage): ChatMessage 
     steps: saved?.steps ?? [],
     sources: saved?.sources ?? [],
     stopReason: saved?.stop_reason ?? null,
+    createdAt: saved?.created_at ?? new Date().toISOString(),
   }
 }
 
@@ -126,6 +127,7 @@ export const useCoachStore = defineStore('coach', () => {
             answer.text = done.message.text
             answer.steps = done.message.steps
             answer.sources = done.message.sources
+            answer.createdAt = done.message.created_at
           } else messages.value = messages.value.filter((m) => m !== answer)
         }
       })
@@ -155,6 +157,7 @@ export const useCoachStore = defineStore('coach', () => {
     rename,
     remove,
     load,
+    create,
     send,
     retry,
   }

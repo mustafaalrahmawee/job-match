@@ -22,6 +22,7 @@ export type ApiMessage = {
   steps: CoachStep[]
   sources: Source[]
   stop_reason: string | null
+  created_at: string
 }
 
 export type Conversation = { id: number; title: string; messages: ApiMessage[] }
@@ -43,7 +44,28 @@ export type ChatMessage = {
   steps: CoachStep[]
   sources: Source[]
   stopReason: string | null
+  createdAt: string
 }
+
+export type ResearchInput = { company: string; question: string }
+
+export type Research = {
+  id: number
+  conversation_id: number
+  company: string
+  question: string
+  text: string
+  steps: CoachStep[]
+  sources: Source[]
+  suspicious_text: string | null
+  suspicious_sources: Source[]
+  confirmed_at: string | null
+  created_at: string
+}
+
+export type ResearchOutcome = 'ready' | 'empty' | 'unfinished' | 'stopped' | 'refused'
+
+export type ResearchDone = { research: Research | null; outcome: ResearchOutcome }
 
 export const CV_ROLES = [
   'Frontend',

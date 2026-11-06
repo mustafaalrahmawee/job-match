@@ -170,9 +170,13 @@ export async function bearerFor(auth: AuthService, user: User): Promise<{ Author
 
 export function requestText({ system, messages }: MessageCreateParamsBase): string {
   const contents = [system ?? [], ...messages.map((message) => message.content)]
-  return contents
-    .flatMap((content) =>
-      typeof content === 'string' ? [content] : content.map((block) => (block.type === 'text' ? block.text : '')),
-    )
-    .join('\n')
+  const texts = (content: (typeof contents)[number]): string[] =>
+    typeof content === 'string'
+      ? [content]
+      : content.flatMap((block) => {
+          if (block.type === 'text') return [block.text]
+          if (block.type === 'tool_result' && block.content !== undefined) return texts(block.content as typeof content)
+          return []
+        })
+  return contents.flatMap(texts).join('\n')
 }

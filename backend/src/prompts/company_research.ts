@@ -1,4 +1,3 @@
-import { randomBytes } from 'node:crypto'
 import type {
   ContentBlock,
   ContentBlockParam,
@@ -104,8 +103,8 @@ const ENTITY = /&(amp|lt|gt|quot|apos);/g
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" }
 const ADDRESS = /https?:\/\/[^\s)\]>]+/giu
 
-function markedRequest({ company, question }: CompanyResearchInput, asOf: string): string {
-  const tag = `anfrage-${randomBytes(4).toString('hex')}`
+function markedRequest({ company, question }: CompanyResearchInput, asOf: string, markId: string): string {
+  const tag = `anfrage-${markId}`
   const field = (text: string) => text.replace(INVISIBLE_CHARS, '').replace(/\s+/gu, ' ').trim()
   return `<${tag} quelle="Formular im Coach-Fenster, von der Person ausgefüllt" stand="${asOf}">\nFirma: ${field(company)}\nFrage: ${field(question)}\n</${tag}>`
 }
@@ -196,6 +195,7 @@ export function companyResearchResult(content: ContentBlock[]): CompanyResearchR
 export function companyResearchRequest(
   input: CompanyResearchInput,
   asOf: string,
+  markId: string,
   steps: MessageParam[] = [],
   variant: Variant = {},
 ): MessageCreateParamsNonStreaming {
@@ -218,7 +218,7 @@ export function companyResearchRequest(
     },
     { id: 'examples', position: 4, tier: 3, versions: [COMPANY_RESEARCH_EXAMPLES], requires: ['contract', 'foreign'] },
     { id: 'glue', position: 5, tier: 3, versions: [COMPANY_RESEARCH_GLUE], requires: ['frame', 'request'] },
-    { id: 'request', position: 6, tier: 3, versions: [markedRequest(input, asOf)] },
+    { id: 'request', position: 6, tier: 3, versions: [markedRequest(input, asOf, markId)] },
     {
       id: 'refocus',
       position: 7,

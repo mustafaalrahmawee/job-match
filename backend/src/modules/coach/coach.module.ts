@@ -4,6 +4,7 @@ import type { SendStream } from '../../llm/send.js'
 import type { ApplicationsService } from '../applications/applications.service.js'
 import type { CvsService } from '../cvs/cvs.service.js'
 import type { MatchesService } from '../matches/matches.service.js'
+import type { ResearchReader } from '../research/research.reader.js'
 import { CoachController } from './coach.controller.js'
 import { coachRoutes } from './coach.routes.js'
 import { CoachService } from './coach.service.js'
@@ -14,11 +15,12 @@ export type CoachModuleDeps = {
   cvs: CvsService
   applications: ApplicationsService
   matches: MatchesService
+  research: ResearchReader
   authenticate: RequestHandler
 }
 
 export function createCoachModule(deps: CoachModuleDeps): { router: Router; service: CoachService } {
-  const service = new CoachService(deps.prisma, deps.sendStream, deps.cvs, deps.applications, deps.matches)
+  const service = new CoachService(deps.prisma, deps.sendStream, deps.cvs, deps.applications, deps.matches, deps.research)
   const controller = new CoachController(service)
   const router = coachRoutes(controller, deps.authenticate)
   return { router, service }

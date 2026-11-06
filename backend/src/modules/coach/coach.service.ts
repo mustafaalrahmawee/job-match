@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto'
 import type {
   ContentBlock,
   ContentBlockParam,
@@ -12,10 +13,9 @@ import {
   applicationInputSchema,
   applicationResult,
   COACH_AGENT_APPLICATION_TOOL,
-  COACH_AGENT_CONTINUATIONS,
   COACH_AGENT_ERRORS,
-  COACH_AGENT_WEB_SEARCHES,
   coachAgentRequest,
+  researchHits,
   type ChatSettings,
   type CoachApplication,
   type CoachToolError,
@@ -25,6 +25,7 @@ import { AppError, NotFoundError } from '../../shared/errors.js'
 import type { ApplicationsService } from '../applications/applications.service.js'
 import type { CvsService } from '../cvs/cvs.service.js'
 import type { MatchesService } from '../matches/matches.service.js'
+import type { ResearchReader } from '../research/research.reader.js'
 import type { CoachStep } from './coach.schemas.js'
 
 export type ConversationWithMessages = Conversation & { messages: Message[] }
@@ -33,7 +34,7 @@ export type Reply = { message: Message | null; stopReason: SendResult['stopReaso
 
 export type ReplyHandlers = { onText: (text: string) => void; onStep: (step: CoachStep) => void; signal: AbortSignal }
 
-const STORED_STOP_REASONS = new Set(['end_turn', 'max_tokens', 'model_context_window_exceeded', 'stopped', 'pause_turn'])
+const STORED_STOP_REASONS = new Set(['end_turn', 'max_tokens', 'model_context_window_exceeded', 'stopped'])
 
 export class CoachService {
   constructor(
@@ -42,6 +43,7 @@ export class CoachService {
     private readonly cvs: CvsService,
     private readonly applications: ApplicationsService,
     private readonly matches: MatchesService,
+    private readonly research: ResearchReader,
   ) { }
 
   createConversation(userId: number, title: string): Promise<Conversation> {
@@ -98,79 +100,53 @@ export class CoachService {
       role: message.role,
       content: message.content as unknown as ContentBlockParam[],
     }))
-    const [cv, applications] = await Promise.all([this.cvs.readyAnalysis(userId), this.applications.list(userId)])
+    const [cv, applications, researches] = await Promise.all([
+      this.cvs.readyAnalysis(userId),
+      this.applications.list(userId),
+      this.research.confirmed(userId, conversationId),
+    ])
     const context = {
       cv,
       applications: applications.map((application) => coachApplication(application, application.changedAt)),
+      researches,
       asOf: new Date().toISOString().slice(0, 10),
+      markId: randomBytes(4).toString('hex'),
     }
     const steps: MessageParam[] = []
     const shown: CoachStep[] = []
     const content: ContentBlock[] = []
-    const queries = new Map<string, string>()
-    const show = (step: CoachStep) => {
-      shown.push(step)
-      onStep(step)
-    }
-    const onBlock = (block: ContentBlock) => {
-      if (block.type === 'server_tool_use' && block.name === 'web_search') {
-        const { query } = block.input as { query?: unknown }
-        queries.set(block.id, typeof query === 'string' ? query : '')
-      }
-      if (block.type === 'web_search_tool_result') {
-        const sources = Array.isArray(block.content) ? block.content.length : null
-        show({ kind: 'web_search', query: queries.get(block.tool_use_id) ?? '', sources })
-        queries.delete(block.tool_use_id)
-      }
-    }
     let requests = 0
-    let continuations = 0
-    let searches = 0
     let inputTokens = 0
     let outputTokens = 0
     for (;;) {
       const params = coachAgentRequest(messages, steps, settings, context)
-      const result = await this.send(params, { onText, onBlock, signal })
+      const result = await this.send(params, { onText, onBlock: () => undefined, signal })
       requests += 1
-      searches += result.webSearches
       inputTokens += result.inputTokens
       outputTokens += result.outputTokens
       content.push(...result.content.filter((block) => block.type === 'text'))
-      if (result.stopReason === 'pause_turn' && continuations < COACH_AGENT_CONTINUATIONS) {
-        continuations += 1
-        steps.push({ role: 'assistant', content: result.content })
-        continue
-      }
       if (result.stopReason === 'tool_use' && params.tool_choice?.type !== 'none') {
         steps.push({ role: 'assistant', content: result.content })
         const results: ToolResultBlockParam[] = []
         for (const block of result.content) {
           if (block.type !== 'tool_use') continue
           const [step, toolResult] = await this.useTool(userId, block)
-          show(step)
+          shown.push(step)
+          onStep(step)
           results.push(toolResult)
         }
         steps.push({ role: 'user', content: results })
         continue
       }
-      for (const query of queries.values()) show({ kind: 'web_search', query, sources: null })
-      const turn = `Coach turn in conversation ${conversationId}`
       const cost = costUsd(params.model, {
         input_tokens: inputTokens,
         output_tokens: outputTokens,
         cache_read_input_tokens: null,
         cache_creation_input_tokens: null,
-        server_tool_use: { web_search_requests: searches },
       })
       console.info(
-        `${turn}: ${requests} requests, ${inputTokens} input and ${outputTokens} output tokens, ${searches} web searches, ${cost.toFixed(4)} $`,
+        `Coach turn in conversation ${conversationId}: ${requests} requests, ${inputTokens} input and ${outputTokens} output tokens, ${researchHits(researches)} research hits, ${cost.toFixed(4)} $`,
       )
-      if (searches > COACH_AGENT_WEB_SEARCHES) {
-        console.warn(`${turn}: ${searches} web searches with ${continuations} continuations`)
-      }
-      if (result.stopReason === 'pause_turn') {
-        console.warn(`${turn}: ended at the limit of ${COACH_AGENT_CONTINUATIONS} continuations`)
-      }
       if (result.stopReason === 'refusal') {
         console.warn(`Coach refusal in conversation ${conversationId}: ${result.stopDetails?.category ?? 'no category'}`)
         return { message: null, stopReason: result.stopReason }
@@ -179,7 +155,7 @@ export class CoachService {
         throw new Error(`Unexpected stop reason ${result.stopReason} in conversation ${conversationId}`)
       }
       const hasText = content.some((block) => block.type === 'text' && block.text.length > 0)
-      if (!hasText && result.stopReason !== 'pause_turn') return { message: null, stopReason: result.stopReason }
+      if (!hasText) return { message: null, stopReason: result.stopReason }
       const message = await this.prisma.message.create({
         data: {
           conversationId,

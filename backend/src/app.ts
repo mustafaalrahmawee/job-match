@@ -8,6 +8,8 @@ import { createCvsModule } from './modules/cvs/cvs.module.js'
 import type { BaClient } from './modules/jobs/jobs.ba.js'
 import { createJobsModule } from './modules/jobs/jobs.module.js'
 import { createMatchesModule } from './modules/matches/matches.module.js'
+import { createResearchModule } from './modules/research/research.module.js'
+import { ResearchReader } from './modules/research/research.reader.js'
 import { requireAuth } from './shared/auth.middleware.js'
 import { errorHandler } from './shared/errors.js'
 
@@ -35,8 +37,10 @@ export function createApp({ prisma, tokenTtlDays, sendStream, sendMessage, ba }:
     cvs: cvs.service,
     applications: applications.service,
     matches: matches.service,
+    research: new ResearchReader(prisma),
     authenticate,
   })
+  const research = createResearchModule({ prisma, sendStream, coach: coach.service, authenticate })
 
   const api = Router()
   api.get('/health', async (_req, res) => {
@@ -45,6 +49,7 @@ export function createApp({ prisma, tokenTtlDays, sendStream, sendMessage, ba }:
   })
   api.use('/auth', auth.router)
   api.use('/coach', coach.router)
+  api.use('/research', research.router)
   api.use('/cvs', cvs.router)
   api.use('/jobs', jobs.router)
   api.use('/matches', matches.router)

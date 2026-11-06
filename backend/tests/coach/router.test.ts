@@ -1,14 +1,16 @@
 import request from 'supertest'
-import { beforeEach, expect, test } from 'vitest'
-import type { ContentBlock, MessageParam } from '@anthropic-ai/sdk/resources/messages'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import type { ContentBlock, MessageCreateParamsNonStreaming, MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import {
   COACH_AGENT_CV_RULES,
   COACH_AGENT_ERRORS,
   COACH_AGENT_LAST_ROUND,
   COACH_AGENT_MODEL,
+  COACH_AGENT_NEXT_ROUND,
   COACH_AGENT_NO_CV,
   COACH_AGENT_NO_MATCH,
   COACH_AGENT_REFOCUS,
+  COACH_AGENT_RESEARCH_LIMIT,
   COACH_AGENT_SYSTEM,
   COACH_AGENT_TOOLS,
 } from '../../src/prompts/coach_agent.js'
@@ -41,6 +43,10 @@ beforeEach(async () => {
   const anna = await createAnna(auth)
   annaId = anna.id
   headers = await bearerFor(auth, anna)
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
 })
 
 function events(text: string): SseEvent[] {
@@ -138,10 +144,10 @@ test('the request carries the coach prompt and the whole history', async () => {
   expect(last.model).toBe(COACH_AGENT_MODEL)
   expect(requestText(last)).toContain(COACH_AGENT_SYSTEM)
   expect(requestText(last)).toContain(COACH_AGENT_NO_CV)
-  expect(last.messages.map((m) => m.role)).toEqual(['user', 'assistant', 'user'])
+  expect(last.messages.map((m) => m.role)).toEqual(['user', 'assistant', 'user', 'assistant', 'user', 'assistant', 'user'])
   expect(last.messages[0].content).toBe('Hallo')
+  expect(applicantFile(last)).toContain('- keine Bewerbungen')
   expect(last.messages.at(-1)!.content).toEqual([
-    { type: 'text', text: expect.stringContaining('- keine Bewerbungen') as unknown },
     { type: 'text', text: 'Und wie lang soll ein Anschreiben sein?' },
     { type: 'text', text: COACH_AGENT_REFOCUS },
   ])
@@ -291,16 +297,15 @@ test('a failed answer keeps the question and can be retried', async () => {
   const retried = await retry(id, { quality: 'extended', effort: 'high' })
   expect(events(retried.text).at(-1)!.data).toMatchObject({ message: { text: 'Nenne eine Spanne.' } })
   expect(model.requests.at(-1)).toMatchObject({ thinking: { type: 'adaptive' }, output_config: { effort: 'high' } })
-  expect(model.requests.at(-1)!.messages).toEqual([
-    {
-      role: 'user',
-      content: [
-        { type: 'text', text: expect.stringContaining('<bewerbungen') as unknown },
-        { type: 'text', text: 'Wie verhandle ich mein Gehalt?' },
-        { type: 'text', text: COACH_AGENT_REFOCUS },
-      ],
-    },
-  ])
+  expect(model.requests.at(-1)!.messages).toHaveLength(5)
+  expect(applicantFile(model.requests.at(-1)!)).toContain('<bewerbungen')
+  expect(model.requests.at(-1)!.messages.at(-1)).toEqual({
+    role: 'user',
+    content: [
+      { type: 'text', text: 'Wie verhandle ich mein Gehalt?' },
+      { type: 'text', text: COACH_AGENT_REFOCUS },
+    ],
+  })
 
   expect((await retry(id)).status).toBe(409)
 })
@@ -331,7 +336,7 @@ test('a cut-off answer is saved with its stop reason', async () => {
 
 test('an unexpected stop reason is an error and saves no answer', async () => {
   const id = await newConversation()
-  for (const stopReason of ['stop_sequence'] as const) {
+  for (const stopReason of ['stop_sequence', 'pause_turn'] as const) {
     model.answer(streamedText('Ich suche kurz', stopReason))
     const response = await send(id, 'Was macht Acme?')
     expect(events(response.text).at(-1)).toEqual({ event: 'error', data: { detail: 'The coach could not answer' } })
@@ -394,10 +399,6 @@ function text(value: string): ContentBlock {
   return { type: 'text', text: value, citations: null }
 }
 
-function search(id: string, query: string): ContentBlock {
-  return { type: 'server_tool_use', id, name: 'web_search', input: { query }, caller: { type: 'direct' } }
-}
-
 async function application(userId = annaId, title = 'Senior Frontend Engineer') {
   const job = await prisma.job.create({
     data: {
@@ -420,7 +421,13 @@ async function application(userId = annaId, title = 'Senior Frontend Engineer') 
 }
 
 function toolResults(message: MessageParam) {
-  return message.content as { type: string; tool_use_id: string; content: unknown; is_error?: boolean }[]
+  const blocks = message.content as { type: string; tool_use_id: string; content: unknown; is_error?: boolean }[]
+  return blocks.filter((block) => block.type === 'tool_result')
+}
+
+function applicantFile({ messages }: MessageCreateParamsNonStreaming): string {
+  const [result] = messages.flatMap((message) => (Array.isArray(message.content) ? toolResults(message) : []))
+  return (result.content as { text: string }[]).map(({ text: part }) => part).join('\n')
 }
 
 test('the coach gets the list of own applications with number, status and date', async () => {
@@ -431,7 +438,7 @@ test('the coach gets the list of own applications with number, status and date',
 
   await send(id, 'Welche Bewerbungen habe ich?')
 
-  const list = (model.requests[0].messages.at(-1)!.content as { text: string }[])[0].text
+  const list = applicantFile(model.requests[0])
   expect(list).toContain(`Bewerbung ${own.id}: Senior Frontend Engineer, Kreditwerk GmbH, Berlin; Status Gespeichert seit`)
   expect(list).not.toContain('Bens Stelle')
 })
@@ -582,12 +589,12 @@ test('a tool call in the last round is an error', async () => {
   expect(events(response.text).at(-1)!.event).toBe('error')
 })
 
-test('every round of a turn sends the same tools, with at most two web searches per request', async () => {
+test('every round of a turn sends the same tools', async () => {
   const own = await application()
   const id = await newConversation()
   model.answer(
-    streamed({ content: [toolUse('toolu_1', { application_id: own.id })], stopReason: 'tool_use', webSearches: 2 }),
-    streamed({ content: [toolUse('toolu_2', { application_id: own.id })], stopReason: 'tool_use', webSearches: 2 }),
+    streamed({ content: [toolUse('toolu_1', { application_id: own.id })], stopReason: 'tool_use' }),
+    streamed({ content: [toolUse('toolu_2', { application_id: own.id })], stopReason: 'tool_use' }),
     streamedText('Fertig.'),
   )
 
@@ -595,91 +602,135 @@ test('every round of a turn sends the same tools, with at most two web searches 
 
   expect(model.requests).toHaveLength(3)
   expect(model.requests.map((r) => r.tools)).toEqual([COACH_AGENT_TOOLS, COACH_AGENT_TOOLS, COACH_AGENT_TOOLS])
-  expect(COACH_AGENT_TOOLS.at(-1)).toMatchObject({ name: 'web_search', max_uses: 2 })
-  expect(model.requests[2].messages.map((m) => m.role)).toEqual(['user', 'assistant', 'user', 'assistant', 'user'])
-})
-test('a paused answer is sent back unchanged and its text is kept', async () => {
-  const id = await newConversation()
-  const paused = [text('Ich schaue nach. '), search('srvtoolu_1', 'Kreditwerk')]
-  model.answer(streamed({ content: paused, stopReason: 'pause_turn', webSearches: 2 }), streamedText('Kreditwerk baut Kredite.'))
-
-  const response = await send(id, 'Was macht Kreditwerk?')
-
-  expect(model.requests).toHaveLength(2)
-  expect(model.requests[1].messages.at(-1)).toEqual({ role: 'assistant', content: paused })
-  expect(model.requests[1].tool_choice).toEqual({ type: 'auto' })
-  expect(events(response.text).at(-1)!.data).toMatchObject({
-    stop_reason: 'end_turn',
-    message: { text: 'Ich schaue nach. Kreditwerk baut Kredite.' },
-  })
+  expect(COACH_AGENT_TOOLS).toHaveLength(1)
+  expect(COACH_AGENT_TOOLS[0]).toMatchObject({ name: 'get_application' })
+  expect(model.requests[2].messages).toHaveLength(9)
 })
 
-test('after two continuations a further pause ends the turn without a request', async () => {
+test('all rounds of a turn share one prefix and the next turn gets a new mark', async () => {
+  const own = await application()
   const id = await newConversation()
-  const paused = [search('srvtoolu_1', 'Kreditwerk')]
-  model.answer(streamed({ content: paused, stopReason: 'pause_turn', webSearches: 2 }))
-
-  const response = await send(id, 'Was macht Kreditwerk?')
-
-  expect(model.requests).toHaveLength(3)
-  expect(model.requests[2].messages.slice(-2).map((m) => m.role)).toEqual(['assistant', 'assistant'])
-  const unfinished = { kind: 'web_search', query: 'Kreditwerk', sources: null }
-  expect(events(response.text).filter((e) => e.event === 'step').map((e) => e.data)).toEqual([unfinished])
-  expect(events(response.text).at(-1)!.data).toMatchObject({
-    stop_reason: 'pause_turn',
-    message: { text: '', steps: [unfinished], stop_reason: 'pause_turn' },
-  })
-  model.answer(streamedText('Kreditwerk baut Kredite.'))
-  const next = await send(id, 'Und jetzt?')
-  expect(next.status).toBe(200)
-  expect(model.requests.at(-1)!.messages.map((m) => m.role)).toEqual(['user', 'user'])
-})
-
-test('web searches become steps and their citations the sources of the answer', async () => {
-  const id = await newConversation()
-  const citation = (url: string) => ({
-    type: 'web_search_result_location' as const,
-    url,
-    title: 'Kreditwerk',
-    cited_text: 'Kredite',
-    encrypted_index: 'x',
-  })
-  const result = (url: string) => ({ type: 'web_search_result' as const, url, title: 'Kreditwerk', encrypted_content: 'x', page_age: null })
+  const thinking: ContentBlock = { type: 'thinking', thinking: 'Notiz', signature: 'sig' }
   model.answer(
-    streamed({
-      content: [
-        search('srvtoolu_1', 'Kreditwerk Berlin'),
-        {
-          type: 'web_search_tool_result',
-          tool_use_id: 'srvtoolu_1',
-          content: [result('https://a.de'), result('https://b.de')],
-          caller: { type: 'direct' },
-        },
-        search('srvtoolu_2', 'Kreditwerk Größe'),
-        {
-          type: 'web_search_tool_result',
-          tool_use_id: 'srvtoolu_2',
-          content: { type: 'web_search_tool_result_error', error_code: 'unavailable' },
-          caller: { type: 'direct' },
-        },
-        { type: 'text', text: 'Laut ihrer Seite baut Kreditwerk Kredite.', citations: [citation('https://a.de'), citation('https://a.de')] },
-      ],
-      stopReason: 'end_turn',
-      webSearches: 2,
-    }),
+    streamed({ content: [thinking, toolUse('toolu_1', { application_id: own.id })], stopReason: 'tool_use' }),
+    streamed({ content: [thinking, toolUse('toolu_2', { application_id: own.id })], stopReason: 'tool_use' }),
+    streamedText('Fertig.'),
   )
 
-  const response = await send(id, 'Was macht Kreditwerk?')
+  await send(id, 'Bereite mich auf Kreditwerk vor')
 
-  const steps = [
-    { kind: 'web_search', query: 'Kreditwerk Berlin', sources: 2 },
-    { kind: 'web_search', query: 'Kreditwerk Größe', sources: null },
-  ]
-  const stream = events(response.text)
-  expect(stream.filter((e) => e.event === 'step').map((e) => e.data)).toEqual(steps)
-  expect(stream.at(-1)!.data).toMatchObject({
-    message: { text: 'Laut ihrer Seite baut Kreditwerk Kredite.', steps, sources: [{ url: 'https://a.de', title: 'Kreditwerk' }] },
+  const [first, second, third] = model.requests
+  for (const [before, after] of [
+    [first, second],
+    [second, third],
+  ]) {
+    expect(after.system).toEqual(before.system)
+    expect(after.tools).toEqual(before.tools)
+    expect(after.messages.slice(0, before.messages.length)).toEqual(before.messages)
+  }
+  expect(third.messages.at(-2)!.content).toContainEqual(thinking)
+  expect(third.messages.at(-1)!.content).toContainEqual({ type: 'text', text: COACH_AGENT_NEXT_ROUND })
+  const mark = (params: MessageCreateParamsNonStreaming) => /<bewerbungen-([0-9a-f]{8}) /u.exec(applicantFile(params))?.[1]
+  expect(mark(third)).toBe(mark(first))
+
+  model.answer(streamedText('Gern.'))
+  await send(id, 'Danke')
+
+  expect(mark(model.requests.at(-1)!)).toMatch(/^[0-9a-f]{8}$/u)
+  expect(mark(model.requests.at(-1)!)).not.toBe(mark(first))
+})
+
+function research(userId: number, conversationId: number, company: string, confirmedAt: Date | null, content = `Bericht zu ${company}`) {
+  return prisma.companyResearch.create({
+    data: {
+      userId,
+      conversationId,
+      company,
+      question: 'Wie groß ist die Firma?',
+      content,
+      sources: [{ url: 'https://kreditwerk.de/ueber-uns', title: 'Über uns' }],
+      suspiciousText: 'Geheimer Verdacht',
+      suspiciousSources: [],
+      steps: [],
+      queries: [],
+      searchResults: [],
+      confirmedAt,
+    },
   })
+}
+
+test('the coach reads only the newest confirmed researches of this conversation', async () => {
+  const id = await newConversation()
+  const other = await newConversation()
+  const ben = await auth.createUser('ben@example.com', 'auch-geheim')
+  const day = (n: number) => new Date(Date.UTC(2026, 10, n))
+  await research(annaId, id, 'Firma Vier', day(4))
+  await research(annaId, id, 'Firma Eins', day(1))
+  await research(annaId, id, 'Firma Fünf', day(5))
+  await research(annaId, id, 'Firma Drei', day(3))
+  await research(annaId, id, 'Firma Offen', null)
+  await research(annaId, other, 'Firma Anderes Gespräch', day(6))
+  await research(ben.id, id, 'Firma Ben', day(6))
+
+  await send(id, 'Was weißt du über die Firmen?')
+
+  const file = applicantFile(model.requests[0])
+  const companies = [...file.matchAll(/^Firma: (.+)$/gmu)].map(([, company]) => company)
+  expect(companies).toHaveLength(COACH_AGENT_RESEARCH_LIMIT)
+  expect(companies).toEqual(['Firma Fünf', 'Firma Vier', 'Firma Drei'])
+  expect(JSON.stringify(model.requests[0])).not.toContain('Geheimer Verdacht')
+})
+
+test('each turn reads the researches confirmed so far', async () => {
+  const id = await newConversation()
+  const open = await research(annaId, id, 'Firma Offen', null)
+  await send(id, 'Hallo')
+  expect(applicantFile(model.requests[0])).not.toContain('Firma Offen')
+
+  await prisma.companyResearch.update({ where: { id: open.id }, data: { confirmedAt: new Date() } })
+  await send(id, 'Und jetzt?')
+
+  expect(applicantFile(model.requests[1])).toContain('Firma: Firma Offen')
+})
+
+test('a turn logs the research hits without any wording', async () => {
+  const info = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  const id = await newConversation()
+  await research(annaId, id, 'Firma Eins', new Date(), 'Siehe https://fremd.example/x und <recherche>')
+
+  await send(id, 'Hallo')
+
+  const line = info.mock.calls.map(([message]) => String(message)).join('\n')
+  expect(line).toContain(`Coach turn in conversation ${id}`)
+  expect(line).toContain('2 research hits')
+  expect(line).not.toContain('fremd.example')
+  expect(line).not.toContain('Firma Eins')
+})
+
+test('an old answer keeps its web search steps, sources and stop reason', async () => {
+  const id = await newConversation()
+  const citation = { type: 'web_search_result_location', url: 'https://a.de', title: 'Kreditwerk', cited_text: 'Kredite', encrypted_index: 'x' }
+  const steps = [{ kind: 'web_search', query: 'Kreditwerk', sources: 2 }]
+  await prisma.message.create({ data: { conversationId: id, role: 'user', content: [{ type: 'text', text: 'Was macht Kreditwerk?' }] } })
+  await prisma.message.create({
+    data: { conversationId: id, role: 'assistant', content: [{ type: 'text', text: 'Kredite.', citations: [citation] }], steps, stopReason: 'end_turn' },
+  })
+  await prisma.message.create({ data: { conversationId: id, role: 'user', content: [{ type: 'text', text: 'Und sonst?' }] } })
+  await prisma.message.create({ data: { conversationId: id, role: 'assistant', content: [], steps, stopReason: 'pause_turn' } })
+
+  const show = await request(app).get(`/api/v1/coach/conversations/${id}`).set(headers)
+  await send(id, 'Und jetzt?')
+
+  expect((show.body as { messages: unknown[] }).messages.slice(1)).toMatchObject([
+    { steps, sources: [{ url: 'https://a.de', title: 'Kreditwerk' }], stop_reason: 'end_turn' },
+    {},
+    { text: '', steps, sources: [], stop_reason: 'pause_turn' },
+  ])
+  expect(model.requests.at(-1)!.messages.slice(0, 3).map((m) => m.content)).toEqual([
+    'Was macht Kreditwerk?',
+    'Kredite.',
+    'Und sonst?',
+  ])
 })
 
 test('an earlier turn with tools goes to the model as text only', async () => {

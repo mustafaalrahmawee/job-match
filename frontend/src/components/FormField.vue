@@ -6,8 +6,10 @@
       v-model="model"
       :type="type ?? 'text'"
       :autocomplete="autocomplete"
+      :placeholder="placeholder"
+      :maxlength="maxlength"
       required
-      class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
+      class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-3 focus:ring-ring/50"
     />
   </div>
 </template>
@@ -15,7 +17,7 @@
 <script setup lang="ts">
 import { useId } from 'vue'
 
-defineProps<{ label: string; type?: string; autocomplete?: string }>()
+defineProps<{ label: string; type?: string; autocomplete?: string; placeholder?: string; maxlength?: number }>()
 
 const model = defineModel<string>({ default: '' })
 const id = useId()

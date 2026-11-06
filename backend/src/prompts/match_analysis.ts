@@ -162,7 +162,7 @@ export function adText(job: MatchJob): string {
   return text.replace(INVISIBLE_CHARS, '')
 }
 
-function adDocument(job: MatchJob, text = adText(job), title = AD_TITLES[job.source]): ContentBlockParam {
+export function adDocument(job: MatchJob, text = adText(job), title = AD_TITLES[job.source]): ContentBlockParam {
   return {
     type: 'document',
     source: { type: 'text', media_type: 'text/plain', data: text },
