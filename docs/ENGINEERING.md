@@ -80,11 +80,12 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
   Modellaufruf, Modell mit Werkzeug, Workflow, Agent. Jede Funktion bekommt die unterste Stufe, die
   sie löst, und jede Unit das billigste Modell, das ihre Eval besteht. Beispiel Coach (UC-11):
   Stelle speichern und Status setzen gibt es schon als Formular (UC-08, UC-10), sie bleiben Code.
-  Der Coach bekommt nur lesende Werkzeuge, die Bewerbung lesen und die Websuche, weil nur dort das
-  Modell etwas kann, was Code nicht kann: Interviewfragen aus Anzeige und Lücken schreiben und eine
-  Firma recherchieren, bei der die Zahl der Suchen vorher offen ist. Schreibende Werkzeuge im Chat
-  hätten die Oberfläche verdoppelt und das größte Risiko gebracht: eine Anweisung in einer Anzeige
-  oder Webseite hätte Daten der Person ändern können.
+  Der Coach bekommt nur ein lesendes Werkzeug, die Bewerbung lesen, weil nur dort das Modell etwas
+  kann, was Code nicht kann: Interviewfragen aus Anzeige und Lücken schreiben. Die Firmenrecherche
+  läuft als eigene Unit `company_research` mit der Websuche, weil die Zahl der Suchen vorher offen
+  ist; die Person startet sie per Formular, und die Unit bekommt keine privaten Daten. Schreibende
+  Werkzeuge im Chat hätten die Oberfläche verdoppelt und das größte Risiko gebracht: eine Anweisung
+  in einer Anzeige oder Webseite hätte Daten der Person ändern können.
 
 ## Was noch nicht gebaut ist
 
