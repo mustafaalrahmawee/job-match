@@ -14,5 +14,3 @@ export const COMPANY_RESEARCH_TITLE_MAX_CHARS = 200
 
 export const COMPANY_RESEARCH_ANSWER_TAG = 'antwort'
 export const COMPANY_RESEARCH_FLAG_TAG = 'meldung'
-
-export const INVISIBLE_CHARS = /[\u{E0000}-\u{E007F}\u{200B}-\u{200D}\u{2060}]|[\u{FE00}-\u{FE0F}]/gu

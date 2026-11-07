@@ -1,5 +1,6 @@
 import type { MessageCreateParamsNonStreaming, MessageParam } from '@anthropic-ai/sdk/resources/messages'
-import { assemble, type PromptElement } from '../../llm/assemble.js'
+import { assemble, joined, type PromptElement } from '../../llm/assemble.js'
+import { marked } from '../../llm/untrusted.js'
 import {
   COACH_AGENT_MAX_TOKENS,
   COACH_AGENT_MODEL,
@@ -12,12 +13,11 @@ import {
 import {
   applicationsVersions,
   cvVersions,
-  marked,
   messageText,
   recentHistory,
   researchAside,
 } from './coach_agent.material.js'
-import type { ChatSettings, CoachAgentContext, Variant } from './coach_agent.schemas.js'
+import type { ChatSettings, CoachAgentContext, CoachVariant } from './coach_agent.schemas.js'
 import {
   COACH_AGENT_APPLICATIONS_GLUE,
   COACH_AGENT_CONTRACT,
@@ -47,7 +47,7 @@ export function coachAgentRequest(
   steps: MessageParam[],
   { quality, effort }: ChatSettings,
   { cv, applications, researches, asOf, markId }: CoachAgentContext,
-  variant: Variant = {},
+  variant: CoachVariant = {},
 ): MessageCreateParamsNonStreaming {
   const { turns, cut } = recentHistory(messages.slice(0, -1))
   const base = 5 + turns.length
@@ -156,17 +156,12 @@ export function coachAgentRequest(
   })
   const { texts, dropped } = assemble(elements, COACH_AGENT_TURN_BUDGET)
   const { texts: stepTexts } = assemble(stepElements, COACH_AGENT_STEPS_BUDGET)
-  const joined = (parts: string[]) =>
-    [...texts]
-      .filter(([key]) => parts.includes(key))
-      .map(([, text]) => text)
-      .join('\n\n')
   const gap = cut || dropped.some((key) => key.startsWith('turn-'))
   const file = [...texts]
     .filter(([key]) => FILE_PARTS.includes(key))
     .map(([, text]) => ({ type: 'text' as const, text }))
   const result = file.length ? file : [{ type: 'text' as const, text: texts.get('fileEmpty')! }]
-  const glue = joined(GLUE_PARTS)
+  const glue = joined(texts, GLUE_PARTS)
   const history = turns.flatMap(({ role }, index): MessageParam[] => {
     const content = texts.get(`turn-${index}`)
     return content === undefined ? [] : [{ role, content }]
@@ -183,7 +178,7 @@ export function coachAgentRequest(
     thinking: COACH_AGENT_THINKING[variant.quality ?? quality],
     output_config: { effort: variant.effort ?? effort },
     system: [
-      { type: 'text', text: joined(SYSTEM_PARTS) },
+      { type: 'text', text: joined(texts, SYSTEM_PARTS) },
       ...(gap ? [{ type: 'text' as const, text: texts.get('historyNote')! }] : []),
     ],
     tools: COACH_AGENT_TOOLS,

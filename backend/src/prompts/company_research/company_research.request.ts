@@ -3,7 +3,7 @@ import type {
   MessageCreateParamsNonStreaming,
   MessageParam,
 } from '@anthropic-ai/sdk/resources/messages'
-import { assemble, type PromptElement } from '../../llm/assemble.js'
+import { assemble, joined, type PromptElement, type Variant } from '../../llm/assemble.js'
 import {
   COMPANY_RESEARCH_EFFORT,
   COMPANY_RESEARCH_INPUT_BUDGET,
@@ -12,7 +12,7 @@ import {
   COMPANY_RESEARCH_THINKING,
 } from './company_research.config.js'
 import { markedRequest } from './company_research.material.js'
-import type { CompanyResearchInput, Variant } from './company_research.schemas.js'
+import type { CompanyResearchInput } from './company_research.schemas.js'
 import {
   COMPANY_RESEARCH_CONTRACT,
   COMPANY_RESEARCH_EXAMPLES,
@@ -71,10 +71,6 @@ export function companyResearchRequest(
     ),
   ]
   const { texts } = assemble(elements, COMPANY_RESEARCH_INPUT_BUDGET)
-  const system = [...texts]
-    .filter(([id]) => SYSTEM_PARTS.includes(id))
-    .map(([, text]) => text)
-    .join('\n\n')
   const content: ContentBlockParam[] = [
     { type: 'text', text: texts.get('request')! },
     { type: 'text', text: texts.get('refocus')! },
@@ -85,7 +81,7 @@ export function companyResearchRequest(
     max_tokens: COMPANY_RESEARCH_MAX_TOKENS,
     thinking: COMPANY_RESEARCH_THINKING,
     output_config: { effort: variant.effort ?? COMPANY_RESEARCH_EFFORT },
-    system,
+    system: joined(texts, SYSTEM_PARTS),
     tools: COMPANY_RESEARCH_TOOLS,
     messages: [{ role: 'user', content }, ...tail],
   }

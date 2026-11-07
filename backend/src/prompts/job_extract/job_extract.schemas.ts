@@ -1,8 +1,5 @@
-import type { OutputConfig } from '@anthropic-ai/sdk/resources/messages'
 import { z } from 'zod'
 import { OFFER_TYPES, type JobDraft } from '../../modules/jobs/jobs.schemas.js'
-
-export type Variant = { model?: string; effort?: OutputConfig['effort'] }
 
 export type JobExtractInput =
   | { kind: 'text'; text: string }

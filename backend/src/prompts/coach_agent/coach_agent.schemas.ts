@@ -1,4 +1,5 @@
-import type { MessageParam, OutputConfig } from '@anthropic-ai/sdk/resources/messages'
+import type { MessageParam } from '@anthropic-ai/sdk/resources/messages'
+import type { Variant } from '../../llm/assemble.js'
 import type { ApplicationStatus } from '../../modules/applications/applications.schemas.js'
 import type { CompanyResearchSource } from '../company_research/company_research.schemas.js'
 import type { CoachCv } from '../cv_analysis/cv_analysis.schemas.js'
@@ -8,7 +9,7 @@ import type { COACH_AGENT_ERRORS } from './coach_agent.texts.js'
 export type Quality = keyof typeof COACH_AGENT_THINKING
 export type Effort = (typeof COACH_AGENT_EFFORTS)[number]
 export type ChatSettings = { quality: Quality; effort: Effort }
-export type Variant = { model?: string; effort?: OutputConfig['effort']; quality?: Quality }
+export type CoachVariant = Variant & { quality?: Quality }
 
 export type CoachApplication = {
   id: number

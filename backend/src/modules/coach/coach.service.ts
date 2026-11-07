@@ -1,4 +1,3 @@
-import { randomBytes } from 'node:crypto'
 import type {
   ContentBlock,
   ContentBlockParam,
@@ -9,6 +8,7 @@ import type {
 import type { Application, Conversation, Job, Message, Prisma, PrismaClient } from '../../generated/prisma/client.js'
 import { costUsd } from '../../llm/costs.js'
 import type { SendResult, SendStream } from '../../llm/send.js'
+import { newMarkId } from '../../llm/untrusted.js'
 import { applicationResult } from '../../prompts/coach_agent/coach_agent.material.js'
 import { coachAgentRequest } from '../../prompts/coach_agent/coach_agent.request.js'
 import { researchHits } from '../../prompts/coach_agent/coach_agent.result.js'
@@ -112,7 +112,7 @@ export class CoachService {
       applications: applications.map((application) => coachApplication(application, application.changedAt)),
       researches,
       asOf: new Date().toISOString().slice(0, 10),
-      markId: randomBytes(4).toString('hex'),
+      markId: newMarkId(),
     }
     const steps: MessageParam[] = []
     const shown: CoachStep[] = []

@@ -1,3 +1,5 @@
+import type { OutputConfig } from '@anthropic-ai/sdk/resources/messages'
+
 export type Tier = 1 | 2 | 3
 
 export type PromptElement = {
@@ -10,6 +12,8 @@ export type PromptElement = {
 }
 
 export type Assembly = { texts: Map<string, string>; dropped: string[]; tokens: number }
+
+export type Variant = { model?: string; effort?: OutputConfig['effort'] }
 
 export function estimateTokens(text: string): number {
   return Math.ceil(text.length / 3)
@@ -49,4 +53,11 @@ export function assemble(elements: PromptElement[], budget: number, measure = es
       .map((element) => [element.id, element.versions[chosen.get(element.id)!]]),
   )
   return { texts, dropped, tokens }
+}
+
+export function joined(texts: Map<string, string>, parts: string[]): string {
+  return [...texts]
+    .filter(([id]) => parts.includes(id))
+    .map(([, text]) => text)
+    .join('\n\n')
 }

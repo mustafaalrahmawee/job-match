@@ -1,8 +1,5 @@
-import type { OutputConfig } from '@anthropic-ai/sdk/resources/messages'
 import { z } from 'zod'
 import type { JOB_SOURCES } from '../../modules/jobs/jobs.schemas.js'
-
-export type Variant = { model?: string; effort?: OutputConfig['effort'] }
 
 export type MatchJob = {
   source: (typeof JOB_SOURCES)[number]

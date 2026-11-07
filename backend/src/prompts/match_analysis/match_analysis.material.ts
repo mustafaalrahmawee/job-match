@@ -1,8 +1,9 @@
 import type { ContentBlockParam } from '@anthropic-ai/sdk/resources/messages'
+import { marked, visible } from '../../llm/untrusted.js'
 import { JOB_TEXT_MAX_CHARS } from '../../modules/jobs/jobs.schemas.js'
 import { cvAside } from '../cv_analysis/cv_analysis.material.js'
 import type { CoachCv } from '../cv_analysis/cv_analysis.schemas.js'
-import { INVISIBLE_CHARS, MATCH_CV_SECTIONS } from './match_analysis.config.js'
+import { MATCH_CV_SECTIONS } from './match_analysis.config.js'
 import type { CoachMatch, MatchJob } from './match_analysis.schemas.js'
 import { AD_TITLES } from './match_analysis.texts.js'
 
@@ -10,7 +11,7 @@ export function adText(job: MatchJob): string {
   const head = [`Titel: ${job.title}`, ...(job.company ? [`Firma: ${job.company}`] : []), `Ort: ${job.city}`]
   const cut = job.description.length > JOB_TEXT_MAX_CHARS ? ' …' : ''
   const text = `${head.join('\n')}\n\n${job.description.slice(0, JOB_TEXT_MAX_CHARS)}${cut}`
-  return text.replace(INVISIBLE_CHARS, '')
+  return visible(text)
 }
 
 export function adDocument(job: MatchJob, text = adText(job), title = AD_TITLES[job.source]): ContentBlockParam {
@@ -22,14 +23,11 @@ export function adDocument(job: MatchJob, text = adText(job), title = AD_TITLES[
 }
 
 export function markedCv(cv: CoachCv, id: string): string {
-  return cvAside(cv, MATCH_CV_SECTIONS)
-    .replace(INVISIBLE_CHARS, '')
-    .replace(/^<lebenslauf /u, `<lebenslauf-${id} `)
-    .replace(/<\/lebenslauf>$/u, `</lebenslauf-${id}>`)
+  return marked(cvAside(cv, MATCH_CV_SECTIONS), 'lebenslauf', id)
 }
 
 export function markedAd(job: MatchJob, id: string): string {
-  return `<stellenanzeige-${id}>\n${adText(job)}\n</stellenanzeige-${id}>`
+  return marked(`<stellenanzeige>\n${adText(job)}\n</stellenanzeige>`, 'stellenanzeige', id)
 }
 
 export function matchAside({ score, gaps, strengths, createdAt }: CoachMatch): string {

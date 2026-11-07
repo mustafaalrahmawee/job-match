@@ -1,5 +1,5 @@
 import type { ContentBlockParam, MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resources/messages'
-import { assemble, estimateTokens, type PromptElement } from '../../llm/assemble.js'
+import { assemble, estimateTokens, joined, type PromptElement, type Variant } from '../../llm/assemble.js'
 import {
   JOB_EXTRACT_EFFORT,
   JOB_EXTRACT_IMAGE_TOKENS,
@@ -9,7 +9,7 @@ import {
   JOB_EXTRACT_THINKING,
 } from './job_extract.config.js'
 import { markedText, materialBlock } from './job_extract.material.js'
-import { JOB_EXTRACT_JSON_SCHEMA, type JobExtractInput, type Variant } from './job_extract.schemas.js'
+import { JOB_EXTRACT_JSON_SCHEMA, type JobExtractInput } from './job_extract.schemas.js'
 import {
   JOB_EXTRACT_CONTRACT,
   JOB_EXTRACT_FOREIGN,
@@ -53,10 +53,6 @@ export function jobExtractRequest(input: JobExtractInput, variant: Variant = {})
   const { texts } = assemble(elements, JOB_EXTRACT_INPUT_BUDGET, (text) =>
     input.kind === 'image' && text === input.data ? JOB_EXTRACT_IMAGE_TOKENS : estimateTokens(text),
   )
-  const system = [...texts]
-    .filter(([id]) => SYSTEM_PARTS.includes(id))
-    .map(([, text]) => text)
-    .join('\n\n')
   const content: ContentBlockParam[] = [
     { type: 'text', text: texts.get('glue')! },
     materialBlock(input, texts.get('material')!),
@@ -70,7 +66,7 @@ export function jobExtractRequest(input: JobExtractInput, variant: Variant = {})
       effort: variant.effort ?? JOB_EXTRACT_EFFORT,
       format: { type: 'json_schema', schema: JOB_EXTRACT_JSON_SCHEMA },
     },
-    system,
+    system: joined(texts, SYSTEM_PARTS),
     messages: [{ role: 'user', content }],
   }
 }

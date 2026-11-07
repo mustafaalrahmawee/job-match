@@ -1,19 +1,15 @@
+import { oneLine, shownExcerpt, SUSPICIOUS_MAX_ENTRIES, UNSAFE_TEXT } from '../../llm/untrusted.js'
 import { cvAside } from '../cv_analysis/cv_analysis.material.js'
 import type { CoachCv } from '../cv_analysis/cv_analysis.schemas.js'
 import {
-  INVISIBLE_CHARS,
   MATCH_CV_SECTIONS,
   MATCH_ENTRY_MAX_CHARS,
   MATCH_ENTRY_MAX_NAMES,
-  MATCH_EXCERPT_MAX_CHARS,
   MATCH_LIST_LIMITS,
   MATCH_NAME_MAX_CHARS,
-  MATCH_SUSPICIOUS_MAX_ENTRIES,
 } from './match_analysis.config.js'
 import { adText } from './match_analysis.material.js'
 import type { MatchAnalysis, MatchAnalysisOutput, MatchJob } from './match_analysis.schemas.js'
-
-const UNSAFE_ENTRY = /https?:\/\/|\bwww\.|[\w.+-]+@[\w-]+\.[a-z]{2,}|!?\[[^\]]*\]\(|<\/?[a-z]/iu
 
 const NUMBER_WORDS: Record<string, string> = {
   zwei: '2', two: '2', drei: '3', three: '3', vier: '4', four: '4', fünf: '5', five: '5', sechs: '6', six: '6',
@@ -31,18 +27,17 @@ export function matchAnalysisResult(output: MatchAnalysisOutput): {
   hits: number
 } {
   let hits = 0
-  const visible = (text: string) => text.replace(INVISIBLE_CHARS, '').replace(/\s+/gu, ' ').trim()
   const shortQuote = <Q extends string | null>(quote: Q) =>
-    (quote === null ? null : visible(quote).slice(0, MATCH_ENTRY_MAX_CHARS)) as Q
+    (quote === null ? null : oneLine(quote).slice(0, MATCH_ENTRY_MAX_CHARS)) as Q
   const entries = <T extends { ad_quote: string | null; cv_quote: string | null; text: string }>(items: T[]) =>
     items.flatMap((item) => {
       const entry = {
         ...item,
         ad_quote: shortQuote(item.ad_quote),
         cv_quote: shortQuote(item.cv_quote),
-        text: visible(item.text),
+        text: oneLine(item.text),
       }
-      if (entry.text.length > MATCH_ENTRY_MAX_CHARS || UNSAFE_ENTRY.test(entry.text)) {
+      if (entry.text.length > MATCH_ENTRY_MAX_CHARS || UNSAFE_TEXT.test(entry.text)) {
         hits++
         return []
       }
@@ -52,7 +47,7 @@ export function matchAnalysisResult(output: MatchAnalysisOutput): {
     items.map((item) => ({
       ...item,
       names: item.names
-        .map((name) => visible(name).slice(0, MATCH_NAME_MAX_CHARS))
+        .map((name) => oneLine(name).slice(0, MATCH_NAME_MAX_CHARS))
         .filter(Boolean)
         .slice(0, MATCH_ENTRY_MAX_NAMES),
     }))
@@ -62,10 +57,7 @@ export function matchAnalysisResult(output: MatchAnalysisOutput): {
     score: output.score,
     tips: entries(output.tips).slice(0, MATCH_LIST_LIMITS.tips),
   }
-  const suspiciousText = output.suspicious_text.slice(0, MATCH_SUSPICIOUS_MAX_ENTRIES).map((entry) => {
-    const shown = entry.replace(INVISIBLE_CHARS, (char) => `[U+${char.codePointAt(0)!.toString(16).toUpperCase()}]`)
-    return shown.length > MATCH_EXCERPT_MAX_CHARS ? `${shown.slice(0, MATCH_EXCERPT_MAX_CHARS)} […]` : shown
-  })
+  const suspiciousText = output.suspicious_text.slice(0, SUSPICIOUS_MAX_ENTRIES).map(shownExcerpt)
   return { analysis, suspiciousText, hits }
 }
 

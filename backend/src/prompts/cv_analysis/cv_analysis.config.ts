@@ -10,8 +10,6 @@ export const CV_MAX_PAGES = 5
 export const CV_ANALYSIS_PDF_TOKENS = CV_MAX_PAGES * 4500
 
 export const CV_ENTRY_MAX_CHARS = 300
-export const CV_SUSPICIOUS_MAX_ENTRIES = 10
-export const CV_EXCERPT_MAX_CHARS = 1000
 
 export const CV_ROLES = [
   'Frontend',
@@ -38,5 +36,3 @@ export const CV_LIST_LIMITS = {
   weaknesses: 5,
   tips: 5,
 } as const
-
-export const INVISIBLE_CHARS = /[\u{E0000}-\u{E007F}\u{200B}-\u{200D}\u{2060}]|[\u{FE00}-\u{FE0F}]/gu

@@ -1,8 +1,8 @@
-import { randomBytes } from 'node:crypto'
 import type { ContentBlock, MessageCreateParamsNonStreaming, MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import type { CompanyResearch, CompanyResearchRun, PrismaClient } from '../../generated/prisma/client.js'
 import { costUsd } from '../../llm/costs.js'
 import type { SendResult, SendStream } from '../../llm/send.js'
+import { newMarkId } from '../../llm/untrusted.js'
 import {
   COMPANY_RESEARCH_CONTINUATIONS,
   COMPANY_RESEARCH_WEB_SEARCHES,
@@ -50,7 +50,7 @@ export class ResearchService {
   async start(userId: number, conversationId: number, input: CompanyResearchInput, now = new Date()): Promise<ResearchRun> {
     await this.coach.getConversation(userId, conversationId)
     const asOf = now.toISOString().slice(0, 10)
-    const markId = randomBytes(4).toString('hex')
+    const markId = newMarkId()
     const params = companyResearchRequest(input, asOf, markId)
     const { id } = await this.count(userId, params, now)
     return { id, userId, conversationId, input, asOf, markId, params }

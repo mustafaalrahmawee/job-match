@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { visible } from '../../llm/untrusted.js'
 import { CV_ROLES } from '../../prompts/cv_analysis/cv_analysis.config.js'
 
 export const OFFER_TYPES = ['work', 'self_employment', 'apprenticeship', 'internship'] as const
@@ -10,8 +11,6 @@ export const JOB_TEXT_MAX_CHARS = 20000
 export const JOB_IMAGE_MAX_BYTES = 5 * 1024 * 1024
 
 export const JOB_LIMITS = { title: 300, company: 300, city: 200, salary: 200 } as const
-
-const INVISIBLE_CHARS = /[\u{E0000}-\u{E007F}\u{200B}-\u{200D}\u{2060}]|[\u{FE00}-\u{FE0F}]/gu
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 
@@ -102,14 +101,12 @@ export const screenshotSchema = z
     return { kind: 'image' as const, mediaType, data: data.toString('base64') }
   })
 
-const visibleText = (text: string) => text.replace(INVISIBLE_CHARS, '')
-
-const requiredText = (max: number) => z.string().overwrite(visibleText).trim().min(1).max(max)
+const requiredText = (max: number) => z.string().overwrite(visible).trim().min(1).max(max)
 
 const optionalText = (max: number) =>
   z
     .string()
-    .overwrite(visibleText)
+    .overwrite(visible)
     .trim()
     .max(max)
     .nullable()

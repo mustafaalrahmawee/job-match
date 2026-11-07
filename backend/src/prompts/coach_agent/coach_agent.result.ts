@@ -1,8 +1,8 @@
-import { COACH_AGENT_RESEARCH_LIMIT, INVISIBLE_CHARS } from './coach_agent.config.js'
+import { ADDRESS, INVISIBLE_CHARS } from '../../llm/untrusted.js'
+import { COACH_AGENT_RESEARCH_LIMIT } from './coach_agent.config.js'
 import { host } from './coach_agent.material.js'
 import type { CoachResearch } from './coach_agent.schemas.js'
 
-const ADDRESS = /https?:\/\/[^\s)\]>]+/giu
 const FILE_TAG = /<\/?(?:lebenslauf|bewerbungen?|recherche|stellenanzeige|match)\b/giu
 
 export function researchHits(researches: CoachResearch[]): number {

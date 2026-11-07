@@ -1,14 +1,6 @@
-import {
-  CV_ENTRY_MAX_CHARS,
-  CV_EXCERPT_MAX_CHARS,
-  CV_LIST_LIMITS,
-  CV_SUSPICIOUS_MAX_ENTRIES,
-  INVISIBLE_CHARS,
-} from './cv_analysis.config.js'
+import { shownExcerpt, SUSPICIOUS_MAX_ENTRIES, TAG_BLOCK, UNSAFE_TEXT, visible } from '../../llm/untrusted.js'
+import { CV_ENTRY_MAX_CHARS, CV_LIST_LIMITS } from './cv_analysis.config.js'
 import type { CvAnalysis, CvAnalysisOutput, SuspiciousText } from './cv_analysis.schemas.js'
-
-const TAG_BLOCK = /[\u{E0000}-\u{E007F}]/u
-const UNSAFE_ENTRY = /https?:\/\/|\bwww\.|[\w.+-]+@[\w-]+\.[a-z]{2,}|\b(?:[a-z0-9-]+\.)+[a-z]{2,}\/|!?\[[^\]]*\]\(|<\/?[a-z][^<>]*>/iu
 
 export function cvAnalysisResult(output: CvAnalysisOutput): {
   analysis: CvAnalysis
@@ -19,13 +11,13 @@ export function cvAnalysisResult(output: CvAnalysisOutput): {
   let hits = 0
   const clean = (text: string | null): string | null | undefined => {
     if (text === null) return null
-    const visible = text.replace(INVISIBLE_CHARS, '')
-    if (visible.length > CV_ENTRY_MAX_CHARS || UNSAFE_ENTRY.test(visible)) {
+    const shown = visible(text)
+    if (shown.length > CV_ENTRY_MAX_CHARS || UNSAFE_TEXT.test(shown)) {
       hits++
       return undefined
     }
     if (TAG_BLOCK.test(text)) hits++
-    return visible
+    return shown
   }
   const texts = (items: string[], limit: number) =>
     [...new Set(items.map((item) => clean(item)).filter((item) => typeof item === 'string'))].slice(0, limit)
@@ -54,12 +46,8 @@ export function cvAnalysisResult(output: CvAnalysisOutput): {
     weaknesses: texts(analysis.weaknesses, CV_LIST_LIMITS.weaknesses),
     tips: texts(analysis.tips, CV_LIST_LIMITS.tips),
   }
-  const suspiciousText = suspicious_text.slice(0, CV_SUSPICIOUS_MAX_ENTRIES).map(({ kind, excerpt }) => {
-    const shown = excerpt.replace(INVISIBLE_CHARS, (char) => `[U+${char.codePointAt(0)!.toString(16).toUpperCase()}]`)
-    return {
-      kind,
-      excerpt: shown.length > CV_EXCERPT_MAX_CHARS ? `${shown.slice(0, CV_EXCERPT_MAX_CHARS)} […]` : shown,
-    }
-  })
+  const suspiciousText = suspicious_text
+    .slice(0, SUSPICIOUS_MAX_ENTRIES)
+    .map(({ kind, excerpt }) => ({ kind, excerpt: shownExcerpt(excerpt) }))
   return { analysis: result, suspiciousText, hits }
 }

@@ -36,5 +36,3 @@ export const COACH_AGENT_CV_SIZES = [
   ['Zielrolle', 'Stationen', 'Kenntnisse', 'Ausbildung', 'Sprachen'],
   ['Zielrolle', 'Stationen'],
 ] as const
-
-export const INVISIBLE_CHARS = /[\u{E0000}-\u{E007F}\u{200B}-\u{200D}\u{2060}]|[\u{FE00}-\u{FE0F}]/gu

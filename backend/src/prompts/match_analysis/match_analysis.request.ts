@@ -1,6 +1,6 @@
-import { randomBytes } from 'node:crypto'
 import type { ContentBlockParam, MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resources/messages'
-import { assemble, type PromptElement } from '../../llm/assemble.js'
+import { assemble, joined, type PromptElement, type Variant } from '../../llm/assemble.js'
+import { newMarkId } from '../../llm/untrusted.js'
 import type { CoachCv } from '../cv_analysis/cv_analysis.schemas.js'
 import {
   MATCH_ANALYSIS_EFFORT,
@@ -10,7 +10,7 @@ import {
   MATCH_ANALYSIS_THINKING,
 } from './match_analysis.config.js'
 import { adDocument, markedAd, markedCv } from './match_analysis.material.js'
-import { MATCH_ANALYSIS_JSON_SCHEMA, type MatchJob, type Variant } from './match_analysis.schemas.js'
+import { MATCH_ANALYSIS_JSON_SCHEMA, type MatchJob } from './match_analysis.schemas.js'
 import {
   AD_TITLES,
   MATCH_ANALYSIS_AD_GLUE,
@@ -31,7 +31,7 @@ export function matchAnalysisRequest(
   job: MatchJob,
   variant: Variant = {},
 ): MessageCreateParamsNonStreaming {
-  const id = randomBytes(4).toString('hex')
+  const id = newMarkId()
   const elements: PromptElement[] = [
     { id: 'frame', position: 0, tier: 3, versions: [MATCH_ANALYSIS_FRAME] },
     { id: 'rules', position: 1, tier: 3, versions: [MATCH_ANALYSIS_RULES], requires: ['frame', 'cv', 'ad'] },
@@ -64,13 +64,8 @@ export function matchAnalysisRequest(
     },
   ]
   const { texts } = assemble(elements, MATCH_ANALYSIS_INPUT_BUDGET)
-  const joined = (parts: string[]) =>
-    [...texts]
-      .filter(([key]) => parts.includes(key))
-      .map(([, text]) => text)
-      .join('\n\n')
   const content: ContentBlockParam[] = [
-    { type: 'text', text: joined(MATERIAL_PARTS) },
+    { type: 'text', text: joined(texts, MATERIAL_PARTS) },
     adDocument(job, texts.get('ad'), texts.get('adTitle')),
     { type: 'text', text: texts.get('refocus')! },
   ]
@@ -82,7 +77,7 @@ export function matchAnalysisRequest(
       effort: variant.effort ?? MATCH_ANALYSIS_EFFORT,
       format: { type: 'json_schema', schema: MATCH_ANALYSIS_JSON_SCHEMA },
     },
-    system: joined(SYSTEM_PARTS),
+    system: joined(texts, SYSTEM_PARTS),
     messages: [{ role: 'user', content }],
   }
 }

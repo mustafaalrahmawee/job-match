@@ -1,9 +1,9 @@
 import type { ContentBlock } from '@anthropic-ai/sdk/resources/messages'
+import { ADDRESS, oneLine, visible } from '../../llm/untrusted.js'
 import {
   COMPANY_RESEARCH_ANSWER_TAG,
   COMPANY_RESEARCH_FLAG_TAG,
   COMPANY_RESEARCH_TITLE_MAX_CHARS,
-  INVISIBLE_CHARS,
 } from './company_research.config.js'
 import type { CompanyResearchResult, CompanyResearchSource } from './company_research.schemas.js'
 
@@ -13,16 +13,15 @@ const FLAG_SHAPE = `<${COMPANY_RESEARCH_FLAG_TAG}></${COMPANY_RESEARCH_FLAG_TAG}
 const TAG = /<[\p{L}/!?][^<>]*>?/gu
 const ENTITY = /&(amp|lt|gt|quot|apos);/g
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" }
-const ADDRESS = /https?:\/\/[^\s)\]>]+/giu
 
 export function companyResearchResult(content: ContentBlock[]): CompanyResearchResult {
   let hits = 0
-  const visible = (raw: string) => {
-    const text = raw.replace(INVISIBLE_CHARS, '')
+  const counted = (raw: string) => {
+    const text = visible(raw)
     if (text !== raw) hits++
     return text
   }
-  const line = (raw: string) => visible(raw).replace(/\s+/gu, ' ').trim()
+  const line = (raw: string) => oneLine(counted(raw))
   const usable = (sources: CompanyResearchSource[], protocols: string[]) => {
     const kept = new Map<string, string | null>()
     for (const { url, title } of sources) {
@@ -35,7 +34,7 @@ export function companyResearchResult(content: ContentBlock[]): CompanyResearchR
   }
   const afterLastSearch = content.slice(content.map((block) => block.type).lastIndexOf('web_search_tool_result') + 1)
   const textBlocks = afterLastSearch.flatMap((block) => (block.type === 'text' ? [block] : []))
-  const parts = textBlocks.map((block) => visible(block.text))
+  const parts = textBlocks.map((block) => counted(block.text))
   const written = parts.join('')
   const tags = [...written.matchAll(TAG)]
   const shape = tags.map((tag) => tag[0]).join('')

@@ -1,5 +1,5 @@
 import type { ContentBlockParam, MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resources/messages'
-import { assemble, estimateTokens, type PromptElement } from '../../llm/assemble.js'
+import { assemble, estimateTokens, joined, type PromptElement, type Variant } from '../../llm/assemble.js'
 import {
   CV_ANALYSIS_EFFORT,
   CV_ANALYSIS_INPUT_BUDGET,
@@ -9,7 +9,7 @@ import {
   CV_ANALYSIS_THINKING,
 } from './cv_analysis.config.js'
 import { checkDate } from './cv_analysis.material.js'
-import { CV_ANALYSIS_JSON_SCHEMA, type Variant } from './cv_analysis.schemas.js'
+import { CV_ANALYSIS_JSON_SCHEMA } from './cv_analysis.schemas.js'
 import {
   CV_ANALYSIS_CONTRACT,
   CV_ANALYSIS_FOREIGN,
@@ -59,10 +59,6 @@ export function cvAnalysisRequest(
   const { texts } = assemble(elements, CV_ANALYSIS_INPUT_BUDGET, (text) =>
     text === pdfBase64 ? CV_ANALYSIS_PDF_TOKENS : estimateTokens(text),
   )
-  const system = [...texts]
-    .filter(([id]) => SYSTEM_PARTS.includes(id))
-    .map(([, text]) => text)
-    .join('\n\n')
   const content: ContentBlockParam[] = [
     { type: 'text', text: texts.get('glue')! },
     { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: texts.get('pdf')! } },
@@ -76,7 +72,7 @@ export function cvAnalysisRequest(
       effort: variant.effort ?? CV_ANALYSIS_EFFORT,
       format: { type: 'json_schema', schema: CV_ANALYSIS_JSON_SCHEMA },
     },
-    system,
+    system: joined(texts, SYSTEM_PARTS),
     messages: [{ role: 'user', content }],
   }
 }

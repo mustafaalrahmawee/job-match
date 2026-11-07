@@ -1,8 +1,5 @@
-import type { OutputConfig } from '@anthropic-ai/sdk/resources/messages'
 import { z } from 'zod'
 import { CV_ROLES, CV_SUSPICIOUS_KINDS } from './cv_analysis.config.js'
-
-export type Variant = { model?: string; effort?: OutputConfig['effort'] }
 
 export type CvRole = (typeof CV_ROLES)[number]
 

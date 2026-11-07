@@ -13,8 +13,6 @@ export const MATCH_LIST_LIMITS = { gaps: 5, strengths: 5, tips: 3 } as const
 export const MATCH_ENTRY_MAX_CHARS = 300
 export const MATCH_ENTRY_MAX_NAMES = 8
 export const MATCH_NAME_MAX_CHARS = 100
-export const MATCH_SUSPICIOUS_MAX_ENTRIES = 10
-export const MATCH_EXCERPT_MAX_CHARS = 1000
 
 export const MATCH_SCORE_BANDS = [
   {
@@ -44,5 +42,3 @@ export const MATCH_SCORE_BANDS = [
     description: 'Der Werdegang liegt in einem anderen Berufsfeld als die Stelle.',
   },
 ] as const
-
-export const INVISIBLE_CHARS = /[\u{E0000}-\u{E007F}\u{200B}-\u{200D}\u{2060}]|[\u{FE00}-\u{FE0F}]/gu
