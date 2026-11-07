@@ -1,17 +1,10 @@
 import { expect, test } from 'vitest'
-import {
-  CV_ANALYSIS_EFFORT,
-  CV_ANALYSIS_MODEL,
-  CV_ROLES,
-} from '../../src/prompts/cv_analysis/cv_analysis.config.js'
+import * as cvConfig from '../../src/prompts/cv_analysis/cv_analysis.config.js'
 import { cvAside } from '../../src/prompts/cv_analysis/cv_analysis.material.js'
 import { cvAnalysisRequest } from '../../src/prompts/cv_analysis/cv_analysis.request.js'
 import { cvAnalysisResult } from '../../src/prompts/cv_analysis/cv_analysis.result.js'
-import {
-  CV_ANALYSIS_JSON_SCHEMA,
-  type CvAnalysisOutput,
-} from '../../src/prompts/cv_analysis/cv_analysis.schemas.js'
-import { CV_ANALYSIS_GLUE, CV_ANALYSIS_REFOCUS } from '../../src/prompts/cv_analysis/cv_analysis.texts.js'
+import { JSON_SCHEMA, type CvAnalysisOutput } from '../../src/prompts/cv_analysis/cv_analysis.schemas.js'
+import * as cvPrompt from '../../src/prompts/cv_analysis/cv_analysis.texts.js'
 
 const PDF_BASE64 = Buffer.from('%PDF-1.7\nLebenslauf\n%%EOF').toString('base64')
 
@@ -38,19 +31,19 @@ const OUTPUT: CvAnalysisOutput = {
 test('the request sends glue, PDF and refocus with model, effort and the schema', () => {
   const params = cvAnalysisRequest(PDF_BASE64, ANALYZED_AT)
 
-  expect(params.model).toBe(CV_ANALYSIS_MODEL)
+  expect(params.model).toBe(cvConfig.MODEL)
   expect(params.thinking).toEqual({ type: 'adaptive' })
   expect(params.output_config).toEqual({
-    effort: CV_ANALYSIS_EFFORT,
-    format: { type: 'json_schema', schema: CV_ANALYSIS_JSON_SCHEMA },
+    effort: cvConfig.EFFORT,
+    format: { type: 'json_schema', schema: JSON_SCHEMA },
   })
   expect(params.messages).toEqual([
     {
       role: 'user',
       content: [
-        { type: 'text', text: CV_ANALYSIS_GLUE },
+        { type: 'text', text: cvPrompt.GLUE },
         { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: PDF_BASE64 } },
-        { type: 'text', text: CV_ANALYSIS_REFOCUS },
+        { type: 'text', text: cvPrompt.REFOCUS },
       ],
     },
   ])
@@ -73,8 +66,8 @@ test('a variant changes only model and effort', () => {
 })
 
 test('the schema allows only a role from the fixed list', () => {
-  const properties = (CV_ANALYSIS_JSON_SCHEMA as { properties: Record<string, { enum?: string[] }> }).properties
-  expect(properties.suggested_role.enum).toEqual([...CV_ROLES])
+  const properties = (JSON_SCHEMA as { properties: Record<string, { enum?: string[] }> }).properties
+  expect(properties.suggested_role.enum).toEqual([...cvConfig.ROLES])
 })
 
 test('the result splits off suspicious_text and keeps a clean answer as it is', () => {

@@ -3,7 +3,7 @@ import { PDFDocument, PDFString } from 'pdf-lib'
 import request from 'supertest'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { CV_ANALYSES_PER_DAY, CV_ANALYSIS_TIMEOUT_MS, CvsService } from '../../src/modules/cvs/cvs.service.js'
-import { CV_ANALYSIS_EFFORT, CV_ANALYSIS_MODEL } from '../../src/prompts/cv_analysis/cv_analysis.config.js'
+import * as cvConfig from '../../src/prompts/cv_analysis/cv_analysis.config.js'
 import type { CvAnalysis, CvAnalysisOutput } from '../../src/prompts/cv_analysis/cv_analysis.schemas.js'
 import { bearerFor, createAnna, sentText, useTestDatabase, type FakeMessageReply } from '../helpers.js'
 
@@ -109,15 +109,15 @@ test('an upload is analysed at once with a direct call and stored as ready activ
   expect(Buffer.from(stored.pdf).equals(PDF)).toBe(true)
   expect(stored).toMatchObject({
     isActive: true,
-    model: CV_ANALYSIS_MODEL,
-    effort: CV_ANALYSIS_EFFORT,
+    model: cvConfig.MODEL,
+    effort: cvConfig.EFFORT,
     inputTokens: 900,
     outputTokens: 300,
     suspiciousText: null,
   })
   expect(messages.requests).toHaveLength(1)
   const params = messages.requests[0]
-  expect(params.model).toBe(CV_ANALYSIS_MODEL)
+  expect(params.model).toBe(cvConfig.MODEL)
   expect(params.messages[0].content).toContainEqual({
     type: 'document',
     source: { type: 'base64', media_type: 'application/pdf', data: PDF.toString('base64') },

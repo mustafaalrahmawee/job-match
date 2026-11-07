@@ -1,20 +1,20 @@
 import type { OutputConfig, ThinkingConfigParam } from '@anthropic-ai/sdk/resources/messages'
 
-export const MATCH_ANALYSIS_MODEL = 'claude-sonnet-5-5'
-export const MATCH_ANALYSIS_EFFORT: OutputConfig['effort'] = 'medium'
-export const MATCH_ANALYSIS_THINKING: ThinkingConfigParam = { type: 'adaptive' }
-export const MATCH_ANALYSIS_MAX_TOKENS = 16000
-export const MATCH_ANALYSIS_INPUT_BUDGET = 1000000 - MATCH_ANALYSIS_MAX_TOKENS - 4000
+export const MODEL = 'claude-sonnet-5-5'
+export const EFFORT: OutputConfig['effort'] = 'medium'
+export const THINKING: ThinkingConfigParam = { type: 'adaptive' }
+export const MAX_TOKENS = 16000
+export const INPUT_BUDGET = 1000000 - MAX_TOKENS - 4000
 
-export const MATCH_CV_SECTIONS = ['Stationen', 'Kenntnisse', 'Ausbildung', 'Sprachen', 'Stärken'] as const
+export const CV_SECTIONS = ['Stationen', 'Kenntnisse', 'Ausbildung', 'Sprachen', 'Stärken'] as const
 
-export const MATCH_LIST_LIMITS = { gaps: 5, strengths: 5, tips: 3 } as const
+export const LIST_LIMITS = { gaps: 5, strengths: 5, tips: 3 } as const
 
-export const MATCH_ENTRY_MAX_CHARS = 300
-export const MATCH_ENTRY_MAX_NAMES = 8
-export const MATCH_NAME_MAX_CHARS = 100
+export const ENTRY_MAX_CHARS = 300
+export const ENTRY_MAX_NAMES = 8
+export const NAME_MAX_CHARS = 100
 
-export const MATCH_SCORE_BANDS = [
+export const SCORE_BANDS = [
   {
     min: 80,
     max: 100,

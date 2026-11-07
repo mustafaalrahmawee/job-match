@@ -3,7 +3,7 @@ import type { Job, MatchResult, MatchRun, PrismaClient } from '../../generated/p
 import type { SendMessage, SendResult } from '../../llm/send.js'
 import { cvAside } from '../../prompts/cv_analysis/cv_analysis.material.js'
 import type { CoachCv } from '../../prompts/cv_analysis/cv_analysis.schemas.js'
-import { MATCH_CV_SECTIONS } from '../../prompts/match_analysis/match_analysis.config.js'
+import * as matchConfig from '../../prompts/match_analysis/match_analysis.config.js'
 import { adText } from '../../prompts/match_analysis/match_analysis.material.js'
 import { matchAnalysisRequest } from '../../prompts/match_analysis/match_analysis.request.js'
 import { matchAnalysisResult, missingFacts } from '../../prompts/match_analysis/match_analysis.result.js'
@@ -171,7 +171,7 @@ function parse(result: SendResult): MatchAnalysisOutput {
 
 function missingQuotes(analysis: MatchAnalysis, cv: CoachCv, job: Job): number {
   const ad = collapse(adText(job))
-  const lines = cvAside(cv, MATCH_CV_SECTIONS)
+  const lines = cvAside(cv, matchConfig.CV_SECTIONS)
     .split('\n')
     .filter((line) => line.startsWith('- ') && line !== '- keine Angabe')
     .map((line) => collapse(line.slice(2)))

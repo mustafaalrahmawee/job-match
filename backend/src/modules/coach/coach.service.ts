@@ -17,11 +17,8 @@ import type {
   CoachApplication,
   CoachToolError,
 } from '../../prompts/coach_agent/coach_agent.schemas.js'
-import { COACH_AGENT_ERRORS } from '../../prompts/coach_agent/coach_agent.texts.js'
-import {
-  applicationInputSchema,
-  COACH_AGENT_APPLICATION_TOOL,
-} from '../../prompts/coach_agent/coach_agent.tools.js'
+import * as coachPrompt from '../../prompts/coach_agent/coach_agent.texts.js'
+import { applicationInputSchema, APPLICATION_TOOL } from '../../prompts/coach_agent/coach_agent.tools.js'
 import type { MatchAnalysis } from '../../prompts/match_analysis/match_analysis.schemas.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
 import type { ApplicationsService } from '../applications/applications.service.js'
@@ -177,7 +174,7 @@ export class CoachService {
   }
 
   private async useTool(userId: number, block: ToolUseBlock): Promise<[CoachStep, ToolResultBlockParam]> {
-    if (block.name !== COACH_AGENT_APPLICATION_TOOL) return toolError(block.id, 'unknown_tool')
+    if (block.name !== APPLICATION_TOOL) return toolError(block.id, 'unknown_tool')
     const input = applicationInputSchema.safeParse(block.input)
     if (!input.success) return toolError(block.id, 'invalid_input')
     try {
@@ -216,6 +213,6 @@ function coachApplication({ id, status, job }: Application & { job: Job }, chang
 function toolError(id: string, error: CoachToolError): [CoachStep, ToolResultBlockParam] {
   return [
     { kind: 'application_failed' },
-    { type: 'tool_result', tool_use_id: id, content: COACH_AGENT_ERRORS[error], is_error: true },
+    { type: 'tool_result', tool_use_id: id, content: coachPrompt.ERRORS[error], is_error: true },
   ]
 }

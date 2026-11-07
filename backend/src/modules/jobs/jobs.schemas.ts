@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { visible } from '../../llm/untrusted.js'
-import { CV_ROLES } from '../../prompts/cv_analysis/cv_analysis.config.js'
+import * as cvConfig from '../../prompts/cv_analysis/cv_analysis.config.js'
 
 export const OFFER_TYPES = ['work', 'self_employment', 'apprenticeship', 'internship'] as const
 
@@ -73,7 +73,7 @@ export const jobIdSchema = z.coerce.number().int().positive()
 
 export const jobsQuerySchema = z.object({
   q: z.string().trim().max(100).optional(),
-  role: z.enum(CV_ROLES).optional(),
+  role: z.enum(cvConfig.ROLES).optional(),
   region: z.enum(REGIONS).optional(),
   work_time: z.enum(['full', 'part']).optional(),
   offer_type: z.enum(OFFER_TYPES).optional(),
@@ -153,7 +153,7 @@ export const jobOutputSchema = z.object({
   city: z.string(),
   region: z.enum(REGIONS).nullable(),
   offer_type: z.enum(OFFER_TYPES),
-  role: z.enum(CV_ROLES).nullable(),
+  role: z.enum(cvConfig.ROLES).nullable(),
   full_time: z.boolean(),
   part_time: z.boolean(),
   published_at: z.iso.date(),

@@ -32,4 +32,4 @@ export type MatchAnalysis = z.infer<typeof matchStoredAnalysisSchema>
 
 export type CoachMatch = Pick<MatchAnalysis, 'score' | 'gaps' | 'strengths'> & { createdAt: Date }
 
-export const MATCH_ANALYSIS_JSON_SCHEMA = z.toJSONSchema(matchAnalysisSchema)
+export const JSON_SCHEMA = z.toJSONSchema(matchAnalysisSchema)

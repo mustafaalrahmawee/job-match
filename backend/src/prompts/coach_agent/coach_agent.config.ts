@@ -1,26 +1,26 @@
 import type { OutputConfig, ThinkingConfigParam } from '@anthropic-ai/sdk/resources/messages'
 
-export const COACH_AGENT_MODEL = 'claude-sonnet-5-5'
-export const COACH_AGENT_EFFORTS = ['medium', 'high'] as const satisfies OutputConfig['effort'][]
+export const MODEL = 'claude-sonnet-5-5'
+export const EFFORTS = ['medium', 'high'] as const satisfies OutputConfig['effort'][]
 
-export const COACH_AGENT_THINKING = {
+export const THINKING = {
   normal: { type: 'between_tools' },
   extended: { type: 'adaptive' },
 } as const satisfies Record<string, ThinkingConfigParam>
 
-export const COACH_AGENT_MAX_TOKENS = 8000
+export const MAX_TOKENS = 8000
 
-export const COACH_AGENT_INPUT_BUDGET = 1000000 - COACH_AGENT_MAX_TOKENS - 4000
-export const COACH_AGENT_TURN_BUDGET = 100000
-export const COACH_AGENT_STEPS_BUDGET = COACH_AGENT_INPUT_BUDGET - COACH_AGENT_TURN_BUDGET
-export const COACH_AGENT_HISTORY_TOKENS = 20000
+export const INPUT_BUDGET = 1000000 - MAX_TOKENS - 4000
+export const TURN_BUDGET = 100000
+export const STEPS_BUDGET = INPUT_BUDGET - TURN_BUDGET
+export const HISTORY_TOKENS = 20000
 
-export const COACH_AGENT_TOOL_ROUNDS = 4
-const COACH_AGENT_APPLICATIONS_LIMIT = 50
-export const COACH_AGENT_RESEARCH_LIMIT = 3
-export const COACH_AGENT_RESEARCH_MAX_CHARS = 2000
-export const COACH_AGENT_RESEARCH_SOURCES = 5
-const COACH_AGENT_CV_SECTIONS = [
+export const TOOL_ROUNDS = 4
+const APPLICATIONS_LIMIT = 50
+export const RESEARCH_LIMIT = 3
+export const RESEARCH_MAX_CHARS = 2000
+export const RESEARCH_SOURCES = 5
+const CV_SECTIONS = [
   'Zielrolle',
   'Stationen',
   'Kenntnisse',
@@ -30,9 +30,9 @@ const COACH_AGENT_CV_SECTIONS = [
   'Schwächen',
   'Tipps',
 ] as const
-export const COACH_AGENT_APPLICATIONS_SIZES = [COACH_AGENT_APPLICATIONS_LIMIT, 20, 5]
-export const COACH_AGENT_CV_SIZES = [
-  COACH_AGENT_CV_SECTIONS,
+export const APPLICATIONS_SIZES = [APPLICATIONS_LIMIT, 20, 5]
+export const CV_SIZES = [
+  CV_SECTIONS,
   ['Zielrolle', 'Stationen', 'Kenntnisse', 'Ausbildung', 'Sprachen'],
   ['Zielrolle', 'Stationen'],
 ] as const

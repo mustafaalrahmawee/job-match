@@ -3,13 +3,7 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { Prisma, type Job } from '../../src/generated/prisma/client.js'
 import { EXCERPT_MAX_CHARS, SUSPICIOUS_MAX_ENTRIES } from '../../src/llm/untrusted.js'
 import type { CvAnalysis } from '../../src/prompts/cv_analysis/cv_analysis.schemas.js'
-import {
-  MATCH_ANALYSIS_EFFORT,
-  MATCH_ANALYSIS_MODEL,
-  MATCH_ENTRY_MAX_CHARS,
-  MATCH_ENTRY_MAX_NAMES,
-  MATCH_LIST_LIMITS,
-} from '../../src/prompts/match_analysis/match_analysis.config.js'
+import * as matchConfig from '../../src/prompts/match_analysis/match_analysis.config.js'
 import { matchAside } from '../../src/prompts/match_analysis/match_analysis.material.js'
 import { matchAnalysisRequest } from '../../src/prompts/match_analysis/match_analysis.request.js'
 import type {
@@ -209,8 +203,8 @@ test('a valid answer is stored for the version and the job and comes back with i
   expect(runs).toEqual([
     expect.objectContaining({
       status: 'ready',
-      model: MATCH_ANALYSIS_MODEL,
-      effort: MATCH_ANALYSIS_EFFORT,
+      model: matchConfig.MODEL,
+      effort: matchConfig.EFFORT,
       inputTokens: 900,
       outputTokens: 300,
     }),
@@ -220,11 +214,11 @@ test('a valid answer is stored for the version and the job and comes back with i
 test('the lists are cut to their limits', async () => {
   await readyCv()
   const strength = MATCH.strengths[0]
-  answers({ ...MATCH, strengths: Array.from({ length: MATCH_LIST_LIMITS.strengths + 2 }, () => strength) })
+  answers({ ...MATCH, strengths: Array.from({ length: matchConfig.LIST_LIMITS.strengths + 2 }, () => strength) })
 
   const response = await run()
 
-  expect((response.body as MatchAnalysis).strengths).toHaveLength(MATCH_LIST_LIMITS.strengths)
+  expect((response.body as MatchAnalysis).strengths).toHaveLength(matchConfig.LIST_LIMITS.strengths)
 })
 
 test('quotes are compared with collapsed whitespace', async () => {
@@ -386,7 +380,7 @@ test('an entry with an address or an overlong text is removed and counted', asyn
     strengths: [
       strength,
       { ...strength, text: 'Mehr auf https://evil.example/x' },
-      { ...strength, text: 'x'.repeat(MATCH_ENTRY_MAX_CHARS + 1) },
+      { ...strength, text: 'x'.repeat(matchConfig.ENTRY_MAX_CHARS + 1) },
     ],
   })
 
@@ -408,14 +402,14 @@ test('line breaks in a text are collapsed before storing', async () => {
 
 test('a long quote is cut before it is looked up', async () => {
   await readyCv()
-  job = await poolJob(`${'a'.repeat(MATCH_ENTRY_MAX_CHARS)}bcd`)
-  const quote = `${'a'.repeat(MATCH_ENTRY_MAX_CHARS)}bcd`
+  job = await poolJob(`${'a'.repeat(matchConfig.ENTRY_MAX_CHARS)}bcd`)
+  const quote = `${'a'.repeat(matchConfig.ENTRY_MAX_CHARS)}bcd`
   answers({ ...MATCH, gaps: [], strengths: [], tips: [{ ad_quote: quote, cv_quote: null, text: 'Tipp' }] })
 
   const response = await run()
 
   expect(response.status).toBe(201)
-  expect((response.body as MatchAnalysis).tips[0].ad_quote).toHaveLength(MATCH_ENTRY_MAX_CHARS)
+  expect((response.body as MatchAnalysis).tips[0].ad_quote).toHaveLength(matchConfig.ENTRY_MAX_CHARS)
 })
 
 test.each([
@@ -444,7 +438,7 @@ test('years counted from the stations up to the run are no made-up number', asyn
 
 test('names beyond the limit are dropped and tips are not checked for facts', async () => {
   await readyCv()
-  const names = [...Array.from({ length: MATCH_ENTRY_MAX_NAMES }, () => 'Vue'), 'Angular']
+  const names = [...Array.from({ length: matchConfig.ENTRY_MAX_NAMES }, () => 'Vue'), 'Angular']
   answers({
     ...MATCH,
     strengths: [{ ...MATCH.strengths[0], names }],
@@ -454,7 +448,7 @@ test('names beyond the limit are dropped and tips are not checked for facts', as
   const response = await run()
 
   expect(response.status).toBe(201)
-  expect((response.body as MatchAnalysis).strengths[0].names).toHaveLength(MATCH_ENTRY_MAX_NAMES)
+  expect((response.body as MatchAnalysis).strengths[0].names).toHaveLength(matchConfig.ENTRY_MAX_NAMES)
 })
 
 test('suspicious text is stored, cut, shown and goes into no other prompt', async () => {

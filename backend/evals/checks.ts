@@ -1,5 +1,5 @@
 import { franc } from 'franc'
-import { CV_LIST_LIMITS } from '../src/prompts/cv_analysis/cv_analysis.config.js'
+import * as cvConfig from '../src/prompts/cv_analysis/cv_analysis.config.js'
 import { cvAnalysisSchema } from '../src/prompts/cv_analysis/cv_analysis.schemas.js'
 
 export type RunRecord = {
@@ -113,13 +113,13 @@ export function cvAnalysisChecks(gold: CvAnalysisGold, run: RunRecord): Check[] 
   if (!parsed.success) return checks
   const answer = parsed.data
 
-  const over = (Object.keys(CV_LIST_LIMITS) as (keyof typeof CV_LIST_LIMITS)[]).filter(
-    (key) => answer[key].length > CV_LIST_LIMITS[key],
+  const over = (Object.keys(cvConfig.LIST_LIMITS) as (keyof typeof cvConfig.LIST_LIMITS)[]).filter(
+    (key) => answer[key].length > cvConfig.LIST_LIMITS[key],
   )
   checks.push({
     name: 'limits',
     ok: over.length === 0,
-    detail: over.map((key) => `${key} ${answer[key].length}/${CV_LIST_LIMITS[key]}`).join('; '),
+    detail: over.map((key) => `${key} ${answer[key].length}/${cvConfig.LIST_LIMITS[key]}`).join('; '),
   })
   const lower = run.text.toLowerCase()
   const hits = gold.forbidden.filter((phrase) => lower.includes(phrase.toLowerCase()))

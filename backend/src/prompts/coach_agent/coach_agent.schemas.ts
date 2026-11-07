@@ -3,11 +3,11 @@ import type { Variant } from '../../llm/assemble.js'
 import type { ApplicationStatus } from '../../modules/applications/applications.schemas.js'
 import type { CompanyResearchSource } from '../company_research/company_research.schemas.js'
 import type { CoachCv } from '../cv_analysis/cv_analysis.schemas.js'
-import type { COACH_AGENT_EFFORTS, COACH_AGENT_THINKING } from './coach_agent.config.js'
-import type { COACH_AGENT_ERRORS } from './coach_agent.texts.js'
+import type * as config from './coach_agent.config.js'
+import type * as prompt from './coach_agent.texts.js'
 
-export type Quality = keyof typeof COACH_AGENT_THINKING
-export type Effort = (typeof COACH_AGENT_EFFORTS)[number]
+export type Quality = keyof typeof config.THINKING
+export type Effort = (typeof config.EFFORTS)[number]
 export type ChatSettings = { quality: Quality; effort: Effort }
 export type CoachVariant = Variant & { quality?: Quality }
 
@@ -34,6 +34,6 @@ export type CoachAgentContext = {
   markId: string
 }
 
-export type CoachToolError = keyof typeof COACH_AGENT_ERRORS
+export type CoachToolError = keyof typeof prompt.ERRORS
 
 export type HistoryTurn = { role: MessageParam['role']; content: string }

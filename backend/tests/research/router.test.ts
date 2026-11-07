@@ -3,14 +3,8 @@ import request from 'supertest'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import type { SendResult } from '../../src/llm/send.js'
 import { RESEARCH_RUNS_PER_DAY } from '../../src/modules/research/research.service.js'
-import {
-  COMPANY_RESEARCH_CONTINUATIONS,
-  COMPANY_RESEARCH_EFFORT,
-  COMPANY_RESEARCH_FIELD_MAX_CHARS,
-  COMPANY_RESEARCH_MODEL,
-  COMPANY_RESEARCH_TITLE_MAX_CHARS,
-} from '../../src/prompts/company_research/company_research.config.js'
-import { COMPANY_RESEARCH_TOOLS } from '../../src/prompts/company_research/company_research.tools.js'
+import * as researchConfig from '../../src/prompts/company_research/company_research.config.js'
+import { TOOLS } from '../../src/prompts/company_research/company_research.tools.js'
 import { bearerFor, createAnna, requestText, streamed, streamedText, useTestDatabase, type FakeReply } from '../helpers.js'
 
 const { app, auth, prisma, model } = useTestDatabase()
@@ -154,8 +148,8 @@ test('a finished research is saved unconfirmed and comes back with its steps and
     {
       userId: annaId,
       status: 'ready',
-      model: COMPANY_RESEARCH_MODEL,
-      effort: COMPANY_RESEARCH_EFFORT,
+      model: researchConfig.MODEL,
+      effort: researchConfig.EFFORT,
       inputTokens: 120,
       outputTokens: 30,
     },
@@ -170,7 +164,7 @@ test('the request holds only the form, the date and the search tool', async () =
 
   const [params] = model.requests
   expect(params.messages).toHaveLength(1)
-  expect(params.tools).toEqual(COMPANY_RESEARCH_TOOLS)
+  expect(params.tools).toEqual(TOOLS)
   const text = requestText(params)
   expect(text).toContain('Firma: Kreditwerk GmbH, Kiel')
   expect(text).toContain(`stand="${new Date().toISOString().slice(0, 10)}"`)
@@ -212,7 +206,7 @@ test('a flagged passage stays apart from the answer and its sources', async () =
 })
 
 test('titles and addresses of sources are checked before they are saved', async () => {
-  const long = 't'.repeat(COMPANY_RESEARCH_TITLE_MAX_CHARS + 50)
+  const long = 't'.repeat(researchConfig.TITLE_MAX_CHARS + 50)
   const research = await researched(
     stopped('end_turn', [
       search('s1', 'Kreditwerk'),
@@ -225,7 +219,7 @@ test('titles and addresses of sources are checked before they are saved', async 
     ]),
   )
 
-  expect(research.sources).toEqual([{ url: CITATION.url, title: 't'.repeat(COMPANY_RESEARCH_TITLE_MAX_CHARS) }])
+  expect(research.sources).toEqual([{ url: CITATION.url, title: 't'.repeat(researchConfig.TITLE_MAX_CHARS) }])
 })
 
 test('a research continues after a pause and reads the blocks of all requests', async () => {
@@ -291,7 +285,7 @@ test('a pause after the last continuation ends the research without a result', a
 
   const response = await run()
 
-  expect(model.requests).toHaveLength(COMPANY_RESEARCH_CONTINUATIONS + 1)
+  expect(model.requests).toHaveLength(researchConfig.CONTINUATIONS + 1)
   expect(done(response)).toEqual({ research: null, outcome: 'unfinished' })
   expect(events(response.text).filter((e) => e.event === 'step').map((e) => e.data)).toEqual([
     { kind: 'web_search', query: 'Kreditwerk', sources: null },
@@ -391,7 +385,7 @@ test('more searches than allowed raise a warning', async () => {
 test.each([
   ['an empty company', { ...FORM, company: '   ' }],
   ['a question of invisible characters', { ...FORM, question: '\u200B\u{E0041}\uFE0F' }],
-  ['a company that is too long', { ...FORM, company: 'x'.repeat(COMPANY_RESEARCH_FIELD_MAX_CHARS + 1) }],
+  ['a company that is too long', { ...FORM, company: 'x'.repeat(researchConfig.FIELD_MAX_CHARS + 1) }],
   ['a missing question', { company: FORM.company }],
 ])('%s is refused before anything is counted', async (_name, body) => {
   const response = await run(conversationId, body)
@@ -403,18 +397,18 @@ test.each([
 
 test('the field limit counts without invisible characters', async () => {
   model.answer(stopped('end_turn'))
-  const company = `${'x'.repeat(COMPANY_RESEARCH_FIELD_MAX_CHARS)}\u200B`
+  const company = `${'x'.repeat(researchConfig.FIELD_MAX_CHARS)}\u200B`
 
   const response = await run(conversationId, { ...FORM, company })
 
   expect(response.status).toBe(200)
-  expect(done(response).research).toMatchObject({ company: 'x'.repeat(COMPANY_RESEARCH_FIELD_MAX_CHARS) })
+  expect(done(response).research).toMatchObject({ company: 'x'.repeat(researchConfig.FIELD_MAX_CHARS) })
 })
 
 test('the daily limit counts every run and refuses the next one', async () => {
   for (let i = 0; i < RESEARCH_RUNS_PER_DAY; i++) {
     await prisma.companyResearchRun.create({
-      data: { userId: annaId, model: COMPANY_RESEARCH_MODEL, status: i ? 'failed' : 'running' },
+      data: { userId: annaId, model: researchConfig.MODEL, status: i ? 'failed' : 'running' },
     })
   }
 
@@ -430,8 +424,8 @@ test('runs of yesterday and of other people do not count', async () => {
   const other = await auth.createUser('ben@example.com', 'richtig-geheim')
   const yesterday = new Date(Date.now() - 86_400_000)
   for (let i = 0; i < RESEARCH_RUNS_PER_DAY; i++) {
-    await prisma.companyResearchRun.create({ data: { userId: annaId, model: COMPANY_RESEARCH_MODEL, createdAt: yesterday } })
-    await prisma.companyResearchRun.create({ data: { userId: other.id, model: COMPANY_RESEARCH_MODEL } })
+    await prisma.companyResearchRun.create({ data: { userId: annaId, model: researchConfig.MODEL, createdAt: yesterday } })
+    await prisma.companyResearchRun.create({ data: { userId: other.id, model: researchConfig.MODEL } })
   }
   model.answer(stopped('end_turn'))
 
@@ -442,7 +436,7 @@ test('runs of yesterday and of other people do not count', async () => {
 
 test('two runs at once cannot pass the daily limit', async () => {
   for (let i = 0; i < RESEARCH_RUNS_PER_DAY - 1; i++) {
-    await prisma.companyResearchRun.create({ data: { userId: annaId, model: COMPANY_RESEARCH_MODEL } })
+    await prisma.companyResearchRun.create({ data: { userId: annaId, model: researchConfig.MODEL } })
   }
   model.answer(stopped('end_turn'))
 

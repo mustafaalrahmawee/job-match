@@ -3,9 +3,9 @@ import { marked, visible } from '../../llm/untrusted.js'
 import { JOB_TEXT_MAX_CHARS } from '../../modules/jobs/jobs.schemas.js'
 import { cvAside } from '../cv_analysis/cv_analysis.material.js'
 import type { CoachCv } from '../cv_analysis/cv_analysis.schemas.js'
-import { MATCH_CV_SECTIONS } from './match_analysis.config.js'
+import * as config from './match_analysis.config.js'
 import type { CoachMatch, MatchJob } from './match_analysis.schemas.js'
-import { AD_TITLES } from './match_analysis.texts.js'
+import * as prompt from './match_analysis.texts.js'
 
 export function adText(job: MatchJob): string {
   const head = [`Titel: ${job.title}`, ...(job.company ? [`Firma: ${job.company}`] : []), `Ort: ${job.city}`]
@@ -14,7 +14,7 @@ export function adText(job: MatchJob): string {
   return visible(text)
 }
 
-export function adDocument(job: MatchJob, text = adText(job), title = AD_TITLES[job.source]): ContentBlockParam {
+export function adDocument(job: MatchJob, text = adText(job), title = prompt.AD_TITLES[job.source]): ContentBlockParam {
   return {
     type: 'document',
     source: { type: 'text', media_type: 'text/plain', data: text },
@@ -23,7 +23,7 @@ export function adDocument(job: MatchJob, text = adText(job), title = AD_TITLES[
 }
 
 export function markedCv(cv: CoachCv, id: string): string {
-  return marked(cvAside(cv, MATCH_CV_SECTIONS), 'lebenslauf', id)
+  return marked(cvAside(cv, config.CV_SECTIONS), 'lebenslauf', id)
 }
 
 export function markedAd(job: MatchJob, id: string): string {

@@ -29,4 +29,4 @@ export const jobExtractSchema = z.object({
 
 export type JobExtract = z.infer<typeof jobExtractSchema>
 
-export const JOB_EXTRACT_JSON_SCHEMA = z.toJSONSchema(jobExtractSchema)
+export const JSON_SCHEMA = z.toJSONSchema(jobExtractSchema)

@@ -1,13 +1,7 @@
 import { oneLine, shownExcerpt, SUSPICIOUS_MAX_ENTRIES, UNSAFE_TEXT } from '../../llm/untrusted.js'
 import { cvAside } from '../cv_analysis/cv_analysis.material.js'
 import type { CoachCv } from '../cv_analysis/cv_analysis.schemas.js'
-import {
-  MATCH_CV_SECTIONS,
-  MATCH_ENTRY_MAX_CHARS,
-  MATCH_ENTRY_MAX_NAMES,
-  MATCH_LIST_LIMITS,
-  MATCH_NAME_MAX_CHARS,
-} from './match_analysis.config.js'
+import * as config from './match_analysis.config.js'
 import { adText } from './match_analysis.material.js'
 import type { MatchAnalysis, MatchAnalysisOutput, MatchJob } from './match_analysis.schemas.js'
 
@@ -28,7 +22,7 @@ export function matchAnalysisResult(output: MatchAnalysisOutput): {
 } {
   let hits = 0
   const shortQuote = <Q extends string | null>(quote: Q) =>
-    (quote === null ? null : oneLine(quote).slice(0, MATCH_ENTRY_MAX_CHARS)) as Q
+    (quote === null ? null : oneLine(quote).slice(0, config.ENTRY_MAX_CHARS)) as Q
   const entries = <T extends { ad_quote: string | null; cv_quote: string | null; text: string }>(items: T[]) =>
     items.flatMap((item) => {
       const entry = {
@@ -37,7 +31,7 @@ export function matchAnalysisResult(output: MatchAnalysisOutput): {
         cv_quote: shortQuote(item.cv_quote),
         text: oneLine(item.text),
       }
-      if (entry.text.length > MATCH_ENTRY_MAX_CHARS || UNSAFE_TEXT.test(entry.text)) {
+      if (entry.text.length > config.ENTRY_MAX_CHARS || UNSAFE_TEXT.test(entry.text)) {
         hits++
         return []
       }
@@ -47,15 +41,15 @@ export function matchAnalysisResult(output: MatchAnalysisOutput): {
     items.map((item) => ({
       ...item,
       names: item.names
-        .map((name) => oneLine(name).slice(0, MATCH_NAME_MAX_CHARS))
+        .map((name) => oneLine(name).slice(0, config.NAME_MAX_CHARS))
         .filter(Boolean)
-        .slice(0, MATCH_ENTRY_MAX_NAMES),
+        .slice(0, config.ENTRY_MAX_NAMES),
     }))
   const analysis = {
-    gaps: named(entries(output.gaps)).slice(0, MATCH_LIST_LIMITS.gaps),
-    strengths: named(entries(output.strengths)).slice(0, MATCH_LIST_LIMITS.strengths),
+    gaps: named(entries(output.gaps)).slice(0, config.LIST_LIMITS.gaps),
+    strengths: named(entries(output.strengths)).slice(0, config.LIST_LIMITS.strengths),
     score: output.score,
-    tips: entries(output.tips).slice(0, MATCH_LIST_LIMITS.tips),
+    tips: entries(output.tips).slice(0, config.LIST_LIMITS.tips),
   }
   const suspiciousText = output.suspicious_text.slice(0, SUSPICIOUS_MAX_ENTRIES).map(shownExcerpt)
   return { analysis, suspiciousText, hits }
@@ -78,7 +72,7 @@ function stationYears({ analysis, asOf }: CoachCv): number {
 }
 
 export function missingFacts({ gaps, strengths }: MatchAnalysis, cv: CoachCv, job: MatchJob): number {
-  const lines = cvAside(cv, MATCH_CV_SECTIONS)
+  const lines = cvAside(cv, config.CV_SECTIONS)
     .split('\n')
     .filter((line) => line.startsWith('- '))
   const material = comparable([adText(job), ...lines].join('\n'))

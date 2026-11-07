@@ -3,7 +3,7 @@ import type { MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resource
 import { PDFDocument } from 'pdf-lib'
 import type { CvVersion, Prisma, PrismaClient } from '../../generated/prisma/client.js'
 import type { SendMessage, SendResult } from '../../llm/send.js'
-import { CV_MAX_PAGES } from '../../prompts/cv_analysis/cv_analysis.config.js'
+import * as cvConfig from '../../prompts/cv_analysis/cv_analysis.config.js'
 import { cvAnalysisRequest } from '../../prompts/cv_analysis/cv_analysis.request.js'
 import { cvAnalysisResult } from '../../prompts/cv_analysis/cv_analysis.result.js'
 import {
@@ -39,7 +39,7 @@ export class CvsService {
   async upload(userId: number, pdf: Buffer, now = new Date()): Promise<CvVersionInfo> {
     const pages = await pageCount(pdf)
     if (!pages) throw new AppError(422, 'unreadable')
-    if (pages > CV_MAX_PAGES) throw new AppError(422, 'too_many_pages')
+    if (pages > cvConfig.MAX_PAGES) throw new AppError(422, 'too_many_pages')
     const params = analysisRequest(pdf, now)
     const version = await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`

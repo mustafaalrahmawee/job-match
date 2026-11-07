@@ -1,12 +1,12 @@
 import { z } from 'zod'
 import { visible } from '../../llm/untrusted.js'
-import { COMPANY_RESEARCH_FIELD_MAX_CHARS } from '../../prompts/company_research/company_research.config.js'
+import * as researchConfig from '../../prompts/company_research/company_research.config.js'
 import type { CompanyResearchSource } from '../../prompts/company_research/company_research.schemas.js'
 
 const field = z
   .string()
   .transform((text) => visible(text).trim())
-  .pipe(z.string().min(1).max(COMPANY_RESEARCH_FIELD_MAX_CHARS))
+  .pipe(z.string().min(1).max(researchConfig.FIELD_MAX_CHARS))
 
 export const researchConversationIdSchema = z.coerce.number().int().positive()
 

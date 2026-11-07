@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type { Job, OfferType, Prisma, PrismaClient } from '../../generated/prisma/client.js'
 import type { SendMessage, SendResult } from '../../llm/send.js'
-import { CV_ROLES } from '../../prompts/cv_analysis/cv_analysis.config.js'
+import * as cvConfig from '../../prompts/cv_analysis/cv_analysis.config.js'
 import type { CvRole } from '../../prompts/cv_analysis/cv_analysis.schemas.js'
 import { jobExtractRequest } from '../../prompts/job_extract/job_extract.request.js'
 import { jobExtractResult } from '../../prompts/job_extract/job_extract.result.js'
@@ -51,7 +51,7 @@ export class JobsService {
   async importPool(now = new Date()): Promise<ImportSummary> {
     const since = new Date(now.getTime() - POOL_DAYS * DAY_MS).toISOString().slice(0, 10)
     const summary: ImportSummary = { imported: 0, duplicates: 0, filtered: 0, failed: 0 }
-    for (const role of CV_ROLES) {
+    for (const role of cvConfig.ROLES) {
       for (const term of BA_SEARCH_TERMS[role]) {
         for (let page = 1; page <= BA_MAX_PAGES; page++) {
           let items: unknown[]

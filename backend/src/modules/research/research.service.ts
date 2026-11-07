@@ -3,10 +3,7 @@ import type { CompanyResearch, CompanyResearchRun, PrismaClient } from '../../ge
 import { costUsd } from '../../llm/costs.js'
 import type { SendResult, SendStream } from '../../llm/send.js'
 import { newMarkId } from '../../llm/untrusted.js'
-import {
-  COMPANY_RESEARCH_CONTINUATIONS,
-  COMPANY_RESEARCH_WEB_SEARCHES,
-} from '../../prompts/company_research/company_research.config.js'
+import * as researchConfig from '../../prompts/company_research/company_research.config.js'
 import { companyResearchRequest } from '../../prompts/company_research/company_research.request.js'
 import { companyResearchResult } from '../../prompts/company_research/company_research.result.js'
 import type {
@@ -95,7 +92,7 @@ export class ResearchService {
       console.info(
         `${label}: ${requests} requests, ${continuations} continuations, ${usage.inputTokens} input and ${usage.outputTokens} output tokens, ${searches} web searches, ${suspiciousText ? 1 : 0} flagged, ${offTopic} queries without the company, ${hits} check hits, ${cost.toFixed(4)} $`,
       )
-      if (searches > COMPANY_RESEARCH_WEB_SEARCHES) console.warn(`${label}: ${searches} web searches with ${continuations} continuations`)
+      if (searches > researchConfig.WEB_SEARCHES) console.warn(`${label}: ${searches} web searches with ${continuations} continuations`)
     }
     try {
       let params = run.params
@@ -107,7 +104,7 @@ export class ResearchService {
         usage.inputTokens += result.inputTokens
         usage.outputTokens += result.outputTokens
         content.push(...result.content)
-        if (result.stopReason !== 'pause_turn' || continuations >= COMPANY_RESEARCH_CONTINUATIONS) break
+        if (result.stopReason !== 'pause_turn' || continuations >= researchConfig.CONTINUATIONS) break
         continuations += 1
         steps.push({ role: 'assistant', content: result.content })
         params = companyResearchRequest(input, asOf, markId, steps)

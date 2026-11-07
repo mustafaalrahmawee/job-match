@@ -1,21 +1,9 @@
 import request from 'supertest'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import type { ContentBlock, MessageCreateParamsNonStreaming, MessageParam } from '@anthropic-ai/sdk/resources/messages'
-import {
-  COACH_AGENT_MODEL,
-  COACH_AGENT_RESEARCH_LIMIT,
-} from '../../src/prompts/coach_agent/coach_agent.config.js'
-import {
-  COACH_AGENT_CV_RULES,
-  COACH_AGENT_ERRORS,
-  COACH_AGENT_LAST_ROUND,
-  COACH_AGENT_NEXT_ROUND,
-  COACH_AGENT_NO_CV,
-  COACH_AGENT_NO_MATCH,
-  COACH_AGENT_REFOCUS,
-  COACH_AGENT_SYSTEM,
-} from '../../src/prompts/coach_agent/coach_agent.texts.js'
-import { COACH_AGENT_TOOLS } from '../../src/prompts/coach_agent/coach_agent.tools.js'
+import * as coachConfig from '../../src/prompts/coach_agent/coach_agent.config.js'
+import * as coachPrompt from '../../src/prompts/coach_agent/coach_agent.texts.js'
+import { TOOLS } from '../../src/prompts/coach_agent/coach_agent.tools.js'
 import type { CvAnalysis } from '../../src/prompts/cv_analysis/cv_analysis.schemas.js'
 import { bearerFor, createAnna, requestText, streamed, streamedText, useTestDatabase } from '../helpers.js'
 
@@ -129,7 +117,7 @@ test('a message streams the answer and saves both turns', async () => {
   })
   const stored = await prisma.message.findFirstOrThrow({ where: { role: 'assistant' } })
   expect(stored).toMatchObject({
-    model: COACH_AGENT_MODEL,
+    model: coachConfig.MODEL,
     effort: 'medium',
     quality: 'normal',
     inputTokens: 120,
@@ -143,15 +131,15 @@ test('the request carries the coach prompt and the whole history', async () => {
   await send(id, 'Und wie lang soll ein Anschreiben sein?')
 
   const last = model.requests.at(-1)!
-  expect(last.model).toBe(COACH_AGENT_MODEL)
-  expect(requestText(last)).toContain(COACH_AGENT_SYSTEM)
-  expect(requestText(last)).toContain(COACH_AGENT_NO_CV)
+  expect(last.model).toBe(coachConfig.MODEL)
+  expect(requestText(last)).toContain(coachPrompt.SYSTEM)
+  expect(requestText(last)).toContain(coachPrompt.NO_CV)
   expect(last.messages.map((m) => m.role)).toEqual(['user', 'assistant', 'user', 'assistant', 'user', 'assistant', 'user'])
   expect(last.messages[0].content).toBe('Hallo')
   expect(applicantFile(last)).toContain('- keine Bewerbungen')
   expect(last.messages.at(-1)!.content).toEqual([
     { type: 'text', text: 'Und wie lang soll ein Anschreiben sein?' },
-    { type: 'text', text: COACH_AGENT_REFOCUS },
+    { type: 'text', text: coachPrompt.REFOCUS },
   ])
 })
 
@@ -182,7 +170,7 @@ test('the coach gets the ready analysis of the active CV, its role and the date 
   await send(id, 'Habe ich Kubernetes-Erfahrung?')
 
   const text = requestText(model.requests.at(-1)!)
-  expect(text).toContain(COACH_AGENT_CV_RULES)
+  expect(text).toContain(coachPrompt.CV_RULES)
   for (const fact of [new Date().toISOString().slice(0, 10), 'Backend', 'Pixelwerk GmbH', 'Vue', 'TypeScript']) {
     expect(text).toContain(fact)
   }
@@ -197,7 +185,7 @@ test('a CV without a finished analysis, or an inactive one, leaves the coach wit
   await send(id, 'Kennst du meinen Lebenslauf?')
 
   const text = requestText(model.requests.at(-1)!)
-  expect(text).toContain(COACH_AGENT_NO_CV)
+  expect(text).toContain(coachPrompt.NO_CV)
   expect(text).not.toContain('Pixelwerk GmbH')
 })
 
@@ -209,7 +197,7 @@ test('a ready analysis without a confirmed role leaves the coach without a CV', 
   await send(id, 'Kennst du meinen Lebenslauf?')
 
   const text = requestText(model.requests.at(-1)!)
-  expect(text).toContain(COACH_AGENT_NO_CV)
+  expect(text).toContain(coachPrompt.NO_CV)
   expect(text).not.toContain('Pixelwerk GmbH')
 })
 
@@ -305,7 +293,7 @@ test('a failed answer keeps the question and can be retried', async () => {
     role: 'user',
     content: [
       { type: 'text', text: 'Wie verhandle ich mein Gehalt?' },
-      { type: 'text', text: COACH_AGENT_REFOCUS },
+      { type: 'text', text: coachPrompt.REFOCUS },
     ],
   })
 
@@ -525,7 +513,7 @@ test('an application without a match says so in the result', async () => {
 
   await send(id, 'Interviewfragen bitte')
 
-  expect(JSON.stringify(toolResults(model.requests[1].messages.at(-1)!)[0].content)).toContain(COACH_AGENT_NO_MATCH)
+  expect(JSON.stringify(toolResults(model.requests[1].messages.at(-1)!)[0].content)).toContain(coachPrompt.NO_MATCH)
 })
 
 test('a foreign, unknown or invalid application and an unknown tool come back as errors', async () => {
@@ -549,10 +537,10 @@ test('a foreign, unknown or invalid application and an unknown tool come back as
 
   const results = toolResults(model.requests[1].messages.at(-1)!)
   expect(results.map((r) => [r.tool_use_id, r.content, r.is_error])).toEqual([
-    ['toolu_1', COACH_AGENT_ERRORS.not_found, true],
-    ['toolu_2', COACH_AGENT_ERRORS.not_found, true],
-    ['toolu_3', COACH_AGENT_ERRORS.invalid_input, true],
-    ['toolu_4', COACH_AGENT_ERRORS.unknown_tool, true],
+    ['toolu_1', coachPrompt.ERRORS.not_found, true],
+    ['toolu_2', coachPrompt.ERRORS.not_found, true],
+    ['toolu_3', coachPrompt.ERRORS.invalid_input, true],
+    ['toolu_4', coachPrompt.ERRORS.unknown_tool, true],
   ])
   expect(events(response.text).filter((e) => e.event === 'step')).toHaveLength(4)
   expect(JSON.stringify(model.requests)).not.toContain('Wir suchen Vue 3')
@@ -577,7 +565,7 @@ test('after four rounds with tools the last round offers none', async () => {
     { type: 'none' },
   ])
   const last = model.requests[4].messages.at(-1)!.content as { type: string; text?: string }[]
-  expect(last.at(-1)).toEqual({ type: 'text', text: COACH_AGENT_LAST_ROUND })
+  expect(last.at(-1)).toEqual({ type: 'text', text: coachPrompt.LAST_ROUND })
   expect(events(response.text).at(-1)!.data).toMatchObject({ message: { text: 'Ich finde die Bewerbung nicht.' } })
 })
 
@@ -603,9 +591,9 @@ test('every round of a turn sends the same tools', async () => {
   await send(id, 'Bereite mich auf Kreditwerk vor')
 
   expect(model.requests).toHaveLength(3)
-  expect(model.requests.map((r) => r.tools)).toEqual([COACH_AGENT_TOOLS, COACH_AGENT_TOOLS, COACH_AGENT_TOOLS])
-  expect(COACH_AGENT_TOOLS).toHaveLength(1)
-  expect(COACH_AGENT_TOOLS[0]).toMatchObject({ name: 'get_application' })
+  expect(model.requests.map((r) => r.tools)).toEqual([TOOLS, TOOLS, TOOLS])
+  expect(TOOLS).toHaveLength(1)
+  expect(TOOLS[0]).toMatchObject({ name: 'get_application' })
   expect(model.requests[2].messages).toHaveLength(9)
 })
 
@@ -631,7 +619,7 @@ test('all rounds of a turn share one prefix and the next turn gets a new mark', 
     expect(after.messages.slice(0, before.messages.length)).toEqual(before.messages)
   }
   expect(third.messages.at(-2)!.content).toContainEqual(thinking)
-  expect(third.messages.at(-1)!.content).toContainEqual({ type: 'text', text: COACH_AGENT_NEXT_ROUND })
+  expect(third.messages.at(-1)!.content).toContainEqual({ type: 'text', text: coachPrompt.NEXT_ROUND })
   const mark = (params: MessageCreateParamsNonStreaming) => /<bewerbungen-([0-9a-f]{8}) /u.exec(applicantFile(params))?.[1]
   expect(mark(third)).toBe(mark(first))
 
@@ -678,7 +666,7 @@ test('the coach reads only the newest confirmed researches of this conversation'
 
   const file = applicantFile(model.requests[0])
   const companies = [...file.matchAll(/^Firma: (.+)$/gmu)].map(([, company]) => company)
-  expect(companies).toHaveLength(COACH_AGENT_RESEARCH_LIMIT)
+  expect(companies).toHaveLength(coachConfig.RESEARCH_LIMIT)
   expect(companies).toEqual(['Firma Fünf', 'Firma Vier', 'Firma Drei'])
   expect(JSON.stringify(model.requests[0])).not.toContain('Geheimer Verdacht')
 })

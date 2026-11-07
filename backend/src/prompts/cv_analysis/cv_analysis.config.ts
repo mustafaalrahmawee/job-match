@@ -1,17 +1,17 @@
 import type { OutputConfig, ThinkingConfigParam } from '@anthropic-ai/sdk/resources/messages'
 
-export const CV_ANALYSIS_MODEL = 'claude-haiku-5-5'
-export const CV_ANALYSIS_EFFORT: OutputConfig['effort'] = 'medium'
-export const CV_ANALYSIS_THINKING: ThinkingConfigParam = { type: 'adaptive' }
-export const CV_ANALYSIS_MAX_TOKENS = 16000
-export const CV_ANALYSIS_INPUT_BUDGET = 1000000 - CV_ANALYSIS_MAX_TOKENS - 4000
+export const MODEL = 'claude-haiku-5-5'
+export const EFFORT: OutputConfig['effort'] = 'medium'
+export const THINKING: ThinkingConfigParam = { type: 'adaptive' }
+export const MAX_TOKENS = 16000
+export const INPUT_BUDGET = 1000000 - MAX_TOKENS - 4000
 
-export const CV_MAX_PAGES = 5
-export const CV_ANALYSIS_PDF_TOKENS = CV_MAX_PAGES * 4500
+export const MAX_PAGES = 5
+export const PDF_TOKENS = MAX_PAGES * 4500
 
-export const CV_ENTRY_MAX_CHARS = 300
+export const ENTRY_MAX_CHARS = 300
 
-export const CV_ROLES = [
+export const ROLES = [
   'Frontend',
   'Backend',
   'Fullstack',
@@ -25,9 +25,9 @@ export const CV_ROLES = [
   'Andere',
 ] as const
 
-export const CV_SUSPICIOUS_KINDS = ['hidden_text', 'instruction', 'fake_notice'] as const
+export const SUSPICIOUS_KINDS = ['hidden_text', 'instruction', 'fake_notice'] as const
 
-export const CV_LIST_LIMITS = {
+export const LIST_LIMITS = {
   positions: 15,
   skills: 30,
   education: 8,

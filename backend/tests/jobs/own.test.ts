@@ -2,7 +2,7 @@ import type { ContentBlockParam } from '@anthropic-ai/sdk/resources/messages'
 import request from 'supertest'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { JOB_READINGS_PER_DAY } from '../../src/modules/jobs/jobs.service.js'
-import { JOB_EXTRACT_MODEL } from '../../src/prompts/job_extract/job_extract.config.js'
+import * as jobConfig from '../../src/prompts/job_extract/job_extract.config.js'
 import { bearerFor, createAnna, sentText, useTestDatabase } from '../helpers.js'
 
 const { app, auth, prisma, messages } = useTestDatabase()
@@ -96,7 +96,7 @@ test('pasted text goes to the model as a document and comes back as fields with 
     unverified: ['salary'],
   })
   expect(messages.requests).toHaveLength(1)
-  expect(messages.requests[0].model).toBe(JOB_EXTRACT_MODEL)
+  expect(messages.requests[0].model).toBe(jobConfig.MODEL)
   expect(material()).toMatchObject({ type: 'document', source: { type: 'text' } })
   expect(JSON.stringify(material())).toContain('Senior Frontend Engineer')
   expect(await prisma.job.count()).toBe(0)

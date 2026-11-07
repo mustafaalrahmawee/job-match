@@ -1,26 +1,11 @@
 import type { MessageCreateParamsNonStreaming, MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import { expect, test } from 'vitest'
 import { estimateTokens } from '../../src/llm/assemble.js'
-import { COACH_AGENT_TOOL_ROUNDS } from '../../src/prompts/coach_agent/coach_agent.config.js'
+import * as coachConfig from '../../src/prompts/coach_agent/coach_agent.config.js'
 import { coachAgentRequest } from '../../src/prompts/coach_agent/coach_agent.request.js'
 import type { CoachAgentContext } from '../../src/prompts/coach_agent/coach_agent.schemas.js'
-import {
-  COACH_AGENT_CONTRACT,
-  COACH_AGENT_CV_RULES,
-  COACH_AGENT_FILE_CLOSE,
-  COACH_AGENT_FILE_EMPTY,
-  COACH_AGENT_FILE_OPEN,
-  COACH_AGENT_FOREIGN,
-  COACH_AGENT_FRAME,
-  COACH_AGENT_HISTORY_NOTE,
-  COACH_AGENT_LAST_ROUND,
-  COACH_AGENT_NEXT_ROUND,
-  COACH_AGENT_NO_CV,
-  COACH_AGENT_REFOCUS,
-  COACH_AGENT_RULES,
-  COACH_AGENT_SYSTEM,
-} from '../../src/prompts/coach_agent/coach_agent.texts.js'
-import { COACH_AGENT_FILE_TOOL } from '../../src/prompts/coach_agent/coach_agent.tools.js'
+import * as coachPrompt from '../../src/prompts/coach_agent/coach_agent.texts.js'
+import { FILE_TOOL } from '../../src/prompts/coach_agent/coach_agent.tools.js'
 import type { CvAnalysis } from '../../src/prompts/cv_analysis/cv_analysis.schemas.js'
 import { requestText } from '../helpers.js'
 
@@ -56,15 +41,15 @@ function round(n: number): MessageParam[] {
 
 test('without a ready CV the request holds the coach prompt and the no-CV text, but no CV rules', () => {
   const text = requestText(coachAgentRequest(messages, [], settings, noCv))
-  expect(text).toContain(COACH_AGENT_SYSTEM)
-  expect(text).toContain(COACH_AGENT_NO_CV)
-  expect(text).not.toContain(COACH_AGENT_CV_RULES)
+  expect(text).toContain(coachPrompt.SYSTEM)
+  expect(text).toContain(coachPrompt.NO_CV)
+  expect(text).not.toContain(coachPrompt.CV_RULES)
 })
 
 test('with a ready CV the request holds the CV rules and every fact of the analysis', () => {
   const text = requestText(coachAgentRequest(messages, [], settings, withCv))
-  expect(text).toContain(COACH_AGENT_CV_RULES)
-  expect(text).not.toContain(COACH_AGENT_NO_CV)
+  expect(text).toContain(coachPrompt.CV_RULES)
+  expect(text).not.toContain(coachPrompt.NO_CV)
   for (const fact of [
     'Frontend',
     'stand="2026-10-16"',
@@ -94,13 +79,13 @@ test('earlier turns go as text only, empty ones are left out, and only the last 
 
   expect(request.messages.map((m) => m.role)).toEqual(['user', 'user', 'assistant', 'user', 'assistant', 'user'])
   expect(request.messages[0]).toEqual({ role: 'user', content: 'Hallo' })
-  expect(request.messages[1]).toEqual({ role: 'user', content: COACH_AGENT_FILE_OPEN })
-  expect(request.messages[4]).toEqual({ role: 'assistant', content: COACH_AGENT_FILE_CLOSE })
+  expect(request.messages[1]).toEqual({ role: 'user', content: coachPrompt.FILE_OPEN })
+  expect(request.messages[4]).toEqual({ role: 'assistant', content: coachPrompt.FILE_CLOSE })
   expect(request.messages[5]).toEqual({
     role: 'user',
     content: [
       { type: 'text', text: 'Wie lang soll ein Anschreiben sein?' },
-      { type: 'text', text: COACH_AGENT_REFOCUS },
+      { type: 'text', text: coachPrompt.REFOCUS },
     ],
   })
   expect(JSON.stringify(request.messages[3])).toContain('- keine Bewerbungen')
@@ -114,16 +99,16 @@ test('the steps of the turn follow unchanged, and the last round offers no tools
   expect(open.messages.slice(-steps.length)).toEqual(
     steps.map((step) =>
       step.role === 'user' && Array.isArray(step.content)
-        ? { ...step, content: [...step.content, { type: 'text', text: COACH_AGENT_NEXT_ROUND }] }
+        ? { ...step, content: [...step.content, { type: 'text', text: coachPrompt.NEXT_ROUND }] }
         : step,
     ),
   )
 
-  const last = [...steps, ...round(COACH_AGENT_TOOL_ROUNDS)]
+  const last = [...steps, ...round(coachConfig.TOOL_ROUNDS)]
   const final = coachAgentRequest(messages, last, settings, noCv)
   expect(final.tool_choice).toEqual({ type: 'none' })
-  expect(final.messages.at(-1)!.content).toContainEqual({ type: 'text', text: COACH_AGENT_LAST_ROUND })
-  expect(last.at(-1)!.content).not.toContainEqual({ type: 'text', text: COACH_AGENT_LAST_ROUND })
+  expect(final.messages.at(-1)!.content).toContainEqual({ type: 'text', text: coachPrompt.LAST_ROUND })
+  expect(last.at(-1)!.content).not.toContainEqual({ type: 'text', text: coachPrompt.LAST_ROUND })
 })
 
 const research = { company: 'Kreditwerk', question: 'Wie groß?', content: 'Klein.', sources: [], createdAt: new Date('2026-10-15') }
@@ -172,9 +157,9 @@ test('every round of a turn keeps system, tools and all earlier messages of the 
   const hints = last
     .filter((message) => Array.isArray(message.content))
     .flatMap((message) => message.content as { type: string; text?: string }[])
-    .filter(({ text }) => text === COACH_AGENT_NEXT_ROUND || text === COACH_AGENT_LAST_ROUND)
+    .filter(({ text }) => text === coachPrompt.NEXT_ROUND || text === coachPrompt.LAST_ROUND)
     .map(({ text }) => text)
-  expect(hints).toEqual([COACH_AGENT_NEXT_ROUND, COACH_AGENT_NEXT_ROUND, COACH_AGENT_NEXT_ROUND, COACH_AGENT_LAST_ROUND])
+  expect(hints).toEqual([coachPrompt.NEXT_ROUND, coachPrompt.NEXT_ROUND, coachPrompt.NEXT_ROUND, coachPrompt.LAST_ROUND])
   expect(history).toEqual(messages)
   expect(context).toEqual(full)
 })
@@ -186,7 +171,7 @@ test('the prefix also holds when the budget cuts the file and the history note a
 
   expectOnePrefix(requests)
   const text = requestText(requests[0])
-  expect(requests[0].system).toContainEqual({ type: 'text', text: COACH_AGENT_HISTORY_NOTE })
+  expect(requests[0].system).toContainEqual({ type: 'text', text: coachPrompt.HISTORY_NOTE })
   expect(text).toContain('Weitere Bewerbungen, die länger nicht geändert wurden')
   expect(text).not.toContain('Pixelpfad Digital GmbH')
   expect(text).not.toContain('Frage 1')
@@ -208,18 +193,18 @@ test('steps never shorten the fixed part and throw once they pass their own budg
 })
 
 test('when the budget leaves no room for the file, the result says so and no note speaks about it', () => {
-  const call = { role: 'assistant', content: [{ type: 'tool_use', id: 'toolu_applicant_file', name: COACH_AGENT_FILE_TOOL, input: {} }] }
+  const call = { role: 'assistant', content: [{ type: 'tool_use', id: 'toolu_applicant_file', name: FILE_TOOL, input: {} }] }
   const fixed = [
-    COACH_AGENT_FRAME,
-    COACH_AGENT_RULES,
-    COACH_AGENT_CONTRACT,
-    COACH_AGENT_FOREIGN,
-    COACH_AGENT_HISTORY_NOTE,
-    COACH_AGENT_FILE_OPEN,
+    coachPrompt.FRAME,
+    coachPrompt.RULES,
+    coachPrompt.CONTRACT,
+    coachPrompt.FOREIGN,
+    coachPrompt.HISTORY_NOTE,
+    coachPrompt.FILE_OPEN,
     JSON.stringify(call),
-    COACH_AGENT_FILE_EMPTY,
-    COACH_AGENT_FILE_CLOSE,
-    COACH_AGENT_REFOCUS,
+    coachPrompt.FILE_EMPTY,
+    coachPrompt.FILE_CLOSE,
+    coachPrompt.REFOCUS,
   ].reduce((sum, text) => sum + estimateTokens(text), 0)
   const live = 'x'.repeat((TURN_BUDGET - fixed) * 3)
   const context = { ...withCv, researches: [research] }
@@ -232,10 +217,10 @@ test('when the budget leaves no room for the file, the result says so and no not
       {
         type: 'tool_result',
         tool_use_id: 'toolu_applicant_file',
-        content: [{ type: 'text', text: COACH_AGENT_FILE_EMPTY }],
+        content: [{ type: 'text', text: coachPrompt.FILE_EMPTY }],
       },
     ],
   })
   expect(request.messages[1]).toEqual(call)
-  expect(request.messages[3]).toEqual({ role: 'assistant', content: COACH_AGENT_FILE_CLOSE })
+  expect(request.messages[3]).toEqual({ role: 'assistant', content: coachPrompt.FILE_CLOSE })
 })

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { CV_ROLES } from '../../prompts/cv_analysis/cv_analysis.config.js'
+import * as cvConfig from '../../prompts/cv_analysis/cv_analysis.config.js'
 import { cvStoredAnalysisSchema } from '../../prompts/cv_analysis/cv_analysis.schemas.js'
 
 export const CV_MAX_BYTES = 5 * 1024 * 1024
@@ -10,7 +10,7 @@ export const pdfSchema = z
   .instanceof(Buffer, { message: 'A PDF file is required' })
   .refine((pdf) => pdf.subarray(0, 5).toString('latin1') === '%PDF-', 'The file is not a PDF')
 
-export const confirmRoleSchema = z.object({ role: z.enum(CV_ROLES) })
+export const confirmRoleSchema = z.object({ role: z.enum(cvConfig.ROLES) })
 
 export type ConfirmRoleInput = z.infer<typeof confirmRoleSchema>
 
@@ -30,7 +30,7 @@ export const cvVersionSchema = z.object({
   id: z.int(),
   status: z.enum(['none', 'running', 'ready', 'failed']),
   error: z.enum(ANALYSIS_ERRORS).nullable(),
-  role: z.enum(CV_ROLES).nullable(),
+  role: z.enum(cvConfig.ROLES).nullable(),
   analysis: cvStoredAnalysisSchema.nullable(),
   created_at: z.date(),
 })

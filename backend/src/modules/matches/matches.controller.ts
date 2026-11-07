@@ -1,6 +1,6 @@
 import type { RequestHandler } from 'express'
 import type { CvRole } from '../../prompts/cv_analysis/cv_analysis.schemas.js'
-import { MATCH_SCORE_BANDS } from '../../prompts/match_analysis/match_analysis.config.js'
+import * as matchConfig from '../../prompts/match_analysis/match_analysis.config.js'
 import type { MatchAnalysis } from '../../prompts/match_analysis/match_analysis.schemas.js'
 import { authOf } from '../../shared/auth.middleware.js'
 import {
@@ -58,7 +58,7 @@ function output(result: MatchResultInfo): MatchOutput {
     id: result.id,
     job_id: result.jobId,
     score: result.score,
-    fit: MATCH_SCORE_BANDS.filter((band) => result.score >= band.min)[0].fit,
+    fit: matchConfig.SCORE_BANDS.filter((band) => result.score >= band.min)[0].fit,
     strengths: result.strengths as MatchAnalysis['strengths'],
     gaps: result.gaps as MatchAnalysis['gaps'],
     tips: result.tips as MatchAnalysis['tips'],

@@ -1,5 +1,5 @@
 import type { PrismaClient } from '../../generated/prisma/client.js'
-import { COACH_AGENT_RESEARCH_LIMIT } from '../../prompts/coach_agent/coach_agent.config.js'
+import * as coachConfig from '../../prompts/coach_agent/coach_agent.config.js'
 import type { CoachResearch } from '../../prompts/coach_agent/coach_agent.schemas.js'
 import type { CompanyResearchSource } from '../../prompts/company_research/company_research.schemas.js'
 
@@ -10,7 +10,7 @@ export class ResearchReader {
     const researches = await this.prisma.companyResearch.findMany({
       where: { userId, conversationId, confirmedAt: { not: null } },
       orderBy: [{ confirmedAt: 'desc' }, { id: 'desc' }],
-      take: COACH_AGENT_RESEARCH_LIMIT,
+      take: coachConfig.RESEARCH_LIMIT,
       select: { company: true, question: true, content: true, sources: true, createdAt: true },
     })
     return researches.map((research) => ({ ...research, sources: research.sources as CompanyResearchSource[] }))

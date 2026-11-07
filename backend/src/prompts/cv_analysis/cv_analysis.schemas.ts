@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { CV_ROLES, CV_SUSPICIOUS_KINDS } from './cv_analysis.config.js'
+import * as config from './cv_analysis.config.js'
 
-export type CvRole = (typeof CV_ROLES)[number]
+export type CvRole = (typeof config.ROLES)[number]
 
 export type CoachCv = { role: CvRole; analysis: CvAnalysis; asOf: string }
 
@@ -27,11 +27,11 @@ export const cvAnalysisSchema = z.object({
   ),
   highest_degree: z.string().nullable(),
   languages: z.array(z.object({ name: z.string(), level: z.string().nullable() })),
-  suggested_role: z.enum(CV_ROLES),
+  suggested_role: z.enum(config.ROLES),
   strengths: z.array(z.string()),
   weaknesses: z.array(z.string()),
   tips: z.array(z.string()),
-  suspicious_text: z.array(z.object({ kind: z.enum(CV_SUSPICIOUS_KINDS), excerpt: z.string() })),
+  suspicious_text: z.array(z.object({ kind: z.enum(config.SUSPICIOUS_KINDS), excerpt: z.string() })),
 })
 
 export const cvStoredAnalysisSchema = cvAnalysisSchema.omit({ suspicious_text: true })
@@ -42,4 +42,4 @@ export type CvAnalysis = z.infer<typeof cvStoredAnalysisSchema>
 
 export type SuspiciousText = CvAnalysisOutput['suspicious_text']
 
-export const CV_ANALYSIS_JSON_SCHEMA = z.toJSONSchema(cvAnalysisSchema)
+export const JSON_SCHEMA = z.toJSONSchema(cvAnalysisSchema)

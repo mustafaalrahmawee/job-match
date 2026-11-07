@@ -1,14 +1,10 @@
 import type { ContentBlock } from '@anthropic-ai/sdk/resources/messages'
 import { ADDRESS, oneLine, visible } from '../../llm/untrusted.js'
-import {
-  COMPANY_RESEARCH_ANSWER_TAG,
-  COMPANY_RESEARCH_FLAG_TAG,
-  COMPANY_RESEARCH_TITLE_MAX_CHARS,
-} from './company_research.config.js'
+import * as config from './company_research.config.js'
 import type { CompanyResearchResult, CompanyResearchSource } from './company_research.schemas.js'
 
-const ANSWER_SHAPE = `<${COMPANY_RESEARCH_ANSWER_TAG}></${COMPANY_RESEARCH_ANSWER_TAG}>`
-const FLAG_SHAPE = `<${COMPANY_RESEARCH_FLAG_TAG}></${COMPANY_RESEARCH_FLAG_TAG}>`
+const ANSWER_SHAPE = `<${config.ANSWER_TAG}></${config.ANSWER_TAG}>`
+const FLAG_SHAPE = `<${config.FLAG_TAG}></${config.FLAG_TAG}>`
 
 const TAG = /<[\p{L}/!?][^<>]*>?/gu
 const ENTITY = /&(amp|lt|gt|quot|apos);/g
@@ -27,7 +23,7 @@ export function companyResearchResult(content: ContentBlock[]): CompanyResearchR
     for (const { url, title } of sources) {
       const address = URL.canParse(url) ? new URL(url) : null
       if (address && protocols.includes(address.protocol)) {
-        kept.set(address.href, title === null ? null : line(title).slice(0, COMPANY_RESEARCH_TITLE_MAX_CHARS) || null)
+        kept.set(address.href, title === null ? null : line(title).slice(0, config.TITLE_MAX_CHARS) || null)
       } else hits++
     }
     return [...kept].map(([url, title]) => ({ url, title }))
