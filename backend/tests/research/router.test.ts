@@ -9,8 +9,8 @@ import {
   COMPANY_RESEARCH_FIELD_MAX_CHARS,
   COMPANY_RESEARCH_MODEL,
   COMPANY_RESEARCH_TITLE_MAX_CHARS,
-  COMPANY_RESEARCH_TOOLS,
-} from '../../src/prompts/company_research.js'
+} from '../../src/prompts/company_research/company_research.config.js'
+import { COMPANY_RESEARCH_TOOLS } from '../../src/prompts/company_research/company_research.tools.js'
 import { bearerFor, createAnna, requestText, streamed, streamedText, useTestDatabase, type FakeReply } from '../helpers.js'
 
 const { app, auth, prisma, model } = useTestDatabase()

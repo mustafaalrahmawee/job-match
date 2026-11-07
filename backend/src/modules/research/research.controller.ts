@@ -1,6 +1,6 @@
 import type { RequestHandler, Response } from 'express'
 import type { CompanyResearch } from '../../generated/prisma/client.js'
-import type { CompanyResearchSource } from '../../prompts/company_research.js'
+import type { CompanyResearchSource } from '../../prompts/company_research/company_research.schemas.js'
 import { authOf } from '../../shared/auth.middleware.js'
 import {
   researchConversationIdSchema,

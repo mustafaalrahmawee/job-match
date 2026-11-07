@@ -32,15 +32,15 @@ Diese Arbeitsdokumente liegen nicht im öffentlichen Repo; auf Nachfrage zeige i
 
 | Behauptung | Wo nachlesen | Was man dort sieht |
 | --- | --- | --- |
-| Jeder Prompt-Teil ist benannt und einzeln nachvollziehbar | [job_extract.ts](../backend/src/prompts/job_extract.ts) | jeder Teil als benannte Konstante, der Kopfkommentar nennt Profil, Slots, Stop und was der Code statt des Prompts erzwingt |
-| App und Eval bauen dieselbe Anfrage | [cv_analysis.ts](../backend/src/prompts/cv_analysis.ts), Funktion `cvAnalysisRequest` | eine Funktion je Unit; der Service ruft sie, die Eval ruft sie mit einer `Variant` für Modell und Effort |
+| Jeder Prompt-Teil ist benannt und einzeln nachvollziehbar | [job_extract/](../backend/src/prompts/job_extract/) | jeder Teil als benannte Konstante, der Kopfkommentar nennt Profil, Slots, Stop und was der Code statt des Prompts erzwingt |
+| App und Eval bauen dieselbe Anfrage | [cv_analysis.request.ts](../backend/src/prompts/cv_analysis/cv_analysis.request.ts), Funktion `cvAnalysisRequest` | eine Funktion je Unit; der Service ruft sie, die Eval ruft sie mit einer `Variant` für Modell und Effort |
 | Prompt passt ins Eingabebudget | [assemble.ts](../backend/src/llm/assemble.ts) | jeder Teil der Anfrage ist ein Element mit Position, Stufe und Score; `assemble` wählt vor dem Senden, was ins Budget passt |
-| Structured Outputs ohne doppeltes Schema | [job_extract.ts](../backend/src/prompts/job_extract.ts), `jobExtractSchema` | ein Zod-Schema validiert die Antwort, `z.toJSONSchema()` daraus geht als `output_config.format` an die API |
-| Prompt-Injection wird strukturell behandelt, nicht mit Verboten | [job_extract.ts](../backend/src/prompts/job_extract.ts), `markedText`, `JOB_EXTRACT_FOREIGN` und `jobExtractResult` | eingefügter Text geht als Document-Block und zusätzlich zwischen zwei Tags mit einer Kennung, die bei jedem Aufruf neu zufällig gewählt wird und die der Text nicht kennen kann; der Absatz zum fremden Material erklärt Anweisungen im Material zum Material; was gelten muss, prüft der Code: Zod, Wortlaut, Adressen und unsichtbare Zeichen in `jobExtractResult` |
+| Structured Outputs ohne doppeltes Schema | [job_extract.schemas.ts](../backend/src/prompts/job_extract/job_extract.schemas.ts), `jobExtractSchema` | ein Zod-Schema validiert die Antwort, `z.toJSONSchema()` daraus geht als `output_config.format` an die API |
+| Prompt-Injection wird strukturell behandelt, nicht mit Verboten | [job_extract/](../backend/src/prompts/job_extract/), `markedText`, `JOB_EXTRACT_FOREIGN` und `jobExtractResult` | eingefügter Text geht als Document-Block und zusätzlich zwischen zwei Tags mit einer Kennung, die bei jedem Aufruf neu zufällig gewählt wird und die der Text nicht kennen kann; der Absatz zum fremden Material erklärt Anweisungen im Material zum Material; was gelten muss, prüft der Code: Zod, Wortlaut, Adressen und unsichtbare Zeichen in `jobExtractResult` |
 | Modellwahl ist ein Kosten-Latenz-Qualität-Trade-off | [prompts/](../backend/src/prompts/) | Modell und Effort je Unit als Konstante: Haiku für Extraktion und Fragen, Sonnet für Analyse und Bewertung; Opus nirgends, bis eine Messung es verlangt |
 | Kosten werden je Aufruf gemessen, mit Cache | [costs.ts](../backend/src/llm/costs.ts), [cvs.service.ts](../backend/src/modules/cvs/cvs.service.ts) | Preistabelle mit Cache-Read und Cache-Write, Batch-Rabatt; Tokens und Kosten werden am Datensatz gespeichert |
 | Eval-Prüfungen sind Code, nicht Prosa | [checks.ts](../backend/evals/checks.ts), [checks.test.ts](../backend/tests/evals/checks.test.ts) | Sprache mit `franc`, Wortzahl, verbotene Phrasen, Stop-Grund; die Prüfungen sind selbst getestet |
-| Claude-API-Funktionen dort, wo sie fachlich passen | [send.ts](../backend/src/llm/send.ts), [cvs.service.ts](../backend/src/modules/cvs/cvs.service.ts), [cv_analysis.ts](../backend/src/prompts/cv_analysis.ts) | Streaming mit Abbruch und Teilantwort; die Lebenslauf-Analyse als direkter Aufruf mit Zeitlimit statt als Batch, weil Stellen, Match und Coach auf das Ergebnis warten; PDF als Document-Block; Screenshot als Image-Block; adaptives Thinking mit Effort |
+| Claude-API-Funktionen dort, wo sie fachlich passen | [send.ts](../backend/src/llm/send.ts), [cvs.service.ts](../backend/src/modules/cvs/cvs.service.ts), [cv_analysis.request.ts](../backend/src/prompts/cv_analysis/cv_analysis.request.ts) | Streaming mit Abbruch und Teilantwort; die Lebenslauf-Analyse als direkter Aufruf mit Zeitlimit statt als Batch, weil Stellen, Match und Coach auf das Ergebnis warten; PDF als Document-Block; Screenshot als Image-Block; adaptives Thinking mit Effort |
 | Jeder Stop-Grund hat eine Behandlung | [coach.service.ts](../backend/src/modules/coach/coach.service.ts) | `refusal` wird geloggt und nicht gespeichert, leere Antwort nicht gespeichert – außer an der Grenze der Fortsetzungen (`pause_turn`), damit Schrittzeilen und der Hinweis der App bleiben –, unbekannter Grund wirft einen Fehler |
 | Backend-Architektur, die sich testen lässt | [app.ts](../backend/src/app.ts) | ein Composition Root, Module je Domäne, Services mit Abhängigkeiten im Konstruktor, feste Fehlerabbildung; 242 Vitest-Fälle im Backend mit Supertest gegen eine eigene Testdatenbank, 58 im Frontend mit `@vue/test-utils` |
 | Sicherheit im Kleinen | [auth.security.ts](../backend/src/modules/auth/auth.security.ts), [auth.service.ts](../backend/src/modules/auth/auth.service.ts) | argon2, Dummy-Hash gegen Timing-Unterschiede bei unbekannter E-Mail, Token nur als SHA-256 gespeichert; fremde Datensätze antworten mit 404 |
@@ -55,7 +55,7 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
    Prüfer-Agent meldet Funde gegen den Leitfaden, eine Runde Überarbeitung, dann Pause. Offene
    Punkte entscheidet der Autor, etwa ob das Modell für eine Anzeige ohne Firmennamen raten darf
    (nein).
-3. **Code der Unit.** Der Schreiber setzt das Blatt in [job_extract.ts](../backend/src/prompts/job_extract.ts)
+3. **Code der Unit.** Der Schreiber setzt das Blatt in [job_extract/](../backend/src/prompts/job_extract/)
    um, der Prüfer vergleicht Blatt und Code Wort für Wort.
 4. **Use Case.** Claude Code schreibt Kontext, Backend, Frontend und Tests, dann fordert es das
    Review an. Codex prüft nur lesend gegen die Anforderung und die Projektregeln und antwortet mit
@@ -101,8 +101,8 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
 
 ## Leseweg für 15 Minuten
 
-1. [job_extract.ts](../backend/src/prompts/job_extract.ts): eine Prompt-Unit von oben nach unten –
-   Konstanten, Schema, Prompt-Teile, Request-Funktion.
+1. [job_extract/](../backend/src/prompts/job_extract/): eine Prompt-Unit Datei für Datei –
+   Konstanten, Schema, Prompt-Teile, Material, Prüfung der Antwort, Request-Funktion.
 2. [assemble.ts](../backend/src/llm/assemble.ts): wie aus den Teilen die Anfrage im Budget wird.
 3. [send.ts](../backend/src/llm/send.ts) und [costs.ts](../backend/src/llm/costs.ts): Senden,
    Streaming, Kosten.

@@ -1,4 +1,4 @@
-import type { CvRole } from '../../prompts/cv_analysis.js'
+import type { CvRole } from '../../prompts/cv_analysis/cv_analysis.schemas.js'
 import { baDetailsSchema, baSearchPageSchema } from './jobs.schemas.js'
 
 const BASE_URL = 'https://rest.arbeitsagentur.de/jobboerse/jobsuche-service'

@@ -2,7 +2,7 @@ import type { ContentBlockParam } from '@anthropic-ai/sdk/resources/messages'
 import request from 'supertest'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { JOB_READINGS_PER_DAY } from '../../src/modules/jobs/jobs.service.js'
-import { JOB_EXTRACT_MODEL } from '../../src/prompts/job_extract.js'
+import { JOB_EXTRACT_MODEL } from '../../src/prompts/job_extract/job_extract.config.js'
 import { bearerFor, createAnna, sentText, useTestDatabase } from '../helpers.js'
 
 const { app, auth, prisma, messages } = useTestDatabase()

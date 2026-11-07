@@ -1,16 +1,17 @@
 import { expect, test } from 'vitest'
 import {
   CV_ANALYSIS_EFFORT,
-  CV_ANALYSIS_GLUE,
-  CV_ANALYSIS_JSON_SCHEMA,
   CV_ANALYSIS_MODEL,
-  CV_ANALYSIS_REFOCUS,
   CV_ROLES,
-  cvAnalysisRequest,
-  cvAnalysisResult,
-  cvAside,
+} from '../../src/prompts/cv_analysis/cv_analysis.config.js'
+import { cvAside } from '../../src/prompts/cv_analysis/cv_analysis.material.js'
+import { cvAnalysisRequest } from '../../src/prompts/cv_analysis/cv_analysis.request.js'
+import { cvAnalysisResult } from '../../src/prompts/cv_analysis/cv_analysis.result.js'
+import {
+  CV_ANALYSIS_JSON_SCHEMA,
   type CvAnalysisOutput,
-} from '../../src/prompts/cv_analysis.js'
+} from '../../src/prompts/cv_analysis/cv_analysis.schemas.js'
+import { CV_ANALYSIS_GLUE, CV_ANALYSIS_REFOCUS } from '../../src/prompts/cv_analysis/cv_analysis.texts.js'
 
 const PDF_BASE64 = Buffer.from('%PDF-1.7\nLebenslauf\n%%EOF').toString('base64')
 

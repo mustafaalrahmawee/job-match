@@ -1,8 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { expect, test } from 'vitest'
 import { createSendMessage, createSendStream } from '../../src/llm/send.js'
-import { coachAgentRequest } from '../../src/prompts/coach_agent.js'
-import { jobExtractRequest } from '../../src/prompts/job_extract.js'
+import { coachAgentRequest } from '../../src/prompts/coach_agent/coach_agent.request.js'
+import { jobExtractRequest } from '../../src/prompts/job_extract/job_extract.request.js'
 
 const EVENTS = [
   {

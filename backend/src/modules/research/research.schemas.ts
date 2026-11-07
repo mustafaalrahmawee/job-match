@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import { COMPANY_RESEARCH_FIELD_MAX_CHARS, type CompanyResearchSource } from '../../prompts/company_research.js'
+import { COMPANY_RESEARCH_FIELD_MAX_CHARS } from '../../prompts/company_research/company_research.config.js'
+import type { CompanyResearchSource } from '../../prompts/company_research/company_research.schemas.js'
 
 const INVISIBLE_CHARS = /[\u{E0000}-\u{E007F}\u{200B}-\u{200D}\u{2060}]|[\u{FE00}-\u{FE0F}]/gu
 

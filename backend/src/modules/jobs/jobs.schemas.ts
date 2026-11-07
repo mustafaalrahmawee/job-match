@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { CV_ROLES } from '../../prompts/cv_analysis.js'
+import { CV_ROLES } from '../../prompts/cv_analysis/cv_analysis.config.js'
 
 export const OFFER_TYPES = ['work', 'self_employment', 'apprenticeship', 'internship'] as const
 

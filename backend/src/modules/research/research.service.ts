@@ -6,11 +6,13 @@ import type { SendResult, SendStream } from '../../llm/send.js'
 import {
   COMPANY_RESEARCH_CONTINUATIONS,
   COMPANY_RESEARCH_WEB_SEARCHES,
-  companyResearchRequest,
-  companyResearchResult,
-  type CompanyResearchInput,
-  type CompanyResearchSource,
-} from '../../prompts/company_research.js'
+} from '../../prompts/company_research/company_research.config.js'
+import { companyResearchRequest } from '../../prompts/company_research/company_research.request.js'
+import { companyResearchResult } from '../../prompts/company_research/company_research.result.js'
+import type {
+  CompanyResearchInput,
+  CompanyResearchSource,
+} from '../../prompts/company_research/company_research.schemas.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
 import type { CoachService } from '../coach/coach.service.js'
 import type { ResearchOutcome, ResearchStep } from './research.schemas.js'

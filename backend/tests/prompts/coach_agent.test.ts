@@ -1,13 +1,15 @@
 import type { MessageCreateParamsNonStreaming, MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import { expect, test } from 'vitest'
 import { estimateTokens } from '../../src/llm/assemble.js'
+import { COACH_AGENT_TOOL_ROUNDS } from '../../src/prompts/coach_agent/coach_agent.config.js'
+import { coachAgentRequest } from '../../src/prompts/coach_agent/coach_agent.request.js'
+import type { CoachAgentContext } from '../../src/prompts/coach_agent/coach_agent.schemas.js'
 import {
   COACH_AGENT_CONTRACT,
   COACH_AGENT_CV_RULES,
   COACH_AGENT_FILE_CLOSE,
   COACH_AGENT_FILE_EMPTY,
   COACH_AGENT_FILE_OPEN,
-  COACH_AGENT_FILE_TOOL,
   COACH_AGENT_FOREIGN,
   COACH_AGENT_FRAME,
   COACH_AGENT_HISTORY_NOTE,
@@ -17,11 +19,9 @@ import {
   COACH_AGENT_REFOCUS,
   COACH_AGENT_RULES,
   COACH_AGENT_SYSTEM,
-  COACH_AGENT_TOOL_ROUNDS,
-  coachAgentRequest,
-  type CoachAgentContext,
-} from '../../src/prompts/coach_agent.js'
-import type { CvAnalysis } from '../../src/prompts/cv_analysis.js'
+} from '../../src/prompts/coach_agent/coach_agent.texts.js'
+import { COACH_AGENT_FILE_TOOL } from '../../src/prompts/coach_agent/coach_agent.tools.js'
+import type { CvAnalysis } from '../../src/prompts/cv_analysis/cv_analysis.schemas.js'
 import { requestText } from '../helpers.js'
 
 const messages = [{ role: 'user' as const, content: 'Habe ich Kubernetes-Erfahrung?' }]

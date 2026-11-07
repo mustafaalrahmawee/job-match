@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import { costUsd } from '../../src/llm/costs.js'
-import { coachAgentRequest } from '../../src/prompts/coach_agent.js'
+import { coachAgentRequest } from '../../src/prompts/coach_agent/coach_agent.request.js'
 
 const USAGE = { input_tokens: 1_000_000, output_tokens: 1_000_000, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
 

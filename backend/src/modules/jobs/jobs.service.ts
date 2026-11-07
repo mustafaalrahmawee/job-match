@@ -1,14 +1,15 @@
 import { randomUUID } from 'node:crypto'
 import type { Job, OfferType, Prisma, PrismaClient } from '../../generated/prisma/client.js'
 import type { SendMessage, SendResult } from '../../llm/send.js'
-import { CV_ROLES, type CvRole } from '../../prompts/cv_analysis.js'
+import { CV_ROLES } from '../../prompts/cv_analysis/cv_analysis.config.js'
+import type { CvRole } from '../../prompts/cv_analysis/cv_analysis.schemas.js'
+import { jobExtractRequest } from '../../prompts/job_extract/job_extract.request.js'
+import { jobExtractResult } from '../../prompts/job_extract/job_extract.result.js'
 import {
-  jobExtractRequest,
-  jobExtractResult,
   jobExtractSchema,
   type JobExtract,
   type JobExtractInput,
-} from '../../prompts/job_extract.js'
+} from '../../prompts/job_extract/job_extract.schemas.js'
 import { BA_MAX_PAGES, BA_PAGE_SIZE, BA_SEARCH_TERMS, POOL_DAYS, type BaClient } from './jobs.ba.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
 import {

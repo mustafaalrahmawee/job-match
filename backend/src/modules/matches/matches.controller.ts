@@ -1,6 +1,7 @@
 import type { RequestHandler } from 'express'
-import type { CvRole } from '../../prompts/cv_analysis.js'
-import { MATCH_SCORE_BANDS, type MatchAnalysis } from '../../prompts/match_analysis.js'
+import type { CvRole } from '../../prompts/cv_analysis/cv_analysis.schemas.js'
+import { MATCH_SCORE_BANDS } from '../../prompts/match_analysis/match_analysis.config.js'
+import type { MatchAnalysis } from '../../prompts/match_analysis/match_analysis.schemas.js'
 import { authOf } from '../../shared/auth.middleware.js'
 import {
   matchConfirmSchema,

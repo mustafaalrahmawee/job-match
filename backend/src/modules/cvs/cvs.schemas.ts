@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import { CV_ROLES, cvStoredAnalysisSchema } from '../../prompts/cv_analysis.js'
+import { CV_ROLES } from '../../prompts/cv_analysis/cv_analysis.config.js'
+import { cvStoredAnalysisSchema } from '../../prompts/cv_analysis/cv_analysis.schemas.js'
 
 export const CV_MAX_BYTES = 5 * 1024 * 1024
 

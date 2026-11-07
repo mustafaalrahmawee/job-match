@@ -1,6 +1,7 @@
 import type { PrismaClient } from '../../generated/prisma/client.js'
-import { COACH_AGENT_RESEARCH_LIMIT, type CoachResearch } from '../../prompts/coach_agent.js'
-import type { CompanyResearchSource } from '../../prompts/company_research.js'
+import { COACH_AGENT_RESEARCH_LIMIT } from '../../prompts/coach_agent/coach_agent.config.js'
+import type { CoachResearch } from '../../prompts/coach_agent/coach_agent.schemas.js'
+import type { CompanyResearchSource } from '../../prompts/company_research/company_research.schemas.js'
 
 export class ResearchReader {
   constructor(private readonly prisma: PrismaClient) { }

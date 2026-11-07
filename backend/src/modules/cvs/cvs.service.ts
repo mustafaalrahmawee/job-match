@@ -3,15 +3,15 @@ import type { MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resource
 import { PDFDocument } from 'pdf-lib'
 import type { CvVersion, Prisma, PrismaClient } from '../../generated/prisma/client.js'
 import type { SendMessage, SendResult } from '../../llm/send.js'
+import { CV_MAX_PAGES } from '../../prompts/cv_analysis/cv_analysis.config.js'
+import { cvAnalysisRequest } from '../../prompts/cv_analysis/cv_analysis.request.js'
+import { cvAnalysisResult } from '../../prompts/cv_analysis/cv_analysis.result.js'
 import {
-  CV_MAX_PAGES,
-  cvAnalysisRequest,
-  cvAnalysisResult,
   cvAnalysisSchema,
   type CvAnalysis,
   type CvRole,
   type SuspiciousText,
-} from '../../prompts/cv_analysis.js'
+} from '../../prompts/cv_analysis/cv_analysis.schemas.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
 import type { AnalysisError } from './cvs.schemas.js'
 

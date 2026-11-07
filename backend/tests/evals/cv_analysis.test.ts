@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import { type Check, type CvAnalysisGold, cvAnalysisChecks, mentions, type RunRecord, tallyChecks } from '../../evals/checks.js'
-import type { CvAnalysis } from '../../src/prompts/cv_analysis.js'
+import type { CvAnalysis } from '../../src/prompts/cv_analysis/cv_analysis.schemas.js'
 
 const GOLD: CvAnalysisGold = {
   is_cv: true,

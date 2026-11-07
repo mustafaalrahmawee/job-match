@@ -3,18 +3,14 @@ import { PDFDocument, PDFString } from 'pdf-lib'
 import request from 'supertest'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { CV_ANALYSES_PER_DAY, CV_ANALYSIS_TIMEOUT_MS, CvsService } from '../../src/modules/cvs/cvs.service.js'
-import {
-  CV_ANALYSIS_EFFORT,
-  CV_ANALYSIS_MODEL,
-  type CvAnalysis,
-  type CvAnalysisOutput,
-} from '../../src/prompts/cv_analysis.js'
+import { CV_ANALYSIS_EFFORT, CV_ANALYSIS_MODEL } from '../../src/prompts/cv_analysis/cv_analysis.config.js'
+import type { CvAnalysis, CvAnalysisOutput } from '../../src/prompts/cv_analysis/cv_analysis.schemas.js'
 import { bearerFor, createAnna, sentText, useTestDatabase, type FakeMessageReply } from '../helpers.js'
 
 const budget = vi.hoisted(() => ({ over: false }))
 
-vi.mock('../../src/prompts/cv_analysis.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/prompts/cv_analysis.js')>()
+vi.mock('../../src/prompts/cv_analysis/cv_analysis.request.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/prompts/cv_analysis/cv_analysis.request.js')>()
   return {
     ...actual,
     cvAnalysisRequest: (...args: Parameters<typeof actual.cvAnalysisRequest>) => {

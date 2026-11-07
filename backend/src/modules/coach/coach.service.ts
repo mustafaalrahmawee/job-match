@@ -9,18 +9,20 @@ import type {
 import type { Application, Conversation, Job, Message, Prisma, PrismaClient } from '../../generated/prisma/client.js'
 import { costUsd } from '../../llm/costs.js'
 import type { SendResult, SendStream } from '../../llm/send.js'
+import { applicationResult } from '../../prompts/coach_agent/coach_agent.material.js'
+import { coachAgentRequest } from '../../prompts/coach_agent/coach_agent.request.js'
+import { researchHits } from '../../prompts/coach_agent/coach_agent.result.js'
+import type {
+  ChatSettings,
+  CoachApplication,
+  CoachToolError,
+} from '../../prompts/coach_agent/coach_agent.schemas.js'
+import { COACH_AGENT_ERRORS } from '../../prompts/coach_agent/coach_agent.texts.js'
 import {
   applicationInputSchema,
-  applicationResult,
   COACH_AGENT_APPLICATION_TOOL,
-  COACH_AGENT_ERRORS,
-  coachAgentRequest,
-  researchHits,
-  type ChatSettings,
-  type CoachApplication,
-  type CoachToolError,
-} from '../../prompts/coach_agent.js'
-import type { MatchAnalysis } from '../../prompts/match_analysis.js'
+} from '../../prompts/coach_agent/coach_agent.tools.js'
+import type { MatchAnalysis } from '../../prompts/match_analysis/match_analysis.schemas.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
 import type { ApplicationsService } from '../applications/applications.service.js'
 import type { CvsService } from '../cvs/cvs.service.js'

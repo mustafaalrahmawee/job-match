@@ -1,5 +1,6 @@
 import { franc } from 'franc'
-import { CV_LIST_LIMITS, cvAnalysisSchema } from '../src/prompts/cv_analysis.js'
+import { CV_LIST_LIMITS } from '../src/prompts/cv_analysis/cv_analysis.config.js'
+import { cvAnalysisSchema } from '../src/prompts/cv_analysis/cv_analysis.schemas.js'
 
 export type RunRecord = {
   text: string

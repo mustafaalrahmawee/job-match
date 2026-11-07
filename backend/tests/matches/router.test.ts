@@ -1,7 +1,7 @@
 import request from 'supertest'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { Prisma, type Job } from '../../src/generated/prisma/client.js'
-import type { CvAnalysis } from '../../src/prompts/cv_analysis.js'
+import type { CvAnalysis } from '../../src/prompts/cv_analysis/cv_analysis.schemas.js'
 import {
   MATCH_ANALYSIS_EFFORT,
   MATCH_ANALYSIS_MODEL,
@@ -10,11 +10,13 @@ import {
   MATCH_EXCERPT_MAX_CHARS,
   MATCH_LIST_LIMITS,
   MATCH_SUSPICIOUS_MAX_ENTRIES,
-  matchAnalysisRequest,
-  matchAside,
-  type MatchAnalysis,
-  type MatchAnalysisOutput,
-} from '../../src/prompts/match_analysis.js'
+} from '../../src/prompts/match_analysis/match_analysis.config.js'
+import { matchAside } from '../../src/prompts/match_analysis/match_analysis.material.js'
+import { matchAnalysisRequest } from '../../src/prompts/match_analysis/match_analysis.request.js'
+import type {
+  MatchAnalysis,
+  MatchAnalysisOutput,
+} from '../../src/prompts/match_analysis/match_analysis.schemas.js'
 import { JOB_TEXT_MAX_CHARS } from '../../src/modules/jobs/jobs.schemas.js'
 import { MATCH_RUNS_PER_DAY, MATCH_TIMEOUT_MS } from '../../src/modules/matches/matches.service.js'
 import { bearerFor, createAnna, sentText, useTestDatabase } from '../helpers.js'

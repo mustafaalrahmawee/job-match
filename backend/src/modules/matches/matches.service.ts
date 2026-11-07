@@ -1,17 +1,17 @@
 import type { MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resources/messages'
 import type { Job, MatchResult, MatchRun, PrismaClient } from '../../generated/prisma/client.js'
 import type { SendMessage, SendResult } from '../../llm/send.js'
-import { cvAside, type CoachCv } from '../../prompts/cv_analysis.js'
+import { cvAside } from '../../prompts/cv_analysis/cv_analysis.material.js'
+import type { CoachCv } from '../../prompts/cv_analysis/cv_analysis.schemas.js'
+import { MATCH_CV_SECTIONS } from '../../prompts/match_analysis/match_analysis.config.js'
+import { adText } from '../../prompts/match_analysis/match_analysis.material.js'
+import { matchAnalysisRequest } from '../../prompts/match_analysis/match_analysis.request.js'
+import { matchAnalysisResult, missingFacts } from '../../prompts/match_analysis/match_analysis.result.js'
 import {
-  MATCH_CV_SECTIONS,
-  adText,
-  matchAnalysisRequest,
-  matchAnalysisResult,
   matchAnalysisSchema,
-  missingFacts,
   type MatchAnalysis,
   type MatchAnalysisOutput,
-} from '../../prompts/match_analysis.js'
+} from '../../prompts/match_analysis/match_analysis.schemas.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
 import type { CvsService } from '../cvs/cvs.service.js'
 import { JOB_TEXT_MAX_CHARS } from '../jobs/jobs.schemas.js'

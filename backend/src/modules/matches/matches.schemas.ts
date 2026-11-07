@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import type { CvRole } from '../../prompts/cv_analysis.js'
-import type { MatchAnalysis } from '../../prompts/match_analysis.js'
+import type { CvRole } from '../../prompts/cv_analysis/cv_analysis.schemas.js'
+import type { MatchAnalysis } from '../../prompts/match_analysis/match_analysis.schemas.js'
 import type { JOB_SOURCES } from '../jobs/jobs.schemas.js'
 
 export const matchJobIdSchema = z.coerce.number().int().positive()

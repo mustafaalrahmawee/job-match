@@ -2,19 +2,21 @@ import request from 'supertest'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import type { ContentBlock, MessageCreateParamsNonStreaming, MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import {
+  COACH_AGENT_MODEL,
+  COACH_AGENT_RESEARCH_LIMIT,
+} from '../../src/prompts/coach_agent/coach_agent.config.js'
+import {
   COACH_AGENT_CV_RULES,
   COACH_AGENT_ERRORS,
   COACH_AGENT_LAST_ROUND,
-  COACH_AGENT_MODEL,
   COACH_AGENT_NEXT_ROUND,
   COACH_AGENT_NO_CV,
   COACH_AGENT_NO_MATCH,
   COACH_AGENT_REFOCUS,
-  COACH_AGENT_RESEARCH_LIMIT,
   COACH_AGENT_SYSTEM,
-  COACH_AGENT_TOOLS,
-} from '../../src/prompts/coach_agent.js'
-import type { CvAnalysis } from '../../src/prompts/cv_analysis.js'
+} from '../../src/prompts/coach_agent/coach_agent.texts.js'
+import { COACH_AGENT_TOOLS } from '../../src/prompts/coach_agent/coach_agent.tools.js'
+import type { CvAnalysis } from '../../src/prompts/cv_analysis/cv_analysis.schemas.js'
 import { bearerFor, createAnna, requestText, streamed, streamedText, useTestDatabase } from '../helpers.js'
 
 const { app, auth, prisma, model } = useTestDatabase()

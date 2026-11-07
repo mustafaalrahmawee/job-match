@@ -1,6 +1,6 @@
 import type { RequestHandler } from 'express'
 import type { Job } from '../../generated/prisma/client.js'
-import type { CvRole } from '../../prompts/cv_analysis.js'
+import type { CvRole } from '../../prompts/cv_analysis/cv_analysis.schemas.js'
 import { authOf } from '../../shared/auth.middleware.js'
 import {
   extractTextSchema,
