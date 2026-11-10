@@ -39,7 +39,6 @@ Diese Arbeitsdokumente liegen nicht im öffentlichen Repo; auf Nachfrage zeige i
 | Prompt-Injection wird strukturell behandelt, nicht mit Verboten | [job_extract/](../backend/src/prompts/job_extract/), `markedText`, `jobPrompt.FOREIGN` und `jobExtractResult` | eingefügter Text geht als Document-Block und zusätzlich zwischen zwei Tags mit einer Kennung, die bei jedem Aufruf neu zufällig gewählt wird und die der Text nicht kennen kann; der Absatz zum fremden Material erklärt Anweisungen im Material zum Material; was gelten muss, prüft der Code: Zod, Wortlaut, Adressen und unsichtbare Zeichen in `jobExtractResult` |
 | Modellwahl ist ein Kosten-Latenz-Qualität-Trade-off | [prompts/](../backend/src/prompts/) | Modell und Effort je Unit als Konstante: Haiku für Extraktion und Fragen, Sonnet für Analyse und Bewertung; Opus nirgends, bis eine Messung es verlangt |
 | Kosten werden je Aufruf gemessen, mit Cache | [costs.ts](../backend/src/llm/costs.ts), [cvs.service.ts](../backend/src/modules/cvs/cvs.service.ts) | Preistabelle mit Cache-Read und Cache-Write, Batch-Rabatt; Tokens und Kosten werden am Datensatz gespeichert |
-| Eval-Prüfungen sind Code, nicht Prosa | [checks.ts](../backend/evals/checks.ts), [checks.test.ts](../backend/tests/evals/checks.test.ts) | Sprache mit `franc`, Wortzahl, verbotene Phrasen, Stop-Grund; die Prüfungen sind selbst getestet |
 | Claude-API-Funktionen dort, wo sie fachlich passen | [send.ts](../backend/src/llm/send.ts), [cvs.service.ts](../backend/src/modules/cvs/cvs.service.ts), [cv_analysis.request.ts](../backend/src/prompts/cv_analysis/cv_analysis.request.ts) | Streaming mit Abbruch und Teilantwort; die Lebenslauf-Analyse als direkter Aufruf mit Zeitlimit statt als Batch, weil Stellen, Match und Coach auf das Ergebnis warten; PDF als Document-Block; Screenshot als Image-Block; adaptives Thinking mit Effort |
 | Jeder Stop-Grund hat eine Behandlung | [coach.service.ts](../backend/src/modules/coach/coach.service.ts) | `refusal` wird geloggt und nicht gespeichert, leere Antwort nicht gespeichert – außer an der Grenze der Fortsetzungen (`pause_turn`), damit Schrittzeilen und der Hinweis der App bleiben –, unbekannter Grund wirft einen Fehler |
 | Backend-Architektur, die sich testen lässt | [app.ts](../backend/src/app.ts) | ein Composition Root, Module je Domäne, Services mit Abhängigkeiten im Konstruktor, feste Fehlerabbildung; 242 Vitest-Fälle im Backend mit Supertest gegen eine eigene Testdatenbank, 58 im Frontend mit `@vue/test-utils` |
@@ -91,9 +90,8 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
 
 - **Stufe 1 bis 4 sind gebaut** (UC-01 bis UC-11), zuletzt der Coach mit lesenden Werkzeugen.
 - **Als Nächstes werden alle Prompts neu geschrieben,** Unit für Unit nach dem Prompt-Leitfaden.
-- **Die Evals sind nicht begonnen.** Die Eval-Infrastruktur (`run`, `check`, `review`, Batch)
-  existiert; Leitfaden, Plan und Beispielfälle entstehen nach den Prompts neu. Die Modellwahl je Unit
-  ist bis dahin eine begründete Schätzung, keine Messung.
+- **Die Evals sind nicht begonnen.** Leitfaden, Beispielfälle und Prüfungen entstehen nach den
+  Prompts neu. Die Modellwahl je Unit ist bis dahin eine begründete Schätzung, keine Messung.
 - **Go-live fehlt:** Registrieren und Konto (UC-13).
 
 ## Leseweg für 15 Minuten
@@ -105,5 +103,4 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
    Streaming, Kosten.
 4. [coach.service.ts](../backend/src/modules/coach/coach.service.ts): die Agent-Schleife mit
    lesenden Werkzeugen und Stop-Gründen.
-5. [checks.ts](../backend/evals/checks.ts): die Eval-Prüfungen als Code.
-6. [app.ts](../backend/src/app.ts): wie alles zusammengesteckt wird.
+5. [app.ts](../backend/src/app.ts): wie alles zusammengesteckt wird.
