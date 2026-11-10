@@ -12,9 +12,7 @@ mit Prüfpfaden in den Code: [docs/ENGINEERING.md](docs/ENGINEERING.md).
 
 **Stand:** Stufe 1 bis 4 sind fertig (UC-01 bis UC-11: Login, Coach-Chat, Lebenslauf, Stellen,
 Match-Analyse, Bewerbungen, Coach mit lesendem Werkzeug und Firmenrecherche per Websuche). Als
-Nächstes werden alle Prompts neu geschrieben, dann kommt Stufe 6 mit MCP (eigene Server für die
-Daten der App und die Jobsuche der Bundesagentur, der Coach als MCP-Client), danach die Evals und
-der Go-live.
+Nächstes werden alle Prompts neu geschrieben, danach kommen die Evals und der Go-live.
 
 ## Stack
 

@@ -1,6 +1,6 @@
 # Was dieses Projekt zeigt
 
-Stand: 4. November 2026
+Stand: 10. November 2026
 
 Die App selbst ist absichtlich gewöhnlich: Login, Chat, Datei-Upload, Listen, Formulare. Das
 Besondere liegt darin, **wie jeder Modellaufruf entworfen, abgesichert und gemessen wird** und wie
@@ -15,8 +15,8 @@ Claude Code schreibt den meisten Code; deshalb steht es als Co-Autor in jedem Co
 Entscheidungen davor und danach trifft der Autor:
 
 - **Die Methode.** Interne Leitfäden legen fest, wie ein Prompt geschrieben wird, destilliert aus
-  Berryman/Ziegler, _Prompt Engineering for LLMs_ (O'Reilly 2025), und wie ein Agent oder ein
-  MCP-Server gebaut wird, nach Kyle Stratis, _AI Agents with MCP_ (O'Reilly 2026), jeweils mit
+  Berryman/Ziegler, _Prompt Engineering for LLMs_ (O'Reilly 2025), und wie ein Agent
+  gebaut wird, nach Kyle Stratis, _AI Agents with MCP_ (O'Reilly 2026), jeweils mit
   angenommenen und abgelehnten Konzepten. Der Leitfaden für Evals entsteht neu.
 - **Der Plan.** Domänenmodell und Use Cases je Stufe stehen fest, bevor Code entsteht.
 - **Die Werkzeuge.** Skills und Subagenten binden Claude Code an diese Methode. Welche Rolle welches
@@ -91,13 +91,10 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
 
 - **Stufe 1 bis 4 sind gebaut** (UC-01 bis UC-11), zuletzt der Coach mit lesenden Werkzeugen.
 - **Als Nächstes werden alle Prompts neu geschrieben,** Unit für Unit nach dem Prompt-Leitfaden.
-- **Stufe 6, MCP, ist geplant und noch nicht Code** (UC-14 bis UC-17): ein MCP-Server über
-  Streamable HTTP mit lesenden Werkzeugen, Resources und Prompts über die Daten der Person, ein eigener Server für die
-  Jobsuche der Bundesagentur, der Coach als MCP-Client beider Server.
 - **Die Evals sind nicht begonnen.** Die Eval-Infrastruktur (`run`, `check`, `review`, Batch)
-  existiert; Leitfaden, Plan und Beispielfälle entstehen nach Stufe 6 neu. Die Modellwahl je Unit
+  existiert; Leitfaden, Plan und Beispielfälle entstehen nach den Prompts neu. Die Modellwahl je Unit
   ist bis dahin eine begründete Schätzung, keine Messung.
-- **Go-live fehlt:** Registrieren und Konto (UC-13), der MCP-Server öffentlich im Netz mit OAuth-Anmeldung (UC-18).
+- **Go-live fehlt:** Registrieren und Konto (UC-13).
 
 ## Leseweg für 15 Minuten
 
