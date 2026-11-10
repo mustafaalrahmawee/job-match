@@ -70,7 +70,8 @@ export class CoachController {
     const { content, ...settings } = sendMessageSchema.parse(req.body)
     const userId = authOf(req).user.id
     const history = await this.coach.addUserMessage(userId, id, content)
-    await streamReply(res, (handlers) => this.coach.reply(userId, id, history, settings, handlers))
+    const run = await this.coach.claim(userId, settings)
+    await streamReply(res, (handlers) => this.coach.reply(userId, id, run.id, history, settings, handlers))
   }
 
   retry: RequestHandler = async (req, res) => {
@@ -78,24 +79,18 @@ export class CoachController {
     const settings = chatSettingsSchema.parse(req.body)
     const userId = authOf(req).user.id
     const history = await this.coach.unansweredHistory(userId, id)
-    await streamReply(res, (handlers) => this.coach.reply(userId, id, history, settings, handlers))
+    const run = await this.coach.claim(userId, settings)
+    await streamReply(res, (handlers) => this.coach.reply(userId, id, run.id, history, settings, handlers))
   }
 }
 
 function messageOutput(message: Message): MessageOutput {
   const blocks = message.content as unknown as TextBlock[]
-  const sources = new Map<string, string | null>()
-  for (const citation of blocks.flatMap((block) => block.citations ?? [])) {
-    if (citation.type === 'web_search_result_location' && !sources.has(citation.url)) {
-      sources.set(citation.url, citation.title)
-    }
-  }
   return {
     id: message.id,
     role: message.role,
     text: blocks.map((block) => (block.type === 'text' ? block.text : '')).join(''),
     steps: (message.steps as CoachStep[] | null) ?? [],
-    sources: [...sources].map(([url, title]) => ({ url, title })),
     stop_reason: message.stopReason,
     created_at: message.createdAt,
   }

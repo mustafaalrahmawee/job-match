@@ -11,7 +11,8 @@ import type {
   MatchAnalysisOutput,
 } from '../../src/prompts/match_analysis/match_analysis.schemas.js'
 import { JOB_TEXT_MAX_CHARS } from '../../src/modules/jobs/jobs.schemas.js'
-import { MATCH_RUNS_PER_DAY, MATCH_TIMEOUT_MS } from '../../src/modules/matches/matches.service.js'
+import { MATCH_TIMEOUT_MS } from '../../src/modules/matches/matches.service.js'
+import { RUNS_PER_DAY } from '../../src/shared/runs.js'
 import { bearerFor, createAnna, sentText, useTestDatabase } from '../helpers.js'
 
 const { app, auth, prisma, messages } = useTestDatabase()
@@ -128,7 +129,7 @@ test('without a ready analysis of the active CV nothing is sent', async () => {
   expect(response.status).toBe(409)
   expect(response.body).toEqual({ detail: 'no_cv' })
   expect(messages.requests).toHaveLength(0)
-  expect(await prisma.matchRun.count()).toBe(0)
+  expect(await prisma.llmRun.count()).toBe(0)
 })
 
 test('a ready analysis without a confirmed role is not used for a match', async () => {
@@ -199,7 +200,7 @@ test('a valid answer is stored for the version and the job and comes back with i
   const stored = await prisma.matchResult.findMany()
   expect(stored).toHaveLength(1)
   expect(stored[0]).toMatchObject({ userId: annaId, cvVersionId: version.id, jobId: job.id, score: 82 })
-  const runs = await prisma.matchRun.findMany()
+  const runs = await prisma.llmRun.findMany()
   expect(runs).toEqual([
     expect.objectContaining({
       status: 'ready',
@@ -240,7 +241,7 @@ test('a missing quote sends the same request once more and logs only the count',
   expect(messages.requests[1]).toEqual(messages.requests[0])
   expect(warn).toHaveBeenCalledWith(`Match for job ${job.id}, attempt 1: 1 quotes or facts not found`)
   expect(warn.mock.calls.flat().join()).not.toContain('Kubernetes-Zertifikat')
-  expect(await prisma.matchRun.findFirst()).toMatchObject({ status: 'ready', inputTokens: 1800, outputTokens: 600 })
+  expect(await prisma.llmRun.findFirst()).toMatchObject({ status: 'ready', inputTokens: 1800, outputTokens: 600 })
 })
 
 test.each([
@@ -259,7 +260,7 @@ test.each([
   expect(response.body).toEqual({ detail: 'quotes_not_found' })
   expect(messages.requests).toHaveLength(2)
   expect(await prisma.matchResult.count()).toBe(0)
-  expect(await prisma.matchRun.findFirst()).toMatchObject({ status: 'failed' })
+  expect(await prisma.llmRun.findFirst()).toMatchObject({ status: 'failed' })
 })
 
 test('a provider error is not retried by the service', async () => {
@@ -272,7 +273,7 @@ test('a provider error is not retried by the service', async () => {
   expect(response.status).toBe(502)
   expect(response.body).toEqual({ detail: 'unavailable' })
   expect(messages.requests).toHaveLength(1)
-  expect(await prisma.matchRun.findFirst()).toMatchObject({ status: 'failed' })
+  expect(await prisma.llmRun.findFirst()).toMatchObject({ status: 'failed' })
 })
 
 test('a job deleted during the run keeps the provider error as answer', async () => {
@@ -323,9 +324,9 @@ test.each([
 test('at most five runs a day count, failed ones included', async () => {
   await readyCv()
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
-  await prisma.matchRun.create({ data: { userId: annaId, jobId: job.id, model: 'm', status: 'ready', createdAt: yesterday } })
-  await prisma.matchRun.createMany({
-    data: Array.from({ length: MATCH_RUNS_PER_DAY - 1 }, () => ({ userId: annaId, jobId: job.id, model: 'm', status: 'failed' as const })),
+  await prisma.llmRun.create({ data: { userId: annaId, unit: 'match_analysis' as const, jobId: job.id, model: 'm', status: 'ready', createdAt: yesterday } })
+  await prisma.llmRun.createMany({
+    data: Array.from({ length: RUNS_PER_DAY.match_analysis - 1 }, () => ({ userId: annaId, unit: 'match_analysis' as const, jobId: job.id, model: 'm', status: 'failed' as const })),
   })
   answers(MATCH)
 
@@ -337,9 +338,30 @@ test('at most five runs a day count, failed ones included', async () => {
   expect(messages.requests).toHaveLength(1)
 })
 
+test('a run still counts after its job is deleted', async () => {
+  await readyCv()
+  await prisma.llmRun.createMany({
+    data: Array.from({ length: RUNS_PER_DAY.match_analysis - 1 }, () => ({
+      userId: annaId,
+      unit: 'match_analysis' as const,
+      jobId: job.id,
+      status: 'failed' as const,
+    })),
+  })
+  const other = await poolJob(AD)
+  answers(MATCH)
+  expect((await run(other.id)).status).toBe(201)
+  await prisma.job.delete({ where: { id: other.id } })
+
+  const response = await run()
+
+  expect(response.status).toBe(429)
+  expect(await prisma.llmRun.count({ where: { jobId: null } })).toBe(1)
+})
+
 test('a second run for the same job is refused while one is running', async () => {
   await readyCv()
-  await prisma.matchRun.create({ data: { userId: annaId, jobId: job.id, model: 'm' } })
+  await prisma.llmRun.create({ data: { userId: annaId, unit: 'match_analysis' as const, jobId: job.id, model: 'm' } })
   answers(MATCH)
 
   const response = await run()
@@ -353,7 +375,7 @@ test('a second run for the same job is refused while one is running', async () =
 test('a run left running past the timeout does not block the job', async () => {
   await readyCv()
   const stale = new Date(Date.now() - MATCH_TIMEOUT_MS - 1000)
-  await prisma.matchRun.create({ data: { userId: annaId, jobId: job.id, model: 'm', createdAt: stale } })
+  await prisma.llmRun.create({ data: { userId: annaId, unit: 'match_analysis' as const, jobId: job.id, model: 'm', createdAt: stale } })
   answers(MATCH)
 
   expect((await run()).status).toBe(201)

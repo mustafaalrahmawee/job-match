@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { expect, test } from 'vitest'
-import { createSendMessage, createSendStream } from '../../src/llm/send.js'
+import { z } from 'zod'
+import { createSendMessage, createSendStream, structuredOutput, type SendResult } from '../../src/llm/send.js'
 import { coachAgentRequest } from '../../src/prompts/coach_agent/coach_agent.request.js'
 import { jobExtractRequest } from '../../src/prompts/job_extract/job_extract.request.js'
 
@@ -203,4 +204,27 @@ test('a failed single request is passed on', async () => {
   const failed = { type: 'error', error: { type: 'overloaded_error', message: 'busy' } }
 
   await expect(createSendMessage(messageClient(failed, 529))(extractParams)).rejects.toThrow()
+})
+
+const answerSchema = z.object({ score: z.int() })
+
+function sent(text: string, stopReason: SendResult['stopReason'] = 'end_turn'): SendResult {
+  return {
+    content: [{ type: 'text', text, citations: null }],
+    stopReason,
+    stopDetails: null,
+    inputTokens: 0,
+    outputTokens: 0,
+    webSearches: 0,
+  }
+}
+
+test.each([
+  ['a valid answer', sent('{"score": 7}'), { data: { score: 7 } }],
+  ['a refusal', sent('', 'refusal'), { error: 'refused' }],
+  ['a cut answer', sent('{"score": ', 'max_tokens'), { error: 'too_long' }],
+  ['text that is not JSON', sent('Hier ist der Score: 7'), { error: 'invalid_output' }],
+  ['JSON against the schema', sent('{"score": 7.5}'), { error: 'invalid_output' }],
+])('structured output of %s', (_, result, expected) => {
+  expect(structuredOutput(result, answerSchema)).toEqual(expected)
 })

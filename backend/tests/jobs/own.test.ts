@@ -1,8 +1,8 @@
 import type { ContentBlockParam } from '@anthropic-ai/sdk/resources/messages'
 import request from 'supertest'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
-import { JOB_READINGS_PER_DAY } from '../../src/modules/jobs/jobs.service.js'
 import * as jobConfig from '../../src/prompts/job_extract/job_extract.config.js'
+import { RUNS_PER_DAY } from '../../src/shared/runs.js'
 import { bearerFor, createAnna, sentText, useTestDatabase } from '../helpers.js'
 
 const { app, auth, prisma, messages } = useTestDatabase()
@@ -255,8 +255,8 @@ test('an amount that only occurs inside a larger one counts as not found', async
 
 test('reading is limited per day, counted per person, and the failed call counts too', async () => {
   const today = new Date()
-  await prisma.extractRun.createMany({
-    data: Array.from({ length: JOB_READINGS_PER_DAY - 1 }, () => ({ userId: annaId, createdAt: today })),
+  await prisma.llmRun.createMany({
+    data: Array.from({ length: RUNS_PER_DAY.job_extract - 1 }, () => ({ userId: annaId, unit: 'job_extract' as const, createdAt: today })),
   })
   messages.answer(sentText('kein JSON'))
   vi.spyOn(console, 'warn').mockImplementation(() => undefined)
@@ -275,8 +275,12 @@ test('reading is limited per day, counted per person, and the failed call counts
 })
 
 test('readings of earlier days do not count', async () => {
-  await prisma.extractRun.createMany({
-    data: Array.from({ length: JOB_READINGS_PER_DAY }, () => ({ userId: annaId, createdAt: new Date('2026-01-01') })),
+  await prisma.llmRun.createMany({
+    data: Array.from({ length: RUNS_PER_DAY.job_extract }, () => ({
+      userId: annaId,
+      unit: 'job_extract' as const,
+      createdAt: new Date('2026-01-01'),
+    })),
   })
   answer(EXTRACT)
 
@@ -286,7 +290,7 @@ test('readings of earlier days do not count', async () => {
 test('invalid input does not use up a reading', async () => {
   await extractText('')
 
-  expect(await prisma.extractRun.count()).toBe(0)
+  expect(await prisma.llmRun.count()).toBe(0)
 })
 
 test('saving removes invisible characters and needs an offer type', async () => {

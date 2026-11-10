@@ -1,17 +1,14 @@
 import { randomUUID } from 'node:crypto'
 import type { Job, OfferType, Prisma, PrismaClient } from '../../generated/prisma/client.js'
-import type { SendMessage, SendResult } from '../../llm/send.js'
+import { structuredOutput, type SendMessage, type SendResult } from '../../llm/send.js'
 import * as cvConfig from '../../prompts/cv_analysis/cv_analysis.config.js'
 import type { CvRole } from '../../prompts/cv_analysis/cv_analysis.schemas.js'
 import { jobExtractRequest } from '../../prompts/job_extract/job_extract.request.js'
 import { jobExtractResult } from '../../prompts/job_extract/job_extract.result.js'
-import {
-  jobExtractSchema,
-  type JobExtract,
-  type JobExtractInput,
-} from '../../prompts/job_extract/job_extract.schemas.js'
+import { jobExtractSchema, type JobExtractInput } from '../../prompts/job_extract/job_extract.schemas.js'
 import { BA_MAX_PAGES, BA_PAGE_SIZE, BA_SEARCH_TERMS, POOL_DAYS, type BaClient } from './jobs.ba.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
+import { claimRun } from '../../shared/runs.js'
 import {
   REGIONS,
   baJobSchema,
@@ -31,8 +28,6 @@ type Outcome = keyof ImportSummary
 const DAY_MS = 24 * 60 * 60 * 1000
 
 const OWN_JOB_ROLE: CvRole = 'Andere'
-
-export const JOB_READINGS_PER_DAY = 20
 
 const OFFER_TYPES: Record<BaJob['stellenangebotsart'], OfferType> = {
   ARBEIT: 'work',
@@ -126,19 +121,32 @@ export class JobsService {
   }
 
   async extract(userId: number, input: JobExtractInput, now = new Date()): Promise<JobReading> {
-    await this.claimReading(userId, now)
+    const params = jobExtractRequest(input)
+    const run = await this.prisma.$transaction((tx) =>
+      claimRun(tx, userId, 'job_extract', now, { model: params.model, effort: params.output_config?.effort }),
+    )
     let result: SendResult
     try {
-      result = await this.sendMessage(jobExtractRequest(input))
+      result = await this.sendMessage(params)
     } catch (error) {
       console.error(error)
+      await this.prisma.llmRun.update({ where: { id: run.id }, data: { status: 'failed' } })
       throw new AppError(502, 'extract_failed')
     }
-    const output = parseExtract(result)
-    if (!output) {
+    const parsed = structuredOutput(result, jobExtractSchema)
+    await this.prisma.llmRun.update({
+      where: { id: run.id },
+      data: {
+        status: 'error' in parsed ? 'failed' : 'ready',
+        inputTokens: result.inputTokens,
+        outputTokens: result.outputTokens,
+      },
+    })
+    if ('error' in parsed) {
       console.warn(`job_extract: no valid output, stop reason ${result.stopReason}`)
       throw new AppError(502, 'extract_failed')
     }
+    const output = parsed.data
     const { draft, suspiciousText, unverified, hits } = jobExtractResult(output, input)
     if (hits || suspiciousText.length) {
       console.warn(`job_extract: ${hits} check hits, ${suspiciousText.length} suspicious passages`)
@@ -170,17 +178,6 @@ export class JobsService {
   async remove(userId: number, id: number): Promise<void> {
     const { count } = await this.prisma.job.deleteMany({ where: { id, source: 'own', userId } })
     if (!count) throw new NotFoundError('Job not found')
-  }
-
-  private async claimReading(userId: number, now: Date): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`
-      const today = await tx.extractRun.count({
-        where: { userId, createdAt: { gte: new Date(now.toISOString().slice(0, 10)) } },
-      })
-      if (today >= JOB_READINGS_PER_DAY) throw new AppError(429, 'limit_reached')
-      await tx.extractRun.create({ data: { userId, createdAt: now } })
-    })
   }
 
   private async importOne(job: BaJob, role: CvRole, since: string, known: Set<string>): Promise<Outcome> {
@@ -218,16 +215,5 @@ export class JobsService {
       skipDuplicates: true,
     })
     return count ? 'imported' : 'duplicates'
-  }
-}
-
-function parseExtract(result: SendResult): JobExtract | null {
-  const text = result.content.find((block) => block.type === 'text')
-  if (result.stopReason !== 'end_turn' || !text) return null
-  try {
-    const parsed = jobExtractSchema.safeParse(JSON.parse(text.text))
-    return parsed.success ? parsed.data : null
-  } catch {
-    return null
   }
 }

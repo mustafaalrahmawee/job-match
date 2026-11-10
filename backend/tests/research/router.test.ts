@@ -2,10 +2,12 @@ import type { ContentBlock, TextBlock } from '@anthropic-ai/sdk/resources/messag
 import request from 'supertest'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import type { SendResult } from '../../src/llm/send.js'
-import { RESEARCH_RUNS_PER_DAY } from '../../src/modules/research/research.service.js'
 import * as researchConfig from '../../src/prompts/company_research/company_research.config.js'
 import { TOOLS } from '../../src/prompts/company_research/company_research.tools.js'
+import { RUNS_PER_DAY } from '../../src/shared/runs.js'
 import { bearerFor, createAnna, requestText, streamed, streamedText, useTestDatabase, type FakeReply } from '../helpers.js'
+
+const RESEARCH_RUNS_PER_DAY = RUNS_PER_DAY.company_research
 
 const { app, auth, prisma, model } = useTestDatabase()
 let headers: { Authorization: string }
@@ -101,7 +103,7 @@ async function researched(reply: FakeReply = stopped('end_turn')): Promise<Resea
 }
 
 function runs() {
-  return prisma.companyResearchRun.findMany({ orderBy: { id: 'asc' } })
+  return prisma.llmRun.findMany({ orderBy: { id: 'asc' } })
 }
 
 function logged(): string {
@@ -407,8 +409,8 @@ test('the field limit counts without invisible characters', async () => {
 
 test('the daily limit counts every run and refuses the next one', async () => {
   for (let i = 0; i < RESEARCH_RUNS_PER_DAY; i++) {
-    await prisma.companyResearchRun.create({
-      data: { userId: annaId, model: researchConfig.MODEL, status: i ? 'failed' : 'running' },
+    await prisma.llmRun.create({
+      data: { userId: annaId, unit: 'company_research', model: researchConfig.MODEL, status: i ? 'failed' : 'running' },
     })
   }
 
@@ -424,8 +426,8 @@ test('runs of yesterday and of other people do not count', async () => {
   const other = await auth.createUser('ben@example.com', 'richtig-geheim')
   const yesterday = new Date(Date.now() - 86_400_000)
   for (let i = 0; i < RESEARCH_RUNS_PER_DAY; i++) {
-    await prisma.companyResearchRun.create({ data: { userId: annaId, model: researchConfig.MODEL, createdAt: yesterday } })
-    await prisma.companyResearchRun.create({ data: { userId: other.id, model: researchConfig.MODEL } })
+    await prisma.llmRun.create({ data: { userId: annaId, unit: 'company_research', model: researchConfig.MODEL, createdAt: yesterday } })
+    await prisma.llmRun.create({ data: { userId: other.id, unit: 'company_research', model: researchConfig.MODEL } })
   }
   model.answer(stopped('end_turn'))
 
@@ -436,7 +438,7 @@ test('runs of yesterday and of other people do not count', async () => {
 
 test('two runs at once cannot pass the daily limit', async () => {
   for (let i = 0; i < RESEARCH_RUNS_PER_DAY - 1; i++) {
-    await prisma.companyResearchRun.create({ data: { userId: annaId, model: researchConfig.MODEL } })
+    await prisma.llmRun.create({ data: { userId: annaId, unit: 'company_research', model: researchConfig.MODEL } })
   }
   model.answer(stopped('end_turn'))
 

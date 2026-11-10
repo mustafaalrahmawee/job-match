@@ -56,16 +56,6 @@
               <span class="size-1.5 animate-pulse rounded-full bg-muted-foreground [animation-delay:150ms]" />
               <span class="size-1.5 animate-pulse rounded-full bg-muted-foreground [animation-delay:300ms]" />
             </span>
-            <div v-if="entry.message.sources.length" class="mt-3 text-xs text-muted-foreground">
-              <p class="font-medium">Quellen</p>
-              <ol class="mt-1 flex flex-col gap-0.5">
-                <li v-for="source in entry.message.sources" :key="source.url" class="truncate">
-                  <a :href="source.url" target="_blank" rel="noopener noreferrer" class="text-brand underline">
-                    {{ source.title || source.url }}
-                  </a>
-                </li>
-              </ol>
-            </div>
             <p v-if="entry.message.stopReason && NOTES[entry.message.stopReason]" class="mt-1 text-xs text-muted-foreground">
               {{ NOTES[entry.message.stopReason] }}
             </p>
@@ -268,6 +258,7 @@ async function talk(action: () => Promise<string | null>) {
     if (isAbort(e)) return
     if (!(e instanceof ApiError)) error.value = 'Die Verbindung zum Coach ist abgebrochen.'
     else if (e.status === 401) error.value = 'Bitte melde dich neu an.'
+    else if (e.status === 429) error.value = 'Du hast heute schon 50 Antworten vom Coach bekommen. Morgen geht es weiter.'
     else error.value = 'Der Coach konnte nicht antworten.'
   }
 }

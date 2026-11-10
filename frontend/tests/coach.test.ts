@@ -22,7 +22,7 @@ function sseResponse(body: string): Response {
 }
 
 const DONE = {
-  message: { id: 2, role: 'assistant', text: 'Hallo Anna', steps: [], sources: [], stop_reason: 'end_turn' },
+  message: { id: 2, role: 'assistant', text: 'Hallo Anna', steps: [], stop_reason: 'end_turn' },
   stop_reason: 'end_turn',
 }
 
@@ -77,9 +77,8 @@ test('the first message creates a conversation and streams the answer', async ()
   expect(coach.canRetry).toBe(false)
 })
 
-test('steps appear while the coach works and the saved answer brings its sources', async () => {
-  const step = { kind: 'web_search', query: 'Kreditwerk Berlin', sources: 2 }
-  const source = { url: 'https://kreditwerk.de', title: 'Kreditwerk' }
+test('steps appear while the coach works and stay with the saved answer', async () => {
+  const step = { kind: 'application', application_id: 4, title: 'Frontend', company: 'Kreditwerk' }
   let push: (text: string) => void = () => undefined
   let close: () => void = () => undefined
   const fetch = vi.fn(() => {
@@ -100,11 +99,11 @@ test('steps appear while the coach works and the saved answer brings its sources
   push(sse(['step', step]))
   await vi.waitFor(() => expect(coach.messages.at(-1)!.steps).toEqual([step]))
   expect(coach.messages.at(-1)!.text).toBe('')
-  push(sse(['done', { ...DONE, message: { ...DONE.message, steps: [step], sources: [source] } }]))
+  push(sse(['done', { ...DONE, message: { ...DONE.message, steps: [step] } }]))
   close()
   await sending
 
-  expect(coach.messages.at(-1)).toMatchObject({ text: 'Hallo Anna', steps: [step], sources: [source] })
+  expect(coach.messages.at(-1)).toMatchObject({ text: 'Hallo Anna', steps: [step] })
 })
 
 test('an error event drops the answer and offers a retry', async () => {
@@ -156,13 +155,12 @@ test('loading a conversation shows its history', async () => {
     id: 3,
     title: 'Hallo',
     messages: [
-      { id: 1, role: 'user', text: 'Hallo', steps: [], sources: [], stop_reason: null, created_at: '' },
+      { id: 1, role: 'user', text: 'Hallo', steps: [], stop_reason: null, created_at: '' },
       {
         id: 2,
         role: 'assistant',
         text: '',
-        steps: [{ kind: 'web_search', query: 'Kreditwerk', sources: 0 }],
-        sources: [],
+        steps: [{ kind: 'application_failed' }],
         stop_reason: 'pause_turn',
         created_at: '',
       },

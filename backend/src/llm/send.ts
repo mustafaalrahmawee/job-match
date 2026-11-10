@@ -6,6 +6,7 @@ import type {
   RefusalStopDetails,
   StopReason,
 } from '@anthropic-ai/sdk/resources/messages'
+import type { ZodType } from 'zod'
 
 export type StreamHandlers = {
   onText: (text: string) => void
@@ -25,6 +26,23 @@ export type SendResult = {
 export type SendStream = (params: MessageCreateParamsNonStreaming, handlers: StreamHandlers) => Promise<SendResult>
 
 export type SendMessage = (params: MessageCreateParamsNonStreaming, options?: { signal?: AbortSignal }) => Promise<SendResult>
+
+export type Structured<T> = { data: T } | { error: 'refused' | 'too_long' | 'invalid_output' }
+
+export function structuredOutput<T>(result: SendResult, schema: ZodType<T>): Structured<T> {
+  if (result.stopReason === 'refusal') return { error: 'refused' }
+  if (result.stopReason === 'max_tokens') return { error: 'too_long' }
+  const text = result.content.find((block) => block.type === 'text')
+  if (result.stopReason !== 'end_turn' || !text) return { error: 'invalid_output' }
+  let json: unknown
+  try {
+    json = JSON.parse(text.text)
+  } catch {
+    return { error: 'invalid_output' }
+  }
+  const parsed = schema.safeParse(json)
+  return parsed.success ? { data: parsed.data } : { error: 'invalid_output' }
+}
 
 function result(message: Message): SendResult {
   if (!message.stop_reason) throw new Error('The message ended without a stop reason')

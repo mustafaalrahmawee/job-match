@@ -1,24 +1,17 @@
 import type { MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resources/messages'
-import type { Job, MatchResult, MatchRun, PrismaClient } from '../../generated/prisma/client.js'
-import type { SendMessage, SendResult } from '../../llm/send.js'
-import { cvAside } from '../../prompts/cv_analysis/cv_analysis.material.js'
+import type { Job, LlmRun, MatchResult, PrismaClient } from '../../generated/prisma/client.js'
+import { structuredOutput, type SendMessage, type SendResult } from '../../llm/send.js'
 import type { CoachCv } from '../../prompts/cv_analysis/cv_analysis.schemas.js'
-import * as matchConfig from '../../prompts/match_analysis/match_analysis.config.js'
-import { adText } from '../../prompts/match_analysis/match_analysis.material.js'
 import { matchAnalysisRequest } from '../../prompts/match_analysis/match_analysis.request.js'
-import { matchAnalysisResult, missingFacts } from '../../prompts/match_analysis/match_analysis.result.js'
-import {
-  matchAnalysisSchema,
-  type MatchAnalysis,
-  type MatchAnalysisOutput,
-} from '../../prompts/match_analysis/match_analysis.schemas.js'
+import { matchAnalysisResult, missingFacts, missingQuotes } from '../../prompts/match_analysis/match_analysis.result.js'
+import { matchAnalysisSchema } from '../../prompts/match_analysis/match_analysis.schemas.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
+import { claimRun } from '../../shared/runs.js'
 import type { CvsService } from '../cvs/cvs.service.js'
 import { JOB_TEXT_MAX_CHARS } from '../jobs/jobs.schemas.js'
 import type { JobsService } from '../jobs/jobs.service.js'
 
 export const MATCH_MAX_ATTEMPTS = 2
-export const MATCH_RUNS_PER_DAY = 5
 export const MATCH_TIMEOUT_MS = 120_000
 
 const VERSION = { cvVersion: { select: { isActive: true, role: true, createdAt: true } } } as const
@@ -96,7 +89,9 @@ export class MatchesService {
         }
         usage.inputTokens += result.inputTokens
         usage.outputTokens += result.outputTokens
-        const { analysis, suspiciousText, hits } = matchAnalysisResult(parse(result))
+        const output = structuredOutput(result, matchAnalysisSchema)
+        if ('error' in output) throw new AppError(502, output.error)
+        const { analysis, suspiciousText, hits } = matchAnalysisResult(output.data)
         if (hits || suspiciousText.length) {
           console.warn(`Match for job ${job.id}, attempt ${attempt}: ${hits} check hits, ${suspiciousText.length} suspicious passages`)
         }
@@ -110,7 +105,7 @@ export class MatchesService {
               update: { ...data, confirmedAt: null },
               include: VERSION,
             }),
-            this.prisma.matchRun.update({ where: { id: run.id }, data: { ...usage, status: 'ready' } }),
+            this.prisma.llmRun.update({ where: { id: run.id }, data: { ...usage, status: 'ready' } }),
           ])
           return saved
         }
@@ -119,7 +114,7 @@ export class MatchesService {
       }
     } catch (error) {
       if (error instanceof AppError) console.warn(`Match for job ${job.id}: ${error.message}`)
-      await this.prisma.matchRun.updateMany({ where: { id: run.id }, data: { ...usage, status: 'failed' } })
+      await this.prisma.llmRun.updateMany({ where: { id: run.id }, data: { ...usage, status: 'failed' } })
       throw error
     }
   }
@@ -135,54 +130,25 @@ export class MatchesService {
     return result
   }
 
-  private start(userId: number, jobId: number, params: MessageCreateParamsNonStreaming, now: Date): Promise<MatchRun> {
+  private start(userId: number, jobId: number, params: MessageCreateParamsNonStreaming, now: Date): Promise<LlmRun> {
     return this.prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`
-      const today = await tx.matchRun.count({
-        where: { userId, createdAt: { gte: new Date(now.toISOString().slice(0, 10)) } },
+      const run = await claimRun(tx, userId, 'match_analysis', now, {
+        model: params.model,
+        effort: params.output_config?.effort,
+        jobId,
       })
-      if (today >= MATCH_RUNS_PER_DAY) throw new AppError(429, 'limit_reached')
-      const running = await tx.matchRun.count({
-        where: { userId, jobId, status: 'running', createdAt: { gt: new Date(now.getTime() - MATCH_TIMEOUT_MS) } },
+      const running = await tx.llmRun.count({
+        where: {
+          id: { not: run.id },
+          userId,
+          unit: 'match_analysis',
+          jobId,
+          status: 'running',
+          createdAt: { gt: new Date(now.getTime() - MATCH_TIMEOUT_MS) },
+        },
       })
       if (running) throw new AppError(409, 'running')
-      return tx.matchRun.create({
-        data: { userId, jobId, model: params.model, effort: params.output_config?.effort, createdAt: now },
-      })
+      return run
     })
   }
-}
-
-function parse(result: SendResult): MatchAnalysisOutput {
-  if (result.stopReason === 'refusal') throw new AppError(502, 'refused')
-  if (result.stopReason === 'max_tokens') throw new AppError(502, 'too_long')
-  const text = result.content.find((block) => block.type === 'text')
-  if (result.stopReason !== 'end_turn' || !text) throw new AppError(502, 'invalid_output')
-  let json: unknown
-  try {
-    json = JSON.parse(text.text)
-  } catch {
-    throw new AppError(502, 'invalid_output')
-  }
-  const parsed = matchAnalysisSchema.safeParse(json)
-  if (!parsed.success) throw new AppError(502, 'invalid_output')
-  return parsed.data
-}
-
-function missingQuotes(analysis: MatchAnalysis, cv: CoachCv, job: Job): number {
-  const ad = collapse(adText(job))
-  const lines = cvAside(cv, matchConfig.CV_SECTIONS)
-    .split('\n')
-    .filter((line) => line.startsWith('- ') && line !== '- keine Angabe')
-    .map((line) => collapse(line.slice(2)))
-  return [...analysis.gaps, ...analysis.strengths, ...analysis.tips]
-    .flatMap(({ ad_quote, cv_quote }) => [
-      ad_quote !== null && !ad.includes(collapse(ad_quote)),
-      cv_quote !== null && !lines.some((line) => line.includes(collapse(cv_quote))),
-    ])
-    .filter(Boolean).length
-}
-
-function collapse(text: string): string {
-  return text.replace(/\s+/g, ' ').trim()
 }

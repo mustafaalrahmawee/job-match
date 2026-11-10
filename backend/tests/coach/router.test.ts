@@ -5,6 +5,7 @@ import * as coachConfig from '../../src/prompts/coach_agent/coach_agent.config.j
 import * as coachPrompt from '../../src/prompts/coach_agent/coach_agent.texts.js'
 import { TOOLS } from '../../src/prompts/coach_agent/coach_agent.tools.js'
 import type { CvAnalysis } from '../../src/prompts/cv_analysis/cv_analysis.schemas.js'
+import { RUNS_PER_DAY } from '../../src/shared/runs.js'
 import { bearerFor, createAnna, requestText, streamed, streamedText, useTestDatabase } from '../helpers.js'
 
 const { app, auth, prisma, model } = useTestDatabase()
@@ -472,7 +473,7 @@ test('the coach reads an own application with ad and match and shows the step', 
     expect(resultText).toContain(fact)
   }
   const show = await request(app).get(`/api/v1/coach/conversations/${id}`).set(headers)
-  expect((show.body as { messages: unknown[] }).messages[1]).toMatchObject({ steps: [step], sources: [] })
+  expect((show.body as { messages: unknown[] }).messages[1]).toMatchObject({ steps: [step] })
 })
 
 test('a match that is not confirmed does not reach the coach', async () => {
@@ -697,24 +698,22 @@ test('a turn logs the research hits without any wording', async () => {
   expect(line).not.toContain('Firma Eins')
 })
 
-test('an old answer keeps its web search steps, sources and stop reason', async () => {
+test('an old empty answer keeps its stop reason and is left out of the history', async () => {
   const id = await newConversation()
-  const citation = { type: 'web_search_result_location', url: 'https://a.de', title: 'Kreditwerk', cited_text: 'Kredite', encrypted_index: 'x' }
-  const steps = [{ kind: 'web_search', query: 'Kreditwerk', sources: 2 }]
   await prisma.message.create({ data: { conversationId: id, role: 'user', content: [{ type: 'text', text: 'Was macht Kreditwerk?' }] } })
   await prisma.message.create({
-    data: { conversationId: id, role: 'assistant', content: [{ type: 'text', text: 'Kredite.', citations: [citation] }], steps, stopReason: 'end_turn' },
+    data: { conversationId: id, role: 'assistant', content: [{ type: 'text', text: 'Kredite.' }], stopReason: 'end_turn' },
   })
   await prisma.message.create({ data: { conversationId: id, role: 'user', content: [{ type: 'text', text: 'Und sonst?' }] } })
-  await prisma.message.create({ data: { conversationId: id, role: 'assistant', content: [], steps, stopReason: 'pause_turn' } })
+  await prisma.message.create({ data: { conversationId: id, role: 'assistant', content: [], stopReason: 'pause_turn' } })
 
   const show = await request(app).get(`/api/v1/coach/conversations/${id}`).set(headers)
   await send(id, 'Und jetzt?')
 
   expect((show.body as { messages: unknown[] }).messages.slice(1)).toMatchObject([
-    { steps, sources: [{ url: 'https://a.de', title: 'Kreditwerk' }], stop_reason: 'end_turn' },
+    { stop_reason: 'end_turn' },
     {},
-    { text: '', steps, sources: [], stop_reason: 'pause_turn' },
+    { text: '', steps: [], stop_reason: 'pause_turn' },
   ])
   expect(model.requests.at(-1)!.messages.slice(0, 3).map((m) => m.content)).toEqual([
     'Was macht Kreditwerk?',
@@ -739,4 +738,52 @@ test('an earlier turn with tools goes to the model as text only', async () => {
     { role: 'user', content: 'Interviewfragen bitte' },
     { role: 'assistant', content: 'Moment. Hier die Fragen.' },
   ])
+})
+
+test('every answer is a run with model, effort and tokens', async () => {
+  const id = await newConversation()
+
+  await send(id, 'Was kannst du?')
+
+  expect(await prisma.llmRun.findMany()).toEqual([
+    expect.objectContaining({
+      userId: annaId,
+      unit: 'coach_agent',
+      status: 'ready',
+      model: coachConfig.MODEL,
+      effort: 'medium',
+      inputTokens: 120,
+      outputTokens: 30,
+    }),
+  ])
+})
+
+test('a failed answer is a failed run', async () => {
+  vi.spyOn(console, 'error').mockImplementation(() => undefined)
+  model.answer(() => Promise.reject(new Error('overloaded')))
+  const id = await newConversation()
+
+  await send(id, 'Hallo')
+
+  expect(await prisma.llmRun.findFirstOrThrow()).toMatchObject({ unit: 'coach_agent', status: 'failed' })
+})
+
+test('the coach answers at most fifty times a day and keeps the question for a retry', async () => {
+  const id = await newConversation()
+  const yesterday = new Date(Date.now() - 86_400_000)
+  const ben = await auth.createUser('ben@example.com', 'auch-geheim')
+  const runs = (userId: number, createdAt?: Date) =>
+    Array.from({ length: RUNS_PER_DAY.coach_agent }, () => ({ userId, unit: 'coach_agent' as const, createdAt }))
+  await prisma.llmRun.createMany({ data: [...runs(annaId, yesterday), ...runs(ben.id)] })
+  await prisma.llmRun.createMany({ data: runs(annaId).slice(1) })
+
+  expect((await send(id, 'Erste Frage')).status).toBe(200)
+  const response = await send(id, 'Zweite Frage')
+
+  expect(response.status).toBe(429)
+  expect(response.body).toEqual({ detail: 'limit_reached' })
+  expect(model.requests).toHaveLength(1)
+  const show = await request(app).get(`/api/v1/coach/conversations/${id}`).set(headers)
+  expect((show.body as { messages: { text: string }[] }).messages.at(-1)).toMatchObject({ role: 'user', text: 'Zweite Frage' })
+  expect((await retry(id)).status).toBe(429)
 })

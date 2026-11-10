@@ -1,8 +1,8 @@
 import { APIError } from '@anthropic-ai/sdk'
 import type { MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resources/messages'
 import { PDFDocument } from 'pdf-lib'
-import type { CvVersion, Prisma, PrismaClient } from '../../generated/prisma/client.js'
-import type { SendMessage, SendResult } from '../../llm/send.js'
+import type { CvVersion, PrismaClient } from '../../generated/prisma/client.js'
+import { structuredOutput, type SendMessage, type SendResult } from '../../llm/send.js'
 import * as cvConfig from '../../prompts/cv_analysis/cv_analysis.config.js'
 import { cvAnalysisRequest } from '../../prompts/cv_analysis/cv_analysis.request.js'
 import { cvAnalysisResult } from '../../prompts/cv_analysis/cv_analysis.result.js'
@@ -13,6 +13,7 @@ import {
   type SuspiciousText,
 } from '../../prompts/cv_analysis/cv_analysis.schemas.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
+import { claimRun } from '../../shared/runs.js'
 import type { AnalysisError } from './cvs.schemas.js'
 
 export type CvVersionInfo = Omit<CvVersion, 'pdf' | 'suspiciousText'>
@@ -23,7 +24,6 @@ type Outcome =
   | { analysis: CvAnalysis; suspiciousText: SuspiciousText; hits: number }
   | { error: AnalysisError; suspiciousText?: SuspiciousText; hits?: number }
 
-export const CV_ANALYSES_PER_DAY = 5
 export const CV_ANALYSIS_TIMEOUT_MS = 180_000
 
 const HIDDEN = { pdf: true, suspiciousText: true } as const
@@ -41,16 +41,17 @@ export class CvsService {
     if (!pages) throw new AppError(422, 'unreadable')
     if (pages > cvConfig.MAX_PAGES) throw new AppError(422, 'too_many_pages')
     const params = analysisRequest(pdf, now)
-    const version = await this.prisma.$transaction(async (tx) => {
+    const { version, runId } = await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`
-      if (params) await claimRun(tx, userId, now)
+      const run = params ? await claimRun(tx, userId, 'cv_analysis', now, usedModel(params)) : null
       await tx.cvVersion.updateMany({ where: { userId, isActive: true }, data: { isActive: false } })
-      return tx.cvVersion.create({
+      const version = await tx.cvVersion.create({
         data: { userId, pdf: new Uint8Array(pdf), analyzedAt: now, ...start(params) },
         omit: HIDDEN,
       })
+      return { version, runId: run?.id }
     })
-    return params ? this.analyse(version.id, params, now) : version
+    return params && runId ? this.analyse(version.id, runId, params, now) : version
   }
 
   list(userId: number): Promise<CvVersionSummaryInfo[]> {
@@ -107,7 +108,7 @@ export class CvsService {
   }
 
   async retry(userId: number, id: number, now = new Date()): Promise<CvVersionInfo> {
-    const { version, params } = await this.prisma.$transaction(async (tx) => {
+    const { version, params, runId } = await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`
       const found = await tx.cvVersion.findFirst({
         where: { id, userId },
@@ -118,15 +119,15 @@ export class CvsService {
         throw new AppError(409, 'The CV cannot be analysed again')
       }
       const params = analysisRequest(found.pdf, now)
-      if (params) await claimRun(tx, userId, now)
+      const run = params ? await claimRun(tx, userId, 'cv_analysis', now, usedModel(params)) : null
       const version = await tx.cvVersion.update({
         where: { id },
         data: { analyzedAt: now, ...start(params) },
         omit: HIDDEN,
       })
-      return { version, params }
+      return { version, params, runId: run?.id }
     })
-    return params ? this.analyse(id, params, now) : version
+    return params && runId ? this.analyse(id, runId, params, now) : version
   }
 
   async confirmRole(userId: number, id: number, role: CvRole): Promise<CvVersionInfo> {
@@ -142,13 +143,18 @@ export class CvsService {
     return this.prisma.cvVersion.findUniqueOrThrow({ where: { id }, omit: HIDDEN })
   }
 
-  private async analyse(id: number, params: MessageCreateParamsNonStreaming, analyzedAt: Date): Promise<CvVersionInfo> {
+  private async analyse(
+    id: number,
+    runId: number,
+    params: MessageCreateParamsNonStreaming,
+    analyzedAt: Date,
+  ): Promise<CvVersionInfo> {
     const signal = AbortSignal.timeout(Math.max(0, analyzedAt.getTime() + CV_ANALYSIS_TIMEOUT_MS - Date.now()))
     let outcome: Outcome
     let usage = {}
     try {
       const result = await this.sendMessage(params, { signal })
-      usage = { model: params.model, inputTokens: result.inputTokens, outputTokens: result.outputTokens }
+      usage = { inputTokens: result.inputTokens, outputTokens: result.outputTokens }
       outcome = evaluate(result)
     } catch (error) {
       console.error(error)
@@ -157,10 +163,13 @@ export class CvsService {
       outcome = { error: signal.aborted ? 'timeout' : tooLong ? 'too_long' : 'unavailable' }
     }
     if (outcome.hits) console.warn(`CV version ${id}: ${outcome.hits} entries removed or cleaned before storing`)
+    await this.prisma.llmRun.update({
+      where: { id: runId },
+      data: { ...usage, status: 'analysis' in outcome ? 'ready' : 'failed' },
+    })
     await this.prisma.cvVersion.updateMany({
       where: { id, analysisStatus: 'running', analyzedAt },
       data: {
-        ...usage,
         ...(outcome.suspiciousText?.length ? { suspiciousText: outcome.suspiciousText } : {}),
         ...('analysis' in outcome
           ? { analysisStatus: 'ready', analysis: outcome.analysis }
@@ -193,32 +202,18 @@ function analysisRequest(pdf: Uint8Array, analyzedAt: Date): MessageCreateParams
 
 function start(params: MessageCreateParamsNonStreaming | null) {
   return params
-    ? { analysisStatus: 'running' as const, analysisError: null, effort: params.output_config?.effort }
+    ? { analysisStatus: 'running' as const, analysisError: null }
     : { analysisStatus: 'failed' as const, analysisError: 'too_long' }
 }
 
-async function claimRun(tx: Prisma.TransactionClient, userId: number, now: Date): Promise<void> {
-  const today = await tx.cvRun.count({
-    where: { userId, createdAt: { gte: new Date(now.toISOString().slice(0, 10)) } },
-  })
-  if (today >= CV_ANALYSES_PER_DAY) throw new AppError(429, 'limit_reached')
-  await tx.cvRun.create({ data: { userId, createdAt: now } })
+function usedModel(params: MessageCreateParamsNonStreaming) {
+  return { model: params.model, effort: params.output_config?.effort }
 }
 
 function evaluate(result: SendResult): Outcome {
-  if (result.stopReason === 'refusal') return { error: 'refused' }
-  if (result.stopReason === 'max_tokens') return { error: 'too_long' }
-  const text = result.content.find((block) => block.type === 'text')
-  if (result.stopReason !== 'end_turn' || !text) return { error: 'invalid_output' }
-  let json: unknown
-  try {
-    json = JSON.parse(text.text)
-  } catch {
-    return { error: 'invalid_output' }
-  }
-  const parsed = cvAnalysisSchema.safeParse(json)
-  if (!parsed.success) return { error: 'invalid_output' }
-  const { analysis, suspiciousText, hits } = cvAnalysisResult(parsed.data)
+  const output = structuredOutput(result, cvAnalysisSchema)
+  if ('error' in output) return output
+  const { analysis, suspiciousText, hits } = cvAnalysisResult(output.data)
   if (!analysis.is_cv) return { error: 'not_cv', suspiciousText, hits }
   if (!CV_LANGUAGES.has(analysis.language.toLowerCase())) return { error: 'language', suspiciousText, hits }
   return { analysis, suspiciousText, hits }

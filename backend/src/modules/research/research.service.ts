@@ -1,5 +1,5 @@
 import type { ContentBlock, MessageCreateParamsNonStreaming, MessageParam } from '@anthropic-ai/sdk/resources/messages'
-import type { CompanyResearch, CompanyResearchRun, PrismaClient } from '../../generated/prisma/client.js'
+import type { CompanyResearch, PrismaClient } from '../../generated/prisma/client.js'
 import { costUsd } from '../../llm/costs.js'
 import type { SendResult, SendStream } from '../../llm/send.js'
 import { newMarkId } from '../../llm/untrusted.js'
@@ -11,10 +11,9 @@ import type {
   CompanyResearchSource,
 } from '../../prompts/company_research/company_research.schemas.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
+import { claimRun } from '../../shared/runs.js'
 import type { CoachService } from '../coach/coach.service.js'
 import type { ResearchOutcome, ResearchStep } from './research.schemas.js'
-
-export const RESEARCH_RUNS_PER_DAY = 5
 
 const UNFINISHED_STOP_REASONS = new Set(['pause_turn', 'max_tokens', 'model_context_window_exceeded'])
 
@@ -49,7 +48,9 @@ export class ResearchService {
     const asOf = now.toISOString().slice(0, 10)
     const markId = newMarkId()
     const params = companyResearchRequest(input, asOf, markId)
-    const { id } = await this.count(userId, params, now)
+    const { id } = await this.prisma.$transaction((tx) =>
+      claimRun(tx, userId, 'company_research', now, { model: params.model, effort: params.output_config?.effort }),
+    )
     return { id, userId, conversationId, input, asOf, markId, params }
   }
 
@@ -115,7 +116,7 @@ export class ResearchService {
       if (UNFINISHED_STOP_REASONS.has(result.stopReason)) console.warn(`${label}: ended with ${result.stopReason}`)
       const outcome = outcomeOf(result.stopReason, parsed.text)
       if (outcome !== 'ready') {
-        await this.prisma.companyResearchRun.updateMany({ where: { id }, data: { ...usage, status: 'failed' } })
+        await this.prisma.llmRun.updateMany({ where: { id }, data: { ...usage, status: 'failed' } })
         return { research: null, outcome }
       }
       const [research] = await this.prisma.$transaction([
@@ -134,11 +135,11 @@ export class ResearchService {
             searchResults: parsed.searchResults,
           },
         }),
-        this.prisma.companyResearchRun.update({ where: { id }, data: { ...usage, status: 'ready' } }),
+        this.prisma.llmRun.update({ where: { id }, data: { ...usage, status: 'ready' } }),
       ])
       return { research, outcome }
     } catch (error) {
-      await this.prisma.companyResearchRun.updateMany({ where: { id }, data: { ...usage, status: 'failed' } })
+      await this.prisma.llmRun.updateMany({ where: { id }, data: { ...usage, status: 'failed' } })
       throw error
     } finally {
       report()
@@ -151,19 +152,6 @@ export class ResearchService {
     if (!(research.sources as CompanyResearchSource[]).length) throw new AppError(409, 'no_sources')
     if (research.confirmedAt) return research
     return this.prisma.companyResearch.update({ where: { id }, data: { confirmedAt: now } })
-  }
-
-  private count(userId: number, params: MessageCreateParamsNonStreaming, now: Date): Promise<CompanyResearchRun> {
-    return this.prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`
-      const today = await tx.companyResearchRun.count({
-        where: { userId, createdAt: { gte: new Date(now.toISOString().slice(0, 10)) } },
-      })
-      if (today >= RESEARCH_RUNS_PER_DAY) throw new AppError(429, 'limit_reached')
-      return tx.companyResearchRun.create({
-        data: { userId, model: params.model, effort: params.output_config?.effort, createdAt: now },
-      })
-    })
   }
 }
 

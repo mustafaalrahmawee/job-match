@@ -5,7 +5,7 @@ import type {
   ToolResultBlockParam,
   ToolUseBlock,
 } from '@anthropic-ai/sdk/resources/messages'
-import type { Application, Conversation, Job, Message, Prisma, PrismaClient } from '../../generated/prisma/client.js'
+import type { Application, Conversation, Job, LlmRun, Message, Prisma, PrismaClient } from '../../generated/prisma/client.js'
 import { costUsd } from '../../llm/costs.js'
 import type { SendResult, SendStream } from '../../llm/send.js'
 import { newMarkId } from '../../llm/untrusted.js'
@@ -21,6 +21,7 @@ import * as coachPrompt from '../../prompts/coach_agent/coach_agent.texts.js'
 import { applicationInputSchema, APPLICATION_TOOL } from '../../prompts/coach_agent/coach_agent.tools.js'
 import type { MatchAnalysis } from '../../prompts/match_analysis/match_analysis.schemas.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
+import { claimRun } from '../../shared/runs.js'
 import type { ApplicationsService } from '../applications/applications.service.js'
 import type { CvsService } from '../cvs/cvs.service.js'
 import type { MatchesService } from '../matches/matches.service.js'
@@ -88,9 +89,14 @@ export class CoachService {
     return messages
   }
 
+  claim(userId: number, settings: ChatSettings, now = new Date()): Promise<LlmRun> {
+    return this.prisma.$transaction((tx) => claimRun(tx, userId, 'coach_agent', now, { effort: settings.effort }))
+  }
+
   async reply(
     userId: number,
     conversationId: number,
+    runId: number,
     history: Message[],
     settings: ChatSettings,
     { onText, onStep, signal }: ReplyHandlers,
@@ -117,59 +123,71 @@ export class CoachService {
     let requests = 0
     let inputTokens = 0
     let outputTokens = 0
-    for (;;) {
-      const params = coachAgentRequest(messages, steps, settings, context)
-      const result = await this.send(params, { onText, onBlock: () => undefined, signal })
-      requests += 1
-      inputTokens += result.inputTokens
-      outputTokens += result.outputTokens
-      content.push(...result.content.filter((block) => block.type === 'text'))
-      if (result.stopReason === 'tool_use' && params.tool_choice?.type !== 'none') {
-        steps.push({ role: 'assistant', content: result.content })
-        const results: ToolResultBlockParam[] = []
-        for (const block of result.content) {
-          if (block.type !== 'tool_use') continue
-          const [step, toolResult] = await this.useTool(userId, block)
-          shown.push(step)
-          onStep(step)
-          results.push(toolResult)
+    const finish = (status: 'ready' | 'failed', model?: string) =>
+      this.prisma.llmRun.update({ where: { id: runId }, data: { status, model, inputTokens, outputTokens } })
+    try {
+      for (;;) {
+        const params = coachAgentRequest(messages, steps, settings, context)
+        const result = await this.send(params, { onText, onBlock: () => undefined, signal })
+        requests += 1
+        inputTokens += result.inputTokens
+        outputTokens += result.outputTokens
+        content.push(...result.content.filter((block) => block.type === 'text'))
+        if (result.stopReason === 'tool_use' && params.tool_choice?.type !== 'none') {
+          steps.push({ role: 'assistant', content: result.content })
+          const results: ToolResultBlockParam[] = []
+          for (const block of result.content) {
+            if (block.type !== 'tool_use') continue
+            const [step, toolResult] = await this.useTool(userId, block)
+            shown.push(step)
+            onStep(step)
+            results.push(toolResult)
+          }
+          steps.push({ role: 'user', content: results })
+          continue
         }
-        steps.push({ role: 'user', content: results })
-        continue
+        const cost = costUsd(params.model, {
+          input_tokens: inputTokens,
+          output_tokens: outputTokens,
+          cache_read_input_tokens: null,
+          cache_creation_input_tokens: null,
+        })
+        console.info(
+          `Coach turn in conversation ${conversationId}: ${requests} requests, ${inputTokens} input and ${outputTokens} output tokens, ${researchHits(researches)} research hits, ${cost.toFixed(4)} $`,
+        )
+        if (result.stopReason === 'refusal') {
+          console.warn(`Coach refusal in conversation ${conversationId}: ${result.stopDetails?.category ?? 'no category'}`)
+          await finish('failed', params.model)
+          return { message: null, stopReason: result.stopReason }
+        }
+        if (!STORED_STOP_REASONS.has(result.stopReason)) {
+          throw new Error(`Unexpected stop reason ${result.stopReason} in conversation ${conversationId}`)
+        }
+        const hasText = content.some((block) => block.type === 'text' && block.text.length > 0)
+        await finish(hasText ? 'ready' : 'failed', params.model)
+        if (!hasText) return { message: null, stopReason: result.stopReason }
+        const message = await this.prisma.message.create({
+          data: {
+            conversationId,
+            role: 'assistant',
+            content: content as unknown as Prisma.InputJsonArray,
+            steps: shown,
+            model: params.model,
+            effort: params.output_config?.effort,
+            quality: settings.quality,
+            stopReason: result.stopReason,
+            inputTokens,
+            outputTokens,
+          },
+        })
+        return { message, stopReason: result.stopReason }
       }
-      const cost = costUsd(params.model, {
-        input_tokens: inputTokens,
-        output_tokens: outputTokens,
-        cache_read_input_tokens: null,
-        cache_creation_input_tokens: null,
+    } catch (error) {
+      await this.prisma.llmRun.updateMany({
+        where: { id: runId, status: 'running' },
+        data: { status: 'failed', inputTokens, outputTokens },
       })
-      console.info(
-        `Coach turn in conversation ${conversationId}: ${requests} requests, ${inputTokens} input and ${outputTokens} output tokens, ${researchHits(researches)} research hits, ${cost.toFixed(4)} $`,
-      )
-      if (result.stopReason === 'refusal') {
-        console.warn(`Coach refusal in conversation ${conversationId}: ${result.stopDetails?.category ?? 'no category'}`)
-        return { message: null, stopReason: result.stopReason }
-      }
-      if (!STORED_STOP_REASONS.has(result.stopReason)) {
-        throw new Error(`Unexpected stop reason ${result.stopReason} in conversation ${conversationId}`)
-      }
-      const hasText = content.some((block) => block.type === 'text' && block.text.length > 0)
-      if (!hasText) return { message: null, stopReason: result.stopReason }
-      const message = await this.prisma.message.create({
-        data: {
-          conversationId,
-          role: 'assistant',
-          content: content as unknown as Prisma.InputJsonArray,
-          steps: shown,
-          model: params.model,
-          effort: params.output_config?.effort,
-          quality: settings.quality,
-          stopReason: result.stopReason,
-          inputTokens,
-          outputTokens,
-        },
-      })
-      return { message, stopReason: result.stopReason }
+      throw error
     }
   }
 

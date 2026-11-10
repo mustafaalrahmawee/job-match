@@ -34,11 +34,9 @@ export const cvAnalysisSchema = z.object({
   suspicious_text: z.array(z.object({ kind: z.enum(config.SUSPICIOUS_KINDS), excerpt: z.string() })),
 })
 
-export const cvStoredAnalysisSchema = cvAnalysisSchema.omit({ suspicious_text: true })
-
 export type CvAnalysisOutput = z.infer<typeof cvAnalysisSchema>
 
-export type CvAnalysis = z.infer<typeof cvStoredAnalysisSchema>
+export type CvAnalysis = Omit<CvAnalysisOutput, 'suspicious_text'>
 
 export type SuspiciousText = CvAnalysisOutput['suspicious_text']
 

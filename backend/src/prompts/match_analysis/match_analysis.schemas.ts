@@ -24,11 +24,9 @@ export const matchAnalysisSchema = z.object({
   suspicious_text: z.array(z.string()),
 })
 
-export const matchStoredAnalysisSchema = matchAnalysisSchema.omit({ suspicious_text: true })
-
 export type MatchAnalysisOutput = z.infer<typeof matchAnalysisSchema>
 
-export type MatchAnalysis = z.infer<typeof matchStoredAnalysisSchema>
+export type MatchAnalysis = Omit<MatchAnalysisOutput, 'suspicious_text'>
 
 export type CoachMatch = Pick<MatchAnalysis, 'score' | 'gaps' | 'strengths'> & { createdAt: Date }
 

@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { visible } from '../../llm/untrusted.js'
 import * as cvConfig from '../../prompts/cv_analysis/cv_analysis.config.js'
+import type { CvRole } from '../../prompts/cv_analysis/cv_analysis.schemas.js'
 
 export const OFFER_TYPES = ['work', 'self_employment', 'apprenticeship', 'internship'] as const
 
@@ -125,48 +126,38 @@ export const ownJobSchema = z.object({
 
 export type OwnJobInput = z.infer<typeof ownJobSchema>
 
-export const jobDraftSchema = z.object({
-  title: z.string().nullable(),
-  company: z.string().nullable(),
-  city: z.string().nullable(),
-  offer_type: z.enum(OFFER_TYPES).nullable(),
-  full_time: z.boolean(),
-  part_time: z.boolean(),
-  salary: z.string().nullable(),
-  description: z.string(),
-})
+type OfferType = (typeof OFFER_TYPES)[number]
 
-export type JobDraft = z.infer<typeof jobDraftSchema>
+export type JobDraft = {
+  title: string | null
+  company: string | null
+  city: string | null
+  offer_type: OfferType | null
+  full_time: boolean
+  part_time: boolean
+  salary: string | null
+  description: string
+}
 
-export const jobReadingSchema = jobDraftSchema.extend({
-  suspicious_text: z.array(z.string()),
-  unverified: z.array(z.enum(['title', 'company', 'city', 'salary'])),
-})
+export type JobReading = JobDraft & {
+  suspicious_text: string[]
+  unverified: ('title' | 'company' | 'city' | 'salary')[]
+}
 
-export type JobReading = z.infer<typeof jobReadingSchema>
+export type JobOutput = {
+  id: number
+  source: (typeof JOB_SOURCES)[number]
+  title: string
+  company: string | null
+  city: string
+  region: Region | null
+  offer_type: OfferType
+  role: CvRole | null
+  full_time: boolean
+  part_time: boolean
+  published_at: string
+}
 
-export const jobOutputSchema = z.object({
-  id: z.int(),
-  source: z.enum(JOB_SOURCES),
-  title: z.string(),
-  company: z.string().nullable(),
-  city: z.string(),
-  region: z.enum(REGIONS).nullable(),
-  offer_type: z.enum(OFFER_TYPES),
-  role: z.enum(cvConfig.ROLES).nullable(),
-  full_time: z.boolean(),
-  part_time: z.boolean(),
-  published_at: z.iso.date(),
-})
-
-export type JobOutput = z.infer<typeof jobOutputSchema>
-
-export const jobDetailOutputSchema = jobOutputSchema.extend({
-  description: z.string(),
-  salary: z.string().nullable(),
-  url: z.url().nullable(),
-})
-
-export type JobDetailOutput = z.infer<typeof jobDetailOutputSchema>
+export type JobDetailOutput = JobOutput & { description: string; salary: string | null; url: string | null }
 
 export type JobListOutput = { total: number; pool_updated_at: Date | null; jobs: JobOutput[] }

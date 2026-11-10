@@ -2,10 +2,13 @@ import { BadRequestError } from '@anthropic-ai/sdk'
 import { PDFDocument, PDFString } from 'pdf-lib'
 import request from 'supertest'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
-import { CV_ANALYSES_PER_DAY, CV_ANALYSIS_TIMEOUT_MS, CvsService } from '../../src/modules/cvs/cvs.service.js'
+import { CV_ANALYSIS_TIMEOUT_MS, CvsService } from '../../src/modules/cvs/cvs.service.js'
 import * as cvConfig from '../../src/prompts/cv_analysis/cv_analysis.config.js'
 import type { CvAnalysis, CvAnalysisOutput } from '../../src/prompts/cv_analysis/cv_analysis.schemas.js'
+import { RUNS_PER_DAY } from '../../src/shared/runs.js'
 import { bearerFor, createAnna, sentText, useTestDatabase, type FakeMessageReply } from '../helpers.js'
+
+const CV_ANALYSES_PER_DAY = RUNS_PER_DAY.cv_analysis
 
 const budget = vi.hoisted(() => ({ over: false }))
 
@@ -107,13 +110,14 @@ test('an upload is analysed at once with a direct call and stored as ready activ
   expect(body.analysis).not.toHaveProperty('suspicious_text')
   const stored = await prisma.cvVersion.findUniqueOrThrow({ where: { id: body.id } })
   expect(Buffer.from(stored.pdf).equals(PDF)).toBe(true)
-  expect(stored).toMatchObject({
-    isActive: true,
+  expect(stored).toMatchObject({ isActive: true, suspiciousText: null })
+  expect(await prisma.llmRun.findFirstOrThrow()).toMatchObject({
+    unit: 'cv_analysis',
+    status: 'ready',
     model: cvConfig.MODEL,
     effort: cvConfig.EFFORT,
     inputTokens: 900,
     outputTokens: 300,
-    suspiciousText: null,
   })
   expect(messages.requests).toHaveLength(1)
   const params = messages.requests[0]
@@ -203,7 +207,8 @@ test('a rejected file still records the token usage of the call', async () => {
   await upload()
 
   const stored = await prisma.cvVersion.findFirstOrThrow()
-  expect(stored).toMatchObject({ analysisStatus: 'failed', analysis: null, inputTokens: 900, outputTokens: 300 })
+  expect(stored).toMatchObject({ analysisStatus: 'failed', analysis: null })
+  expect(await prisma.llmRun.findFirstOrThrow()).toMatchObject({ status: 'failed', inputTokens: 900, outputTokens: 300 })
 })
 
 test('suspicious text is kept in its own column, also for a rejected file, and never leaves the server', async () => {
@@ -480,11 +485,11 @@ test('a prompt over budget is stored as too_long, sends nothing and does not cou
   expect(response.status).toBe(201)
   expect(response.body).toMatchObject({ status: 'failed', error: 'too_long' })
   expect(messages.requests).toHaveLength(0)
-  expect(await prisma.cvRun.count()).toBe(0)
+  expect(await prisma.llmRun.count()).toBe(0)
 
   budget.over = false
   expect((await retry((response.body as { id: number }).id)).body).toMatchObject({ status: 'ready' })
-  expect(await prisma.cvRun.count()).toBe(1)
+  expect(await prisma.llmRun.count()).toBe(1)
 })
 
 test('the CV routes need a token', async () => {

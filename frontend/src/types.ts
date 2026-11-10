@@ -20,7 +20,6 @@ export type ApiMessage = {
   role: Role
   text: string
   steps: CoachStep[]
-  sources: Source[]
   stop_reason: string | null
   created_at: string
 }
@@ -42,7 +41,6 @@ export type ChatMessage = {
   role: Role
   text: string
   steps: CoachStep[]
-  sources: Source[]
   stopReason: string | null
   createdAt: string
 }

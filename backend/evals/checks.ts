@@ -135,7 +135,7 @@ export function cvAnalysisChecks(gold: CvAnalysisGold, run: RunRecord): Check[] 
   const employers = answer.positions.map((position) => position.employer)
   const missingEmployers = gold.positions
     .map((position) => position.employer)
-    .filter((employer) => !employers.some((found) => mentions(found, employer)))
+    .filter((employer) => !employers.some((found) => mentions(found ?? '', employer)))
   checks.push({
     name: 'positions',
     ok: answer.positions.length === gold.positions.length && missingEmployers.length === 0,

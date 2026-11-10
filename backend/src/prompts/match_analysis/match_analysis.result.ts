@@ -88,3 +88,21 @@ export function missingFacts({ gaps, strengths }: MatchAnalysis, cv: CoachCv, jo
   ]
   return [...gaps, ...strengths].flatMap(missing).length
 }
+
+export function missingQuotes(analysis: MatchAnalysis, cv: CoachCv, job: MatchJob): number {
+  const ad = collapse(adText(job))
+  const lines = cvAside(cv, config.CV_SECTIONS)
+    .split('\n')
+    .filter((line) => line.startsWith('- ') && line !== '- keine Angabe')
+    .map((line) => collapse(line.slice(2)))
+  return [...analysis.gaps, ...analysis.strengths, ...analysis.tips]
+    .flatMap(({ ad_quote, cv_quote }) => [
+      ad_quote !== null && !ad.includes(collapse(ad_quote)),
+      cv_quote !== null && !lines.some((line) => line.includes(collapse(cv_quote))),
+    ])
+    .filter(Boolean).length
+}
+
+function collapse(text: string): string {
+  return text.replace(/\s+/g, ' ').trim()
+}

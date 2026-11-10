@@ -11,21 +11,18 @@ datasource db {
 }
 
 model User {
-  id            Int                  @id @default(autoincrement())
-  email         String               @unique @db.VarChar(320)
-  passwordHash  String               @map("password_hash")
-  createdAt     DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  id            Int               @id @default(autoincrement())
+  email         String            @unique @db.VarChar(320)
+  passwordHash  String            @map("password_hash")
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz
   tokens        AuthToken[]
   conversations Conversation[]
   cvVersions    CvVersion[]
   jobs          Job[]
   matchResults  MatchResult[]
-  matchRuns     MatchRun[]
-  cvRuns        CvRun[]
-  extractRuns   ExtractRun[]
+  llmRuns       LlmRun[]
   applications  Application[]
   researches    CompanyResearch[]
-  researchRuns  CompanyResearchRun[]
 
   @@map("users")
 }
@@ -103,25 +100,36 @@ model CompanyResearch {
   @@map("company_researches")
 }
 
-enum CompanyResearchRunStatus {
+enum LlmUnit {
+  cv_analysis
+  job_extract
+  match_analysis
+  company_research
+  coach_agent
+}
+
+enum RunStatus {
   running
   ready
   failed
 }
 
-model CompanyResearchRun {
-  id           Int                      @id @default(autoincrement())
-  userId       Int                      @map("user_id")
-  status       CompanyResearchRunStatus @default(running)
-  model        String                   @db.VarChar(64)
-  effort       String?                  @db.VarChar(16)
-  inputTokens  Int                      @default(0) @map("input_tokens")
-  outputTokens Int                      @default(0) @map("output_tokens")
-  createdAt    DateTime                 @default(now()) @map("created_at") @db.Timestamptz
-  user         User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model LlmRun {
+  id           Int       @id @default(autoincrement())
+  userId       Int       @map("user_id")
+  unit         LlmUnit
+  jobId        Int?      @map("job_id")
+  status       RunStatus @default(running)
+  model        String?   @db.VarChar(64)
+  effort       String?   @db.VarChar(16)
+  inputTokens  Int       @default(0) @map("input_tokens")
+  outputTokens Int       @default(0) @map("output_tokens")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job          Job?      @relation(fields: [jobId], references: [id], onDelete: SetNull)
 
-  @@index([userId, createdAt])
-  @@map("company_research_runs")
+  @@index([userId, unit, createdAt])
+  @@map("llm_runs")
 }
 
 enum AnalysisStatus {
@@ -132,48 +140,22 @@ enum AnalysisStatus {
 }
 
 model CvVersion {
-  id               Int            @id @default(autoincrement())
-  userId           Int            @map("user_id")
-  pdf              Bytes
-  role             String?        @db.VarChar(32)
-  isActive         Boolean        @default(true) @map("is_active")
-  analysis         Json?
-  analysisStatus   AnalysisStatus @default(none) @map("analysis_status")
-  analysisError    String?        @map("analysis_error") @db.VarChar(32)
-  suspiciousText   Json?          @map("suspicious_text")
-  analyzedAt       DateTime       @map("analyzed_at") @db.Timestamptz
-  model            String?        @db.VarChar(64)
-  effort           String?        @db.VarChar(16)
-  inputTokens      Int?           @map("input_tokens")
-  outputTokens     Int?           @map("output_tokens")
-  cacheReadTokens  Int?           @map("cache_read_tokens")
-  cacheWriteTokens Int?           @map("cache_write_tokens")
-  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz
-  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  matchResults     MatchResult[]
+  id             Int            @id @default(autoincrement())
+  userId         Int            @map("user_id")
+  pdf            Bytes
+  role           String?        @db.VarChar(32)
+  isActive       Boolean        @default(true) @map("is_active")
+  analysis       Json?
+  analysisStatus AnalysisStatus @default(none) @map("analysis_status")
+  analysisError  String?        @map("analysis_error") @db.VarChar(32)
+  suspiciousText Json?          @map("suspicious_text")
+  analyzedAt     DateTime       @map("analyzed_at") @db.Timestamptz
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchResults   MatchResult[]
 
   @@index([userId])
   @@map("cv_versions")
-}
-
-model CvRun {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, createdAt])
-  @@map("cv_runs")
-}
-
-model ExtractRun {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, createdAt])
-  @@map("extract_runs")
 }
 
 enum JobSource {
@@ -207,7 +189,7 @@ model Job {
   publishedAt  DateTime      @map("published_at") @db.Date
   createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz
   matchResults MatchResult[]
-  matchRuns    MatchRun[]
+  llmRuns      LlmRun[]
   applications Application[]
 
   @@unique([source, externalId])
@@ -246,29 +228,6 @@ model MatchResult {
   @@unique([cvVersionId, jobId])
   @@index([userId, jobId])
   @@map("match_results")
-}
-
-enum MatchRunStatus {
-  running
-  ready
-  failed
-}
-
-model MatchRun {
-  id           Int            @id @default(autoincrement())
-  userId       Int            @map("user_id")
-  jobId        Int            @map("job_id")
-  status       MatchRunStatus @default(running)
-  model        String         @db.VarChar(64)
-  effort       String?        @db.VarChar(16)
-  inputTokens  Int            @default(0) @map("input_tokens")
-  outputTokens Int            @default(0) @map("output_tokens")
-  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz
-  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  job          Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
-
-  @@index([userId, createdAt])
-  @@map("match_runs")
 }
 
 enum ApplicationStatus {

@@ -15,7 +15,7 @@ const OUTPUT_GUESS = 1500
 
 const REQUESTS: Record<string, (gold: Record<string, unknown>, variant: Variant) => MessageCreateParamsNonStreaming> = {
   cv_analysis: (gold, variant) =>
-    cvAnalysisRequest(readFileSync(join(EVALS, 'corpus', 'cvs', gold.id as string, 'cv.pdf')).toString('base64'), variant),
+    cvAnalysisRequest(readFileSync(join(EVALS, 'corpus', 'cvs', gold.id as string, 'cv.pdf')).toString('base64'), new Date(), variant),
 }
 
 export function sampleNames(unit: string): string[] {
