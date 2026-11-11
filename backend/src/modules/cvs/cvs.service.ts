@@ -40,18 +40,18 @@ export class CvsService {
     const pages = await pageCount(pdf)
     if (!pages) throw new AppError(422, 'unreadable')
     if (pages > cvConfig.MAX_PAGES) throw new AppError(422, 'too_many_pages')
-    const params = analysisRequest(pdf, now)
+    const params = cvAnalysisRequest(pdf.toString('base64'), now)
     const { version, runId } = await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`
-      const run = params ? await claimRun(tx, userId, 'cv_analysis', now, usedModel(params)) : null
+      const run = await claimRun(tx, userId, 'cv_analysis', now, usedModel(params))
       await tx.cvVersion.updateMany({ where: { userId, isActive: true }, data: { isActive: false } })
       const version = await tx.cvVersion.create({
-        data: { userId, pdf: new Uint8Array(pdf), analyzedAt: now, ...start(params) },
+        data: { userId, pdf: new Uint8Array(pdf), analyzedAt: now, analysisStatus: 'running', analysisError: null },
         omit: HIDDEN,
       })
-      return { version, runId: run?.id }
+      return { version, runId: run.id }
     })
-    return params && runId ? this.analyse(version.id, runId, params, now) : version
+    return this.analyse(version.id, runId, params, now)
   }
 
   list(userId: number): Promise<CvVersionSummaryInfo[]> {
@@ -108,7 +108,7 @@ export class CvsService {
   }
 
   async retry(userId: number, id: number, now = new Date()): Promise<CvVersionInfo> {
-    const { version, params, runId } = await this.prisma.$transaction(async (tx) => {
+    const { params, runId } = await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`
       const found = await tx.cvVersion.findFirst({
         where: { id, userId },
@@ -118,16 +118,15 @@ export class CvsService {
       if (!found.isActive || !['none', 'failed'].includes(found.analysisStatus)) {
         throw new AppError(409, 'The CV cannot be analysed again')
       }
-      const params = analysisRequest(found.pdf, now)
-      const run = params ? await claimRun(tx, userId, 'cv_analysis', now, usedModel(params)) : null
-      const version = await tx.cvVersion.update({
+      const params = cvAnalysisRequest(Buffer.from(found.pdf).toString('base64'), now)
+      const run = await claimRun(tx, userId, 'cv_analysis', now, usedModel(params))
+      await tx.cvVersion.update({
         where: { id },
-        data: { analyzedAt: now, ...start(params) },
-        omit: HIDDEN,
+        data: { analyzedAt: now, analysisStatus: 'running', analysisError: null },
       })
-      return { version, params, runId: run?.id }
+      return { params, runId: run.id }
     })
-    return params && runId ? this.analyse(id, runId, params, now) : version
+    return this.analyse(id, runId, params, now)
   }
 
   async confirmRole(userId: number, id: number, role: CvRole): Promise<CvVersionInfo> {
@@ -189,21 +188,6 @@ async function pageCount(pdf: Buffer): Promise<number> {
   } catch {
     return 0
   }
-}
-
-function analysisRequest(pdf: Uint8Array, analyzedAt: Date): MessageCreateParamsNonStreaming | null {
-  try {
-    return cvAnalysisRequest(Buffer.from(pdf).toString('base64'), analyzedAt)
-  } catch (error) {
-    if (error instanceof Error && error.message.startsWith('Prompt over budget')) return null
-    throw error
-  }
-}
-
-function start(params: MessageCreateParamsNonStreaming | null) {
-  return params
-    ? { analysisStatus: 'running' as const, analysisError: null }
-    : { analysisStatus: 'failed' as const, analysisError: 'too_long' }
 }
 
 function usedModel(params: MessageCreateParamsNonStreaming) {

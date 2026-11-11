@@ -1,14 +1,11 @@
 import type { DocumentBlockParam, MessageParam, TextBlockParam } from '@anthropic-ai/sdk/resources/messages'
-import { estimateTokens } from '../../llm/assemble.js'
 import { marked, newMarkId, oneLine, visible } from '../../llm/untrusted.js'
 import * as researchConfig from '../company_research/company_research.config.js'
 import type { CompanyResearchSource } from '../company_research/company_research.schemas.js'
-import { cvAside } from '../cv_analysis/cv_analysis.material.js'
 import { adDocument, markedAd, matchAside } from '../match_analysis/match_analysis.material.js'
 import type { CoachMatch, MatchJob } from '../match_analysis/match_analysis.schemas.js'
 import * as config from './coach_agent.config.js'
 import type {
-  CoachAgentContext,
   CoachApplication,
   CoachResearch,
   HistoryTurn,
@@ -32,18 +29,12 @@ function applicationLine({ id, status, changedAt, job }: CoachApplication): stri
   return oneLine(line)
 }
 
-function applicationsAside(applications: CoachApplication[], asOf: string, limit: number): string {
-  const shown = applications.slice(0, limit)
+export function applicationsAside(applications: CoachApplication[], asOf: string): string {
+  const shown = applications.slice(0, config.APPLICATIONS_LIMIT)
   const lines = shown.map((application) => `- ${applicationLine(application)}`).join('\n') || '- keine Bewerbungen'
   const rest = applications.length - shown.length
   const more = rest > 0 ? `\n- … Weitere Bewerbungen, die länger nicht geändert wurden und hier nicht stehen: ${rest}` : ''
   return `<bewerbungen quelle="Bewerbungen der Person in job-match" stand="${asOf}">\n${lines}${more}\n</bewerbungen>`
-}
-
-export function applicationsVersions(applications: CoachApplication[], asOf: string, id: string): string[] {
-  return config.APPLICATIONS_SIZES.map((limit) =>
-    marked(applicationsAside(applications, asOf, limit), 'bewerbungen', id),
-  )
 }
 
 function sourceLine({ url, title }: CompanyResearchSource): string[] {
@@ -67,22 +58,15 @@ export function researchAside({ company, question, content, sources, createdAt }
   ].join('\n')
 }
 
-export function cvVersions(cv: NonNullable<CoachAgentContext['cv']>, asOf: string, id: string): string[] {
-  return config.CV_SIZES.map((sections, index) => {
-    const block = cvAside({ ...cv, asOf }, sections)
-    return marked(index ? block.replace(/<\/lebenslauf>$/u, '…\n</lebenslauf>') : block, 'lebenslauf', id)
-  })
-}
-
 export function recentHistory(messages: MessageParam[]): { turns: HistoryTurn[]; cut: boolean } {
   const turns = messages
     .map((message) => ({ role: message.role, content: messageText(message) }))
     .filter(({ content }) => content.trim() !== '')
-  let tokens = 0
+  let chars = 0
   let start = turns.length
   for (let index = turns.length - 1; index >= 0; index -= 1) {
-    tokens += estimateTokens(turns[index].content)
-    if (tokens > config.HISTORY_TOKENS) break
+    chars += turns[index].content.length
+    if (chars > config.HISTORY_MAX_CHARS) break
     if (turns[index].role === 'user') start = index
   }
   return { turns: turns.slice(start), cut: start > 0 }

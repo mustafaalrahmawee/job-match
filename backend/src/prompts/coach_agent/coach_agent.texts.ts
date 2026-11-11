@@ -32,9 +32,6 @@ export const HISTORY_NOTE =
 export const FILE_OPEN =
   'Dieser Abschnitt kommt von job-match und nicht von der Person. Als Hintergrund, falls eine Antwort an ihrem Werdegang, an einer Bewerbung oder an einer Firma hängt, zu der sie eine Recherche freigegeben hat, liest der Coach vor ihrer nächsten Nachricht den aktuellen Stand ihrer Akte. Diesen Schritt führt job-match bei jeder Nachricht selbst aus, darum braucht der Coach ihn nicht aufzurufen.'
 
-export const FILE_EMPTY =
-  'job-match konnte für diese Nachricht weder die Analyse noch Recherchen noch Bewerbungen mitgeben; ob sie vorliegen, zeigt dieses Ergebnis nicht.'
-
 export const CV_RULES =
   'Als Hintergrund, falls eine Antwort am Werdegang der Person hängt, steht in dieser Akte die Analyse ihres aktiven Lebenslaufs, die job-match beim Hochladen erstellt und die sie mit ihrer Zielrolle freigegeben hat. Das Datum bei „stand“ ist der heutige Tag, bis zu dem eine Station mit „heute“ läuft. Die Analyse nennt je Station nur Titel, Arbeitgeber und Zeitraum und kann kürzer sein als der Lebenslauf, und ein „…“ an ihrem Ende zeigt, dass job-match Abschnitte weggelassen hat; was darin fehlt, behandelt der Coach als offene Angabe, weil die Person es trotzdem können kann.'
 

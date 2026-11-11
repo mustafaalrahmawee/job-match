@@ -345,18 +345,6 @@ test('a failed request fails the research and counts the run', async () => {
   expect(await runs()).toMatchObject([{ status: 'failed' }])
 })
 
-test('a continuation over the budget fails the research, keeps the run counted and logs its counts', async () => {
-  model.answer(streamed({ content: [answer('x'.repeat(3_000_000))], stopReason: 'pause_turn', webSearches: 4 }))
-
-  const response = await run()
-
-  expect(model.requests).toHaveLength(1)
-  expect(events(response.text).at(-1)!.event).toBe('error')
-  expect(await runs()).toMatchObject([{ status: 'failed', inputTokens: 120 }])
-  expect(logged()).toContain('1 requests, 1 continuations, 120 input and 30 output tokens, 4 web searches')
-  expect(logged()).toContain('4 web searches with 1 continuations')
-})
-
 test('a failed request logs the counts of the requests before it once', async () => {
   const replies = [stopped('pause_turn', [search('s1', 'Kreditwerk')]), () => Promise.reject(new Error('Anthropic down'))]
   model.answer(...replies)

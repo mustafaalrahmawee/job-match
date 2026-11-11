@@ -1,18 +1,15 @@
 import type { MessageCreateParamsNonStreaming, MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import { expect, test } from 'vitest'
-import { estimateTokens } from '../../src/llm/assemble.js'
 import * as coachConfig from '../../src/prompts/coach_agent/coach_agent.config.js'
 import { coachAgentRequest } from '../../src/prompts/coach_agent/coach_agent.request.js'
 import type { CoachAgentContext } from '../../src/prompts/coach_agent/coach_agent.schemas.js'
 import * as coachPrompt from '../../src/prompts/coach_agent/coach_agent.texts.js'
-import { FILE_TOOL } from '../../src/prompts/coach_agent/coach_agent.tools.js'
 import type { CvAnalysis } from '../../src/prompts/cv_analysis/cv_analysis.schemas.js'
 import { requestText } from '../helpers.js'
 
 const messages = [{ role: 'user' as const, content: 'Habe ich Kubernetes-Erfahrung?' }]
 const settings = { quality: 'normal', effort: 'medium' } as const
 const asOf = '2026-10-16'
-const TURN_BUDGET = 100000
 
 const analysis: CvAnalysis = {
   is_cv: true,
@@ -164,63 +161,24 @@ test('every round of a turn keeps system, tools and all earlier messages of the 
   expect(context).toEqual(full)
 })
 
-test('the prefix also holds when the budget cuts the file and the history note appears', () => {
-  const history = [...longHistory, { role: 'user' as const, content: 'x'.repeat(283000) }]
+test('a long history is cut at a user turn, the history note appears and the prefix holds', () => {
+  const history = [...longHistory, { role: 'user' as const, content: 'Und jetzt?' }]
 
   const requests = roundsOf(history, { ...full, applications })
 
   expectOnePrefix(requests)
   const text = requestText(requests[0])
   expect(requests[0].system).toContainEqual({ type: 'text', text: coachPrompt.HISTORY_NOTE })
-  expect(text).toContain('Weitere Bewerbungen, die länger nicht geändert wurden')
-  expect(text).not.toContain('Pixelpfad Digital GmbH')
+  expect(requests[0].messages[0]).toMatchObject({ role: 'user' })
+  expect(text).toContain('Frage 5')
   expect(text).not.toContain('Frage 1')
+  expect(text).toContain('Stelle 50,')
+  expect(text).not.toContain('Stelle 51,')
+  expect(text).toContain('Weitere Bewerbungen, die länger nicht geändert wurden und hier nicht stehen: 150')
 })
 
-test('steps never shorten the fixed part and throw once they pass their own budget', () => {
-  const step = (tokens: number): MessageParam[] => [
-    { role: 'assistant', content: [{ type: 'tool_use', id: 'toolu_1', name: 'get_application', input: { application_id: 1 } }] },
-    { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'toolu_1', content: 'x'.repeat(tokens * 3) }] },
-  ]
-  const open = coachAgentRequest(messages, [], settings, full)
+test('a short history goes in whole and without the history note', () => {
+  const request = coachAgentRequest(messages, [], settings, full)
 
-  const large = coachAgentRequest(messages, step(870000), settings, full)
-
-  expect(large.system).toEqual(open.system)
-  expect(large.messages.slice(0, open.messages.length)).toEqual(open.messages)
-  expect(large.messages.at(-1)!.content).toContainEqual(step(870000)[1].content[0])
-  expect(() => coachAgentRequest(messages, step(890000), settings, full)).toThrow('Prompt over budget')
-})
-
-test('when the budget leaves no room for the file, the result says so and no note speaks about it', () => {
-  const call = { role: 'assistant', content: [{ type: 'tool_use', id: 'toolu_applicant_file', name: FILE_TOOL, input: {} }] }
-  const fixed = [
-    coachPrompt.FRAME,
-    coachPrompt.RULES,
-    coachPrompt.CONTRACT,
-    coachPrompt.FOREIGN,
-    coachPrompt.HISTORY_NOTE,
-    coachPrompt.FILE_OPEN,
-    JSON.stringify(call),
-    coachPrompt.FILE_EMPTY,
-    coachPrompt.FILE_CLOSE,
-    coachPrompt.REFOCUS,
-  ].reduce((sum, text) => sum + estimateTokens(text), 0)
-  const live = 'x'.repeat((TURN_BUDGET - fixed) * 3)
-  const context = { ...withCv, researches: [research] }
-
-  const request = coachAgentRequest([{ role: 'user', content: live }], [], settings, context)
-
-  expect(request.messages[2]).toEqual({
-    role: 'user',
-    content: [
-      {
-        type: 'tool_result',
-        tool_use_id: 'toolu_applicant_file',
-        content: [{ type: 'text', text: coachPrompt.FILE_EMPTY }],
-      },
-    ],
-  })
-  expect(request.messages[1]).toEqual(call)
-  expect(request.messages[3]).toEqual({ role: 'assistant', content: coachPrompt.FILE_CLOSE })
+  expect(request.system).toEqual([{ type: 'text', text: coachPrompt.SYSTEM }])
 })

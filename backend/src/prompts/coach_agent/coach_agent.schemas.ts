@@ -1,5 +1,5 @@
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages'
-import type { Variant } from '../../llm/assemble.js'
+import type { Variant } from '../../llm/send.js'
 import type { ApplicationStatus } from '../../modules/applications/applications.schemas.js'
 import type { CompanyResearchSource } from '../company_research/company_research.schemas.js'
 import type { CoachCv } from '../cv_analysis/cv_analysis.schemas.js'

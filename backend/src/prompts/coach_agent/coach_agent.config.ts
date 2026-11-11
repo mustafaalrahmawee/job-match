@@ -10,17 +10,14 @@ export const THINKING = {
 
 export const MAX_TOKENS = 8000
 
-export const INPUT_BUDGET = 1000000 - MAX_TOKENS - 4000
-export const TURN_BUDGET = 100000
-export const STEPS_BUDGET = INPUT_BUDGET - TURN_BUDGET
-export const HISTORY_TOKENS = 20000
+export const HISTORY_MAX_CHARS = 60000
 
 export const TOOL_ROUNDS = 4
-const APPLICATIONS_LIMIT = 50
+export const APPLICATIONS_LIMIT = 50
 export const RESEARCH_LIMIT = 3
 export const RESEARCH_MAX_CHARS = 2000
 export const RESEARCH_SOURCES = 5
-const CV_SECTIONS = [
+export const CV_SECTIONS = [
   'Zielrolle',
   'Stationen',
   'Kenntnisse',
@@ -29,10 +26,4 @@ const CV_SECTIONS = [
   'Stärken',
   'Schwächen',
   'Tipps',
-] as const
-export const APPLICATIONS_SIZES = [APPLICATIONS_LIMIT, 20, 5]
-export const CV_SIZES = [
-  CV_SECTIONS,
-  ['Zielrolle', 'Stationen', 'Kenntnisse', 'Ausbildung', 'Sprachen'],
-  ['Zielrolle', 'Stationen'],
 ] as const

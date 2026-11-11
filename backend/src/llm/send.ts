@@ -3,6 +3,7 @@ import type {
   ContentBlock,
   Message,
   MessageCreateParamsNonStreaming,
+  OutputConfig,
   RefusalStopDetails,
   StopReason,
 } from '@anthropic-ai/sdk/resources/messages'
@@ -26,6 +27,8 @@ export type SendResult = {
 export type SendStream = (params: MessageCreateParamsNonStreaming, handlers: StreamHandlers) => Promise<SendResult>
 
 export type SendMessage = (params: MessageCreateParamsNonStreaming, options?: { signal?: AbortSignal }) => Promise<SendResult>
+
+export type Variant = { model?: string; effort?: OutputConfig['effort'] }
 
 export type Structured<T> = { data: T } | { error: 'refused' | 'too_long' | 'invalid_output' }
 

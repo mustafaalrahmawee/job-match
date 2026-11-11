@@ -34,7 +34,7 @@ Diese Arbeitsdokumente liegen nicht im öffentlichen Repo; auf Nachfrage zeige i
 | --- | --- | --- |
 | Jeder Prompt-Teil ist benannt und einzeln nachvollziehbar | [job_extract/](../backend/src/prompts/job_extract/) | jeder Teil als benannte Konstante, der Kopfkommentar nennt Profil, Slots, Stop und was der Code statt des Prompts erzwingt |
 | App und Eval bauen dieselbe Anfrage | [cv_analysis.request.ts](../backend/src/prompts/cv_analysis/cv_analysis.request.ts), Funktion `cvAnalysisRequest` | eine Funktion je Unit; der Service ruft sie, die Eval ruft sie mit einer `Variant` für Modell und Effort |
-| Prompt passt ins Eingabebudget | [assemble.ts](../backend/src/llm/assemble.ts) | jeder Teil der Anfrage ist ein Element mit Position, Stufe und Score; `assemble` wählt vor dem Senden, was ins Budget passt |
+| Der Prompt bleibt klein | [coach_agent.config.ts](../backend/src/prompts/coach_agent/coach_agent.config.ts), [coach_agent.request.ts](../backend/src/prompts/coach_agent/coach_agent.request.ts) | jede Unit baut die Anfrage direkt aus ihren Konstanten; was wachsen kann, hat eine feste Grenze: der Verlauf des Coachs 60.000 Zeichen, 50 Bewerbungen, 3 Recherchen, der Lebenslauf 5 Seiten |
 | Structured Outputs ohne doppeltes Schema | [job_extract.schemas.ts](../backend/src/prompts/job_extract/job_extract.schemas.ts), `jobExtractSchema` | ein Zod-Schema validiert die Antwort, `z.toJSONSchema()` daraus geht als `output_config.format` an die API |
 | Prompt-Injection wird strukturell behandelt, nicht mit Verboten | [job_extract/](../backend/src/prompts/job_extract/), `markedText`, `jobPrompt.FOREIGN` und `jobExtractResult` | eingefügter Text geht als Document-Block und zusätzlich zwischen zwei Tags mit einer Kennung, die bei jedem Aufruf neu zufällig gewählt wird und die der Text nicht kennen kann; der Absatz zum fremden Material erklärt Anweisungen im Material zum Material; was gelten muss, prüft der Code: Zod, Wortlaut, Adressen und unsichtbare Zeichen in `jobExtractResult` |
 | Modellwahl ist ein Kosten-Latenz-Qualität-Trade-off | [prompts/](../backend/src/prompts/) | Modell und Effort je Unit als Konstante: Haiku für Extraktion und Fragen, Sonnet für Analyse und Bewertung; Opus nirgends, bis eine Messung es verlangt |
@@ -98,7 +98,7 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
 
 1. [job_extract/](../backend/src/prompts/job_extract/): eine Prompt-Unit Datei für Datei –
    Konstanten, Schema, Prompt-Teile, Material, Prüfung der Antwort, Request-Funktion.
-2. [assemble.ts](../backend/src/llm/assemble.ts): wie aus den Teilen die Anfrage im Budget wird.
+2. [coach_agent.request.ts](../backend/src/prompts/coach_agent/coach_agent.request.ts): wie aus Verlauf, Akte und Nachricht die Anfrage des Coachs wird.
 3. [send.ts](../backend/src/llm/send.ts) und [costs.ts](../backend/src/llm/costs.ts): Senden,
    Streaming, Kosten.
 4. [coach.service.ts](../backend/src/modules/coach/coach.service.ts): die Agent-Schleife mit
