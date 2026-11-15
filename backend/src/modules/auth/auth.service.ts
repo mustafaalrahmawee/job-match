@@ -18,6 +18,11 @@ export class AuthService {
     return this.prisma.user.findUnique({ where: { email: normalizeEmail(email) } })
   }
 
+  async userIds(): Promise<number[]> {
+    const users = await this.prisma.user.findMany({ select: { id: true }, orderBy: { id: 'asc' } })
+    return users.map((user) => user.id)
+  }
+
   async createUser(email: string, password: string): Promise<User> {
     return this.prisma.user.create({
       data: { email: normalizeEmail(email), passwordHash: await hashPassword(password) },

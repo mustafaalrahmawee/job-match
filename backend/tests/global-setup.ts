@@ -3,6 +3,7 @@ import { env } from '../src/config/env.js'
 
 export default function setup(): void {
   if (!env.TEST_DATABASE_URL) throw new Error('TEST_DATABASE_URL is missing in backend/.env')
+  if (!env.TEST_CHROMA_URL) throw new Error('TEST_CHROMA_URL is missing in backend/.env')
   execSync('pnpm prisma migrate deploy', {
     env: { ...process.env, DATABASE_URL: env.TEST_DATABASE_URL },
     stdio: 'inherit',

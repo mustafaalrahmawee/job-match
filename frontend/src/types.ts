@@ -164,6 +164,10 @@ export type Job = {
 
 export type JobList = { total: number; pool_updated_at: string | null; jobs: Job[] }
 
+export type FitJob = Job
+
+export type FitList = { cv_version: { id: number; created_at: string }; jobs: FitJob[] }
+
 export type JobFilter = {
   q: string
   role: CvRole | null

@@ -19,6 +19,10 @@
           <Tag class="size-3.5" />
           {{ OFFER_LABELS[job.offer_type] }}
         </span>
+        <span v-if="showSource" class="inline-flex items-center gap-1.5">
+          <component :is="job.source === 'own' ? Bookmark : Building2" class="size-3.5" />
+          {{ job.source === 'own' ? 'Eigene Stelle' : 'Bundesagentur' }}
+        </span>
       </div>
     </div>
     <span class="shrink-0 text-xs text-muted-foreground">{{ age }}</span>
@@ -26,13 +30,13 @@
 </template>
 
 <script setup lang="ts">
-import { Clock, MapPin, Tag } from '@lucide/vue'
+import { Bookmark, Building2, Clock, MapPin, Tag } from '@lucide/vue'
 import { computed } from 'vue'
 import { OFFER_LABELS, type Job } from '../types'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
-const props = defineProps<{ job: Job }>()
+const props = withDefaults(defineProps<{ job: Job; showSource?: boolean }>(), { showSource: false })
 
 const time = computed(() =>
   props.job.full_time ? (props.job.part_time ? 'Vollzeit, Teilzeit möglich' : 'Vollzeit') : props.job.part_time ? 'Teilzeit' : null,

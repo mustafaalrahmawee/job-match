@@ -4,8 +4,8 @@ import { BA_PAGE_SIZE } from '../../src/modules/jobs/jobs.ba.js'
 import { JobsService } from '../../src/modules/jobs/jobs.service.js'
 import { useTestDatabase } from '../helpers.js'
 
-const { prisma, ba, messages } = useTestDatabase()
-const service = new JobsService(prisma, ba.client, messages.send)
+const { prisma, ba, messages, searchIndex } = useTestDatabase()
+const service = new JobsService(prisma, ba.client, messages.send, searchIndex)
 
 const NOW = new Date('2026-10-17T06:00:00Z')
 

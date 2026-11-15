@@ -49,7 +49,7 @@ export class JobsController {
   }
 }
 
-function output(job: Job): JobOutput {
+export function output(job: Job): JobOutput {
   return {
     id: job.id,
     source: job.source,

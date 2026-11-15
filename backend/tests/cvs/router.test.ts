@@ -10,7 +10,7 @@ import { bearerFor, createAnna, sentText, useTestDatabase, type FakeMessageReply
 
 const CV_ANALYSES_PER_DAY = RUNS_PER_DAY.cv_analysis
 
-const { app, auth, prisma, messages } = useTestDatabase()
+const { app, auth, prisma, messages, searchIndex } = useTestDatabase()
 let headers: { Authorization: string }
 
 async function makePdf(pages: number, encrypt?: { O: string; U: string }): Promise<Buffer> {
@@ -285,7 +285,7 @@ test('the call ends at the same deadline after analyzedAt that marks a stuck ver
   const service = new CvsService(prisma, (_params, options) => {
     const signal = options!.signal!
     return new Promise((_resolve, reject) => signal.addEventListener('abort', () => reject(signal.reason as Error)))
-  })
+  }, searchIndex)
   const user = await prisma.user.findFirstOrThrow()
 
   const version = await service.upload(user.id, PDF, new Date(Date.now() - CV_ANALYSIS_TIMEOUT_MS + 100))

@@ -14,6 +14,7 @@ import {
 } from '../../prompts/cv_analysis/cv_analysis.schemas.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
 import { claimRun } from '../../shared/runs.js'
+import type { SearchIndex } from '../search/search.index.js'
 import type { AnalysisError } from './cvs.schemas.js'
 
 export type CvVersionInfo = Omit<CvVersion, 'pdf' | 'suspiciousText'>
@@ -34,6 +35,7 @@ export class CvsService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly sendMessage: SendMessage,
+    private readonly search: SearchIndex,
   ) { }
 
   async upload(userId: number, pdf: Buffer, now = new Date()): Promise<CvVersionInfo> {
@@ -62,14 +64,16 @@ export class CvsService {
     })
   }
 
-  activate(userId: number, id: number): Promise<CvVersionInfo> {
-    return this.prisma.$transaction(async (tx) => {
+  async activate(userId: number, id: number): Promise<CvVersionInfo> {
+    const version = await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`
       const exists = await tx.cvVersion.count({ where: { id, userId } })
       if (!exists) throw new NotFoundError('CV not found')
       await tx.cvVersion.updateMany({ where: { userId, isActive: true }, data: { isActive: false } })
       return tx.cvVersion.update({ where: { id }, data: { isActive: true }, omit: HIDDEN })
     })
+    await this.search.ensureCv(version)
+    return version
   }
 
   async remove(userId: number, id: number): Promise<void> {
@@ -80,6 +84,7 @@ export class CvsService {
       if (version.isActive) throw new AppError(409, 'The active CV cannot be deleted')
       await tx.cvVersion.delete({ where: { id } })
     })
+    await this.search.remove(`cv-${id}`)
   }
 
   async active(userId: number, now = new Date()): Promise<CvVersionInfo> {
@@ -96,6 +101,21 @@ export class CvsService {
       data: { analysisStatus: 'failed', analysisError: 'timeout' },
     })
     return this.prisma.cvVersion.findUniqueOrThrow({ where: { id: version.id }, omit: HIDDEN })
+  }
+
+  activeReady(userId: number): Promise<{ id: number; createdAt: Date } | null> {
+    return this.prisma.cvVersion.findFirst({
+      where: { userId, isActive: true, analysisStatus: 'ready' },
+      select: { id: true, createdAt: true },
+    })
+  }
+
+  readyVersions(userId: number): Promise<{ id: number; userId: number; isActive: boolean; analysis: unknown }[]> {
+    return this.prisma.cvVersion.findMany({
+      where: { userId, analysisStatus: 'ready' },
+      select: { id: true, userId: true, isActive: true, analysis: true },
+      orderBy: { id: 'asc' },
+    })
   }
 
   async readyAnalysis(userId: number): Promise<{ id: number; role: CvRole; analysis: CvAnalysis } | null> {
@@ -166,7 +186,7 @@ export class CvsService {
       where: { id: runId },
       data: { ...usage, status: 'analysis' in outcome ? 'ready' : 'failed' },
     })
-    await this.prisma.cvVersion.updateMany({
+    const { count } = await this.prisma.cvVersion.updateMany({
       where: { id, analysisStatus: 'running', analyzedAt },
       data: {
         ...(outcome.suspiciousText?.length ? { suspiciousText: outcome.suspiciousText } : {}),
@@ -177,6 +197,7 @@ export class CvsService {
     })
     const version = await this.prisma.cvVersion.findUnique({ where: { id }, omit: HIDDEN })
     if (!version) throw new NotFoundError('CV not found')
+    if (count === 1 && 'analysis' in outcome) await this.search.putCv(version)
     return version
   }
 }

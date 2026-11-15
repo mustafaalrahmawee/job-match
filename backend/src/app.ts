@@ -10,6 +10,8 @@ import { createJobsModule } from './modules/jobs/jobs.module.js'
 import { createMatchesModule } from './modules/matches/matches.module.js'
 import { createResearchModule } from './modules/research/research.module.js'
 import { ResearchReader } from './modules/research/research.reader.js'
+import type { SearchIndex } from './modules/search/search.index.js'
+import { createSearchModule } from './modules/search/search.module.js'
 import { requireAuth } from './shared/auth.middleware.js'
 import { errorHandler } from './shared/errors.js'
 
@@ -19,16 +21,18 @@ export type AppDeps = {
   sendStream: SendStream
   sendMessage: SendMessage
   ba: BaClient
+  searchIndex: SearchIndex
 }
 
-export function createApp({ prisma, tokenTtlDays, sendStream, sendMessage, ba }: AppDeps): Express {
+export function createApp({ prisma, tokenTtlDays, sendStream, sendMessage, ba, searchIndex }: AppDeps): Express {
   const app = express()
   app.use(express.json())
 
   const auth = createAuthModule({ prisma, tokenTtlDays })
   const authenticate = requireAuth(auth.service)
-  const cvs = createCvsModule({ prisma, sendMessage, authenticate })
-  const jobs = createJobsModule({ prisma, ba, sendMessage, authenticate })
+  const cvs = createCvsModule({ prisma, sendMessage, search: searchIndex, authenticate })
+  const jobs = createJobsModule({ prisma, ba, sendMessage, search: searchIndex, authenticate })
+  const search = createSearchModule({ cvs: cvs.service, jobs: jobs.service, index: searchIndex, authenticate })
   const matches = createMatchesModule({ prisma, sendMessage, cvs: cvs.service, jobs: jobs.service, authenticate })
   const applications = createApplicationsModule({ prisma, jobs: jobs.service, matches: matches.service, authenticate })
   const coach = createCoachModule({
@@ -52,6 +56,7 @@ export function createApp({ prisma, tokenTtlDays, sendStream, sendMessage, ba }:
   api.use('/research', research.router)
   api.use('/cvs', cvs.router)
   api.use('/jobs', jobs.router)
+  api.use('/search', search.router)
   api.use('/matches', matches.router)
   api.use('/applications', applications.router)
 

@@ -1,14 +1,20 @@
 import type { RequestHandler, Router } from 'express'
 import type { PrismaClient } from '../../generated/prisma/client.js'
 import type { SendMessage } from '../../llm/send.js'
+import type { SearchIndex } from '../search/search.index.js'
 import { CvsController } from './cvs.controller.js'
 import { cvsRoutes } from './cvs.routes.js'
 import { CvsService } from './cvs.service.js'
 
-export type CvsModuleDeps = { prisma: PrismaClient; sendMessage: SendMessage; authenticate: RequestHandler }
+export type CvsModuleDeps = {
+  prisma: PrismaClient
+  sendMessage: SendMessage
+  search: SearchIndex
+  authenticate: RequestHandler
+}
 
 export function createCvsModule(deps: CvsModuleDeps): { router: Router; service: CvsService } {
-  const service = new CvsService(deps.prisma, deps.sendMessage)
+  const service = new CvsService(deps.prisma, deps.sendMessage, deps.search)
   const controller = new CvsController(service)
   const router = cvsRoutes(controller, deps.authenticate)
   return { router, service }

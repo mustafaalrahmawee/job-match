@@ -3,6 +3,7 @@ import { env } from './config/env.js'
 import { createClaudeClient } from './llm/clients.js'
 import { createSendMessage, createSendStream } from './llm/send.js'
 import { BaClient } from './modules/jobs/jobs.ba.js'
+import { createSearchIndex } from './modules/search/search.index.js'
 import { createPrisma } from './shared/prisma.js'
 
 const claude = createClaudeClient()
@@ -13,6 +14,7 @@ const app = createApp({
   sendStream: createSendStream(claude),
   sendMessage: createSendMessage(claude),
   ba: new BaClient(fetch),
+  searchIndex: createSearchIndex(env.CHROMA_URL, env.OLLAMA_URL),
 })
 
 app.listen(env.PORT, () => console.log(`job-match backend listening on port ${env.PORT}`))

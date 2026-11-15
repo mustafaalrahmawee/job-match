@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
 import { fetchApi } from '../api'
-import type { Job, JobDetail, JobFilter, JobList, JobReading, OwnJobInput } from '../types'
+import type { CvRole, FitList, Job, JobDetail, JobFilter, JobList, JobReading, OwnJobInput } from '../types'
 
 export const JOBS_PAGE_SIZE = 20
 
@@ -14,6 +14,7 @@ export const useJobsStore = defineStore('jobs', () => {
   const job = ref<JobDetail | null>(null)
   const ownJobs = ref<Job[]>([])
   const ownTotal = ref(0)
+  const fit = ref<FitList | null>(null)
 
   async function load(target = 1, signal?: AbortSignal) {
     const params = new URLSearchParams({
@@ -42,6 +43,12 @@ export const useJobsStore = defineStore('jobs', () => {
     ownTotal.value = result.total
   }
 
+  async function loadFit(role: CvRole | null, signal?: AbortSignal) {
+    const query = role ? `?${new URLSearchParams({ role }).toString()}` : ''
+    const response = await fetchApi(`/search/jobs${query}`, { signal })
+    fit.value = (await response.json()) as FitList
+  }
+
   async function loadOne(id: number) {
     job.value = null
     const response = await fetchApi(`/jobs/${id}`)
@@ -65,5 +72,22 @@ export const useJobsStore = defineStore('jobs', () => {
     job.value = null
   }
 
-  return { jobs, total, filter, page, loaded, job, ownJobs, ownTotal, load, loadOwn, loadOne, extract, create, remove }
+  return {
+    jobs,
+    total,
+    filter,
+    page,
+    loaded,
+    job,
+    ownJobs,
+    ownTotal,
+    fit,
+    load,
+    loadOwn,
+    loadFit,
+    loadOne,
+    extract,
+    create,
+    remove,
+  }
 })

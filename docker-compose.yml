@@ -23,5 +23,32 @@ services:
       timeout: 3s
       retries: 10
 
+  chroma:
+    image: chromadb/chroma:1.5.9
+    container_name: jobmatch-chroma
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:8001:8000'
+    volumes:
+      - jobmatch-chromadata:/data
+
+  chroma-test:
+    image: chromadb/chroma:1.5.9
+    container_name: jobmatch-chroma-test
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:8002:8000'
+
+  ollama:
+    image: ollama/ollama:0.40.16
+    container_name: jobmatch-ollama
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:11434:11434'
+    volumes:
+      - jobmatch-ollamadata:/root/.ollama
+
 volumes:
   jobmatch-pgdata:
+  jobmatch-chromadata:
+  jobmatch-ollamadata:

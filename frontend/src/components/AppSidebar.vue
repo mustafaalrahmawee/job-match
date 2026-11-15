@@ -145,6 +145,7 @@ import {
   MessageSquare,
   PanelLeft,
   Pencil,
+  Target,
   Trash2,
 } from '@lucide/vue'
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
@@ -164,6 +165,7 @@ const NAV = [
   { to: '/coach', label: 'Coach', icon: MessageSquare, exact: false },
   { to: '/cv', label: 'Lebenslauf', icon: FileText, exact: false },
   { to: '/jobs', label: 'Stellen', icon: Briefcase, exact: false },
+  { to: '/jobs/fit', label: 'Passt zu dir', icon: Target, exact: false },
   { to: '/jobs/own', label: 'Eigene Stellen', icon: Bookmark, exact: false },
   { to: '/matches', label: 'Matches', icon: Gauge, exact: false },
   { to: '/applications', label: 'Bewerbungen', icon: ClipboardList, exact: false },
@@ -263,6 +265,7 @@ async function logout() {
   jobs.loaded = false
   jobs.page = 1
   jobs.ownJobs = []
+  jobs.fit = null
   Object.assign(jobs.filter, { q: '', role: null, region: null, workTime: null, offerType: null })
   applications.list = []
   applications.application = null

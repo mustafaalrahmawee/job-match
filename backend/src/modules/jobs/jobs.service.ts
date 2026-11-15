@@ -9,6 +9,7 @@ import { jobExtractSchema, type JobExtractInput } from '../../prompts/job_extrac
 import { BA_MAX_PAGES, BA_PAGE_SIZE, BA_SEARCH_TERMS, POOL_DAYS, type BaClient } from './jobs.ba.js'
 import { AppError, NotFoundError } from '../../shared/errors.js'
 import { claimRun } from '../../shared/runs.js'
+import type { SearchIndex } from '../search/search.index.js'
 import {
   REGIONS,
   baJobSchema,
@@ -41,6 +42,7 @@ export class JobsService {
     private readonly prisma: PrismaClient,
     private readonly ba: BaClient,
     private readonly sendMessage: SendMessage,
+    private readonly search: SearchIndex,
   ) { }
 
   async importPool(now = new Date()): Promise<ImportSummary> {
@@ -79,7 +81,7 @@ export class JobsService {
   async list(userId: number, query: JobsQuery, now = new Date()): Promise<JobList> {
     const pool: Prisma.JobWhereInput = {
       source: 'ba',
-      publishedAt: { gte: new Date(new Date(now.getTime() - POOL_DAYS * DAY_MS).toISOString().slice(0, 10)) },
+      publishedAt: { gte: poolStart(now) },
       role: query.role,
       region: query.region,
     }
@@ -155,8 +157,16 @@ export class JobsService {
     return { ...draft, suspicious_text: suspiciousText, unverified }
   }
 
-  create(userId: number, input: OwnJobInput, now = new Date()): Promise<Job> {
-    return this.prisma.job.create({
+  poolJobs(now = new Date()): Promise<Job[]> {
+    return this.prisma.job.findMany({ where: { source: 'ba', publishedAt: { gte: poolStart(now) } }, orderBy: { id: 'asc' } })
+  }
+
+  ownJobs(userId: number): Promise<Job[]> {
+    return this.prisma.job.findMany({ where: { source: 'own', userId }, orderBy: { id: 'asc' } })
+  }
+
+  async create(userId: number, input: OwnJobInput, now = new Date()): Promise<Job> {
+    const job = await this.prisma.job.create({
       data: {
         source: 'own',
         userId,
@@ -173,11 +183,14 @@ export class JobsService {
         publishedAt: new Date(now.toISOString().slice(0, 10)),
       },
     })
+    await this.search.putJob(job, now)
+    return job
   }
 
   async remove(userId: number, id: number): Promise<void> {
     const { count } = await this.prisma.job.deleteMany({ where: { id, source: 'own', userId } })
     if (!count) throw new NotFoundError('Job not found')
+    await this.search.remove(`job-${id}`)
   }
 
   private async importOne(job: BaJob, role: CvRole, since: string, known: Set<string>): Promise<Outcome> {
@@ -216,4 +229,8 @@ export class JobsService {
     })
     return count ? 'imported' : 'duplicates'
   }
+}
+
+export function poolStart(now: Date): Date {
+  return new Date(new Date(now.getTime() - POOL_DAYS * DAY_MS).toISOString().slice(0, 10))
 }

@@ -6,6 +6,7 @@ import ApplicationView from './views/ApplicationView.vue'
 import CoachView from './views/CoachView.vue'
 import CvView from './views/CvView.vue'
 import HomeView from './views/HomeView.vue'
+import JobFitView from './views/JobFitView.vue'
 import JobsView from './views/JobsView.vue'
 import JobView from './views/JobView.vue'
 import LoginView from './views/LoginView.vue'
@@ -26,6 +27,7 @@ export const router = createRouter({
         { path: 'coach/:id(\\d+)?', component: CoachView },
         { path: 'cv', component: CvView },
         { path: 'jobs', component: JobsView },
+        { path: 'jobs/fit', component: JobFitView, meta: { nav: '/jobs/fit' } },
         { path: 'jobs/own', component: OwnJobsView, meta: { nav: '/jobs/own' } },
         { path: 'jobs/new', component: OwnJobView, meta: { nav: '/jobs/own' } },
         { path: 'jobs/own/:id(\\d+)', component: JobView, meta: { nav: '/jobs/own' } },

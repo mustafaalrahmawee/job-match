@@ -6,6 +6,10 @@ export const EXCERPT_MAX_CHARS = 1000
 export const INVISIBLE_CHARS = /[\u{E0000}-\u{E007F}\u{200B}-\u{200D}\u{2060}]|[\u{FE00}-\u{FE0F}]/gu
 export const TAG_BLOCK = /[\u{E0000}-\u{E007F}]/u
 export const ADDRESS = /https?:\/\/[^\s)\]>]+/giu
+export const HTML_TAG = /<\/?[a-z](?:[^>"']|"[^"]*"|'[^']*')*>/giu
+export const HIDDEN_HTML =
+  /<!--[\s\S]*?(?:-->|$)|<(script|style|template|noscript|iframe|object)\b(?:[^>"']|"[^"]*"|'[^']*')*>|<([a-z][a-z0-9-]*)(?=(?:[^>"']|"[^"]*"|'[^']*')*?\s(?:hidden(?=[\s/>=])|aria-hidden\s*=\s*["']?true\b|style\s*=\s*(?:["'][^"']*|[^\s>"']*)(?:display\s*:\s*none|visibility\s*:\s*hidden|(?:opacity|font-size)\s*:\s*0(?![\d.]))|class\s*=\s*(?:["'](?:[^"']*\s)?)?(?:hidden|invisible|sr-only)(?=["'\s/>])))(?:[^>"']|"[^"]*"|'[^']*')*>/iu
+export const EMAIL = /[a-z0-9._%+-]+@(?:[a-z0-9-]+\.)+[a-z]{2,}/giu
 export const UNSAFE_TEXT =
   /https?:\/\/|\bwww\.|[\w.+-]+@[\w-]+\.[a-z]{2,}|\b(?:[a-z0-9-]+\.)+(?!js\/|net\/)[a-z]{2,}\/|!?\[[^\]]*\]\(|<\/?[a-z]/iu
 
