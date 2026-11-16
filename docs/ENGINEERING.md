@@ -1,6 +1,6 @@
 # Was dieses Projekt zeigt
 
-Stand: 15. November 2026
+Stand: 16. November 2026
 
 Die App selbst ist absichtlich gewöhnlich: Login, Chat, Datei-Upload, Listen, Formulare. Das
 Besondere liegt darin, **wie jeder Modellaufruf entworfen, abgesichert und gemessen wird** und wie
@@ -96,6 +96,12 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
   Fehlgriff (eine Cloud-QA-Stelle, nur weil in Wörter zerlegte Skills wie „test“ und „api“ trafen).
   Die Entscheidung ist bewusst auf die Eval mit einem Prüfbestand und eigenen Urteilen verschoben;
   bis dahin bleibt die Suche rein semantisch.
+- **Die App wird vertieft, nicht verbreitert.** Statt eines zweiten Projekts bekommt job-match je
+  Thema ein Stück, das sich messen oder vorführen lässt: die Suche mit Kennzahlen, der Coach mit der
+  Suche als Werkzeug, ein MCP-Server, eine Seite für Kosten und Fehlerquote. Für jedes gilt weiter
+  die niedrigste Stufe: Der MCP-Server liest nur, der Coach ruft seine Werkzeuge im selben Prozess
+  aus einem Register und ist kein MCP-Client, und eine Verbesserung der Suche wird nur gebaut, wenn
+  der Prüfbestand sie belegt.
 
 ## Was noch nicht gebaut ist
 
@@ -105,11 +111,23 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
 - **Die Stellen-Vorauswahl mit RAG ist gebaut (UC-14).** Lebenslauf und Stellen liegen als Vektoren
   in ChromaDB, eingebettet mit einem lokalen Modell über Ollama; die Liste „Passt zu dir“ zeigt die
   20 ähnlichsten Stellen ohne Sprachmodell und wird bei jeder Änderung nachgeführt und mit PostgreSQL
-  abgeglichen. Noch nicht gemessen ist die Güte der Suche auf einem Prüfbestand; davon hängt die
-  Entscheidung über die hybride Suche ab.
+  abgeglichen.
 - **Die Evals sind nicht begonnen.** Der Leitfaden steht; gemessen werden `cv_analysis` und
-  `coach_agent`. Die Modellwahl je Unit ist bis dahin eine begründete Schätzung, keine Messung.
+  `coach_agent`. Die Modellwahl je Unit ist bis dahin eine begründete Schätzung, keine Messung. Die
+  Reihenfolge ist bewusst gewählt: `cv_analysis` zuerst, weil die Suche den Text aus der
+  gespeicherten Analyse einbettet und eine vorher gemessene Suche nicht vergleichbar bliebe;
+  `coach_agent` erst, wenn der Coach sein neues Werkzeug hat.
+- **Die Güte der Suche ist nicht gemessen (UC-15).** Geplant ist ein Prüfbestand aus wenigen
+  Lebensläufen mit eigenen Urteilen je Stelle und den Kennzahlen Recall@20, nDCG@20 und MRR. Erst
+  diese Zahlen entscheiden, ob Reranking (UC-16) oder die hybride Suche über ganze Skills (UC-17)
+  gebaut wird.
+- **Der Coach kann den Stellen-Pool nicht durchsuchen (UC-20, UC-22).** Geplant ist ein
+  Werkzeug-Register, in dem jedes Werkzeug einmal definiert ist, und daraus ein zweites lesendes
+  Werkzeug für den Coach.
 - **Go-live fehlt:** Registrieren und Konto (UC-13).
+- **Nach dem Go-live geplant:** ein lesender MCP-Server mit den Werkzeugen aus dem Register und
+  eigenen Zugriffstoken (UC-21), eine Seite mit Kosten, Dauer und Fehlerquote je Modellaufruf
+  (UC-26) und ein Hinweis auf neue passende Stellen nach dem täglichen Import (UC-23).
 
 ## Leseweg für 15 Minuten
 

@@ -1,9 +1,9 @@
 # job-match
 
 job-match begleitet Bewerbende von der Stellenanzeige bis zur Zusage: Lebenslauf einmal
-analysieren, passende Stellen und Match-Score sehen, Bewerbungen im Blick behalten, das
-Vorstellungsgespräch schriftlich üben. Zugleich ein Lernprojekt für LLM-Anwendungen mit der
-Claude API.
+analysieren, passende Stellen und Match-Score sehen, Bewerbungen im Blick behalten, den
+Coach nach Interviewfragen fragen. Zugleich ein Lern- und Portfolio-Projekt für LLM-Anwendungen mit
+der Claude API.
 
 **Was das Projekt zeigt:** wie jeder Modellaufruf entworfen, abgesichert und gemessen wird –
 Structured Outputs aus einem Zod-Schema, Modellwahl als Kosten-Trade-off, Kosten je Aufruf,
@@ -11,8 +11,23 @@ Prompt-Injection strukturell behandelt, ein Agent nur dort, wo ein Workflow nich
 mit Prüfpfaden in den Code: [docs/ENGINEERING.md](docs/ENGINEERING.md).
 
 **Stand:** Stufe 1 bis 4 sind fertig (UC-01 bis UC-11: Login, Coach-Chat, Lebenslauf, Stellen,
-Match-Analyse, Bewerbungen, Coach mit lesendem Werkzeug und Firmenrecherche per Websuche). Als
-Nächstes werden alle Prompts neu geschrieben, danach kommen die Evals und der Go-live.
+Match-Analyse, Bewerbungen, Coach mit lesendem Werkzeug und Firmenrecherche per Websuche), alle
+Prompts sind neu geschrieben, und die Liste „Passt zu dir“ sucht passende Stellen per Vektorsuche
+(UC-14).
+
+**Als Nächstes,** in dieser Reihenfolge:
+
+1. Eval für `cv_analysis`; sie kommt zuerst, weil die Suche den Text aus der gespeicherten
+   Analyse einbettet.
+2. Die Suche messen (UC-15: Prüfbestand, Recall@20, nDCG@20, MRR), danach Reranking (UC-16) oder
+   hybride Suche über Skills (UC-17), je nachdem, was die Zahlen belegen.
+3. Ein Werkzeug-Register (UC-20), aus dem der Coach die Stellensuche als lesendes Werkzeug bekommt
+   (UC-22).
+4. Eval für `coach_agent`, mit dem neuen Werkzeug.
+5. Go-live mit Registrierung und Konto (UC-13).
+6. Danach ein lesender MCP-Server mit eigenen Zugriffstoken (UC-21), eine Seite für Kosten und
+   Fehlerquote der Modellaufrufe (UC-26) und ein Hinweis auf neue passende Stellen nach dem Import
+   (UC-23).
 
 ## Stack
 
