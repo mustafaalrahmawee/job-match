@@ -48,6 +48,37 @@ services:
     volumes:
       - jobmatch-ollamadata:/root/.ollama
 
+  backend:
+    image: node:24.21.0-bookworm-slim
+    container_name: jobmatch-backend
+    restart: unless-stopped
+    user: '1000:1000'
+    network_mode: host
+    working_dir: /app
+    command: node_modules/.bin/tsx watch src/server.ts
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      chroma:
+        condition: service_started
+      ollama:
+        condition: service_started
+
+  frontend:
+    image: node:24.21.0-bookworm-slim
+    container_name: jobmatch-frontend
+    restart: unless-stopped
+    user: '1000:1000'
+    network_mode: host
+    working_dir: /app
+    command: node_modules/.bin/vite
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - backend
+
 volumes:
   jobmatch-pgdata:
   jobmatch-chromadata:

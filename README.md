@@ -10,24 +10,16 @@ Structured Outputs aus einem Zod-Schema, Modellwahl als Kosten-Trade-off, Kosten
 Prompt-Injection strukturell behandelt, ein Agent nur dort, wo ein Workflow nicht reicht. Einstieg
 mit Prüfpfaden in den Code: [docs/ENGINEERING.md](docs/ENGINEERING.md).
 
-**Stand:** Stufe 1 bis 4 sind fertig (UC-01 bis UC-11: Login, Coach-Chat, Lebenslauf, Stellen,
-Match-Analyse, Bewerbungen, Coach mit lesendem Werkzeug und Firmenrecherche per Websuche), alle
-Prompts sind neu geschrieben, und die Liste „Passt zu dir“ sucht passende Stellen per Vektorsuche
-(UC-14).
+**Stand: abgeschlossen.** Gebaut sind UC-01 bis UC-11 und UC-14: Login, Coach-Chat, Lebenslauf,
+Stellen, Match-Analyse, Bewerbungen, Coach mit lesendem Werkzeug, Firmenrecherche per Websuche und
+die Liste „Passt zu dir“ per Vektorsuche. Alle Prompts sind nach dem Prompt-Leitfaden neu
+geschrieben. Weitere Use Cases sind nicht geplant.
 
-**Als Nächstes,** in dieser Reihenfolge:
-
-1. Eval für `cv_analysis`; sie kommt zuerst, weil die Suche den Text aus der gespeicherten
-   Analyse einbettet.
-2. Die Suche messen (UC-15: Prüfbestand, Recall@20, nDCG@20, MRR), danach Reranking (UC-16) oder
-   hybride Suche über Skills (UC-17), je nachdem, was die Zahlen belegen.
-3. Ein Werkzeug-Register (UC-20), aus dem der Coach die Stellensuche als lesendes Werkzeug bekommt
-   (UC-22).
-4. Eval für `coach_agent`, mit dem neuen Werkzeug.
-5. Go-live mit Registrierung und Konto (UC-13).
-6. Danach ein lesender MCP-Server mit eigenen Zugriffstoken (UC-21), eine Seite für Kosten und
-   Fehlerquote der Modellaufrufe (UC-26) und ein Hinweis auf neue passende Stellen nach dem Import
-   (UC-23).
+**Grenzen:** Gemessen ist nur `cv_analysis`, in vier Runden mit 20 Fällen (Prompt, Effort,
+Modell; Ergebnis in [docs/ENGINEERING.md](docs/ENGINEERING.md#die-eval-von-cv_analysis)). Für die
+übrigen Prompt-Units sind Modell und Effort begründete Schätzungen; geprüft wird von Hand im
+Browser. Die Güte der Suche ist nicht gemessen. Es gibt keine Registrierung; Konten entstehen per
+Skript.
 
 ## Stack
 
@@ -44,24 +36,31 @@ Prompts sind neu geschrieben, und die Liste „Passt zu dir“ sucht passende St
 
 ## Starten
 
-Datenbank, ChromaDB (`chroma`, `chroma-test`) und Ollama (`ollama`); die Datenbank legt beim ersten
-Start auch die Testdatenbank `jobmatch_test` an, SQL in `docker/initdb/`:
+Einmalig (und nach jeder Änderung an den Paketen) auf dem Host installieren; die Container nutzen
+diese `node_modules`:
+
+```bash
+cd backend && cp -n .env.example .env && pnpm install && pnpm prisma migrate dev
+```
+
+```bash
+cd frontend && pnpm install
+```
+
+Datenbank, ChromaDB (`chroma`, `chroma-test`), Ollama (`ollama`), Backend (`backend`) und Frontend
+(`frontend`); die Datenbank legt beim ersten Start auch die Testdatenbank `jobmatch_test` an, SQL in
+`docker/initdb/`:
 
 ```bash
 docker compose up -d
 ```
 
-```bash
-cd backend && cp -n .env.example .env && pnpm install && pnpm prisma migrate dev && pnpm dev
-```
-
-```bash
-cd frontend && pnpm install && pnpm dev
-```
-
-Der Backend-Dev-Server läuft auf Port 8000; Vite leitet `/api` dorthin weiter.
-Konto anlegen (bis zum Go-live gibt es keine Registrierung): `pnpm create-user <email>`.
-Stellen-Pool füllen (Jobsuche der Bundesagentur, nur Deutschland, letzte 30 Tage; später täglich per Cron):
+Backend und Frontend laufen im Netz des Hosts (`network_mode: host`), damit `backend/.env` mit
+`127.0.0.1` unverändert gilt; beide laden Änderungen am Code neu. Der Backend-Dev-Server läuft auf
+Port 8000, das Frontend auf http://localhost:5173; Vite leitet `/api` dorthin weiter.
+Logs: `docker compose logs -f backend frontend`.
+Konto anlegen (es gibt keine Registrierung): `pnpm create-user <email>`.
+Stellen-Pool füllen (Jobsuche der Bundesagentur, nur Deutschland, letzte 30 Tage):
 `pnpm import-jobs`; danach gleicht der Befehl die Suche mit ChromaDB ab.
 Suche ohne Import abgleichen (fehlende Einträge einbetten, überzählige entfernen, voller Neulauf nach
 einer neuen Generation): `pnpm sync-search`.
