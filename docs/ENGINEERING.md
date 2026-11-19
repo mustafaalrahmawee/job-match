@@ -1,13 +1,13 @@
 # Was dieses Projekt zeigt
 
-Stand: 16. November 2026
+Stand: 19. November 2026
 
 Die App selbst ist absichtlich gewöhnlich: Login, Chat, Datei-Upload, Listen, Formulare. Das
 Besondere liegt darin, **wie jeder Modellaufruf entworfen, abgesichert und gemessen wird** und wie
 das Projekt mit Claude Code als Werkzeug gebaut wird, ohne dass der Code zu Vibe-Coding wird.
 
 Diese Seite ist für eine Person, die das Repo in zehn Minuten beurteilen will. Jede Behauptung steht
-mit der Datei, in der man sie prüfen kann. Was noch nicht gebaut ist, steht am Ende.
+mit der Datei, in der man sie prüfen kann. Was bewusst nicht gebaut ist, steht am Ende.
 
 ## Wer macht was
 
@@ -35,11 +35,11 @@ Diese Arbeitsdokumente liegen nicht im öffentlichen Repo; auf Nachfrage zeige i
 | Behauptung | Wo nachlesen | Was man dort sieht |
 | --- | --- | --- |
 | Jeder Prompt-Teil ist benannt und einzeln nachvollziehbar | [job_extract/](../backend/src/prompts/job_extract/) | jeder Teil als benannte Konstante, der Kopfkommentar nennt Profil, Slots, Stop und was der Code statt des Prompts erzwingt |
-| App und Eval bauen dieselbe Anfrage | [cv_analysis.request.ts](../backend/src/prompts/cv_analysis/cv_analysis.request.ts), Funktion `cvAnalysisRequest` | eine Funktion je Unit; der Service ruft sie, die Eval ruft sie mit einer `Variant` für Modell und Effort |
+| Jede Anfrage entsteht an einer Stelle | [cv_analysis.request.ts](../backend/src/prompts/cv_analysis/cv_analysis.request.ts), Funktion `cvAnalysisRequest` | eine Funktion je Unit baut die vollständige Anfrage; der Service ruft sie, Modell und Effort lassen sich über eine `Variant` tauschen |
 | Der Prompt bleibt klein | [coach_agent.config.ts](../backend/src/prompts/coach_agent/coach_agent.config.ts), [coach_agent.request.ts](../backend/src/prompts/coach_agent/coach_agent.request.ts) | jede Unit baut die Anfrage direkt aus ihren Konstanten; was wachsen kann, hat eine feste Grenze: der Verlauf des Coachs 60.000 Zeichen, 50 Bewerbungen, 3 Recherchen, der Lebenslauf 5 Seiten |
 | Structured Outputs ohne doppeltes Schema | [job_extract.schemas.ts](../backend/src/prompts/job_extract/job_extract.schemas.ts), `jobExtractSchema` | ein Zod-Schema validiert die Antwort, `z.toJSONSchema()` daraus geht als `output_config.format` an die API |
 | Prompt-Injection wird strukturell behandelt, nicht mit Verboten | [job_extract/](../backend/src/prompts/job_extract/), `markedText`, `jobPrompt.FOREIGN` und `jobExtractResult` | eingefügter Text geht als Document-Block und zusätzlich zwischen zwei Tags mit einer Kennung, die bei jedem Aufruf neu zufällig gewählt wird und die der Text nicht kennen kann; der Absatz zum fremden Material erklärt Anweisungen im Material zum Material; was gelten muss, prüft der Code: Zod, Wortlaut, Adressen und unsichtbare Zeichen in `jobExtractResult` |
-| Modellwahl ist ein Kosten-Latenz-Qualität-Trade-off | [prompts/](../backend/src/prompts/) | Modell und Effort je Unit als Konstante: Haiku für Extraktion und Fragen, Sonnet für Analyse und Bewertung; Opus nirgends, bis eine Messung es verlangt |
+| Modellwahl ist ein Kosten-Latenz-Qualität-Trade-off | [prompts/](../backend/src/prompts/) | Modell und Effort je Unit als Konstante: Haiku für Extraktion und Fragen, Sonnet für Analyse und Bewertung; Opus nirgends |
 | Kosten werden je Aufruf gemessen, mit Cache | [costs.ts](../backend/src/llm/costs.ts), [cvs.service.ts](../backend/src/modules/cvs/cvs.service.ts) | Preistabelle mit Cache-Read und Cache-Write, Batch-Rabatt; Tokens und Kosten werden am Datensatz gespeichert |
 | Claude-API-Funktionen dort, wo sie fachlich passen | [send.ts](../backend/src/llm/send.ts), [cvs.service.ts](../backend/src/modules/cvs/cvs.service.ts), [cv_analysis.request.ts](../backend/src/prompts/cv_analysis/cv_analysis.request.ts) | Streaming mit Abbruch und Teilantwort; die Lebenslauf-Analyse als direkter Aufruf mit Zeitlimit statt als Batch, weil Stellen, Match und Coach auf das Ergebnis warten; PDF als Document-Block; Screenshot als Image-Block; adaptives Thinking mit Effort |
 | Jeder Stop-Grund hat eine Behandlung | [coach.service.ts](../backend/src/modules/coach/coach.service.ts) | `refusal` wird geloggt und nicht gespeichert, leere Antwort nicht gespeichert – außer an der Grenze der Fortsetzungen (`pause_turn`), damit Schrittzeilen und der Hinweis der App bleiben –, unbekannter Grund wirft einen Fehler |
@@ -66,20 +66,20 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
 
 ## Entscheidungen, die vorher getroffen wurden
 
-- **Erst bauen, dann messen.** Erst alle Use Cases mit geschätztem Modell, dann Unit für Unit
-  messen. Grund: Schätzen ist billig, Messen kostet Budget; eine Messung an einer halb fertigen App
-  misst das Falsche.
-- **Budget.** 100 $ API-Budget für das ganze Projekt, 25 $ davon für Evals. Judge und Reviewer
-  laufen deshalb auf Codex mit dem ChatGPT-Abo, Beispiele schreibt Claude Code aus dem Abo.
+- **Erst schätzen, dann an einer Unit messen.** Alle Use Cases laufen mit geschätztem Modell und
+  Effort je Unit. Gemessen wird nur `cv_analysis`, weil Suche, Match und Coach auf ihrer
+  gespeicherten Analyse aufbauen; der Weg steht unten unter „Die Eval von `cv_analysis`“.
+- **Budget.** Reviewer und Prüfer der Eval laufen auf Codex mit dem ChatGPT-Abo, damit das
+  API-Budget für die App bleibt; ein Lauf der Eval kostet rund 0,09 $.
 - **Caching nur bei häufigem Lesen.** Der Lebenslauf-Upload bekommt kein `cache_control`, weil der
-  Prefix nur einmal gelesen wird; ob der Coach es bekommt, entscheidet eine Messung in seiner Eval.
+  Prefix nur einmal gelesen wird.
 - **Kein Modell bewertet die eigene Arbeit.** Gilt für Prompts (Opus schreibt, Codex prüft), für
   Beispiele (Claude schreibt, Codex prüft) und für Code (Claude schreibt, Codex prüft).
 - **Was gelten muss, prüft der Code.** Der Prompt bittet; Zod, Enum und Längenprüfung erzwingen.
   Jeder Kopfkommentar einer Unit trennt „Enforced in code“ von „Requested only“.
 - **Die niedrigste Stufe, die die Aufgabe löst.** Die Treppe heißt: Formular und Code, ein
   Modellaufruf, Modell mit Werkzeug, Workflow, Agent. Jede Funktion bekommt die unterste Stufe, die
-  sie löst, und jede Unit das billigste Modell, das ihre Eval besteht. Beispiel Coach (UC-11):
+  sie löst, und jede Unit das billigste Modell, das nach Einschätzung reicht. Beispiel Coach (UC-11):
   Stelle speichern und Status setzen gibt es schon als Formular (UC-08, UC-10), sie bleiben Code.
   Der Coach bekommt nur ein lesendes Werkzeug, die Bewerbung lesen, weil nur dort das Modell etwas
   kann, was Code nicht kann: Interviewfragen aus Anzeige und Lücken schreiben. Die Firmenrecherche
@@ -94,40 +94,65 @@ Am Beispiel UC-08, eine eigene Stelle aus Text oder Screenshot speichern:
   lesender Vergleich mit dem eigenen Lebenslauf über 1.576 Stellen: 5 von 20 Treffern ändern sich,
   mit einem echten Gewinn (eine passende Laravel-Stelle rückt von Vektor-Rang 91 nach vorn) und einem
   Fehlgriff (eine Cloud-QA-Stelle, nur weil in Wörter zerlegte Skills wie „test“ und „api“ trafen).
-  Die Entscheidung ist bewusst auf die Eval mit einem Prüfbestand und eigenen Urteilen verschoben;
-  bis dahin bleibt die Suche rein semantisch.
-- **Die App wird vertieft, nicht verbreitert.** Statt eines zweiten Projekts bekommt job-match je
-  Thema ein Stück, das sich messen oder vorführen lässt: die Suche mit Kennzahlen, der Coach mit der
-  Suche als Werkzeug, ein MCP-Server, eine Seite für Kosten und Fehlerquote. Für jedes gilt weiter
-  die niedrigste Stufe: Der MCP-Server liest nur, der Coach ruft seine Werkzeuge im selben Prozess
-  aus einem Register und ist kein MCP-Client, und eine Verbesserung der Suche wird nur gebaut, wenn
-  der Prüfbestand sie belegt.
+  Ohne Prüfbestand bleibt die Suche rein semantisch.
 
-## Was noch nicht gebaut ist
+## Die Eval von `cv_analysis`
 
-- **Stufe 1 bis 4 sind gebaut** (UC-01 bis UC-11), zuletzt der Coach mit lesenden Werkzeugen.
+Die Lebenslauf-Analyse ist der wichtigste Modellaufruf: Rolle, Match, Coach und Suche bauen auf
+ihrem gespeicherten Ergebnis auf. Deshalb wird sie gemessen, und zwar in einer festen Reihenfolge:
+**erst den Prompt genauer machen, dann messen, ob es wirkt, erst danach Effort oder Modell ändern.**
+Ein teureres Modell ist die letzte Stufe, nicht die erste.
+
+**Aufbau.** 20 erfundene Fälle als PDF, verteilt über vier Dimensionen (Art des Dokuments,
+Werdegang, Form des PDF, fremder Text mit versteckten Anweisungen), darunter ein Anschreiben ohne
+Lebenslauf, ein Zeugnis, ein französischer Lebenslauf und neun Angriffe. Die Texte schrieb ein
+Modell einer anderen Familie (Gemini), damit Claude keinen Heimvorteil hat. Die Eval ruft dieselbe
+Request-Funktion wie die App ([cv_analysis.request.ts](../backend/src/prompts/cv_analysis/cv_analysis.request.ts))
+und zeichnet jede Antwort ganz auf. Jede Runde läuft dreimal über alle Fälle, damit sich ein
+zufälliger von einem festen Fehler unterscheiden lässt.
+
+**Wer urteilt.** Codex (GPT-6) liest jede der 60 Antworten gegen den Fall und die Regeln der Unit
+und zählt jede Fehlerart. Der Autor entscheidet je Fehlerart: Sagt der Prompt die Regel nicht
+(Spezifikationsfehler), wird er genauer; sagt er sie und das Modell folgt trotzdem nicht
+(Generalisierungsfehler), kommen stärkere Mittel. Grenze: Das Urteil über jede Antwort kommt von
+einem Modell, nicht von einem Menschen.
+
+| Runde | Änderung | Ergebnis (Antworten mit Fehler, von 60) | Kosten |
+| --- | --- | --- | --- |
+| 1 | Ausgangsstand, Haiku 5.5, Effort `medium` | 9 von 60 annehmbar; häufigste Fehler: Einschätzung ohne Beleg 27, vorhandene Angabe als fehlend 25, Kenntnisse falsch geschnitten 23, Ort im Feld Arbeitgeber 19; Anschreiben allein in 3 von 3 Läufen als Lebenslauf angenommen | 0,25 $ |
+| 2 | Prompt: fünf Spezifikationsfehler als Regeln (Arbeitgeber nur der Name, nur erworbene Abschlüsse, Anschreiben allein ist kein Lebenslauf, Beförderung, internes Projekt keine Station) | Ort im Arbeitgeber 19 → 0, Vertragszusatz 3 → 0, Anschreiben 3 → 0, Beförderung 2 → 0, internes Projekt 2 → 0; die großen Lesefehler blieben (27 → 29, 25 → 21); 11 von 60 annehmbar | 0,27 $ |
+| 3 | Kein neuer Prompt, Effort `high` statt `medium` bei Haiku 5.5 | gemischt: Kenntnisse falsch geschnitten 18 → 10, Abschlussmonat verloren 8 → 3; aber Einschätzung ohne Beleg 29 → 38, vorhandene Angabe als fehlend 21 → 27, unbelegter Wert in einem Feld 3 → 10; 11 von 60 annehmbar wie in Runde 2 | 0,36 $ (+36 %) |
+| 4 | Kein neuer Prompt, Sonnet 5.5 mit Effort `low` statt Haiku 5.5 `medium` | kein Gewinn: Einschätzung ohne Beleg 29 → 37, vorhandene Angabe als fehlend 21 → 31, Abschlussmonat verloren 8 → 27, Teilnahme als Abschluss 6 → 10; schneller (rund 4 statt 8 Minuten je Lauf); 13 von 60 annehmbar | 2,67 $ (rund zehnmal Haiku) |
+
+**Warum diese Reihenfolge.** Runde 2 zeigt den Unterschied der beiden Fehlerarten: Wo der Prompt
+eine Regel nicht nannte, reichte eine Zeile, und der Fehler verschwand in allen drei Läufen. Die
+großen Fehler (eine Stärke oder Schwäche behauptet mehr, als die Stelle belegt; eine Schwäche
+nennt eine vorhandene Angabe als fehlend) stehen schon als Regel im Prompt; weitere Zeilen helfen
+dort wenig. Deshalb kam als Nächstes mehr Denken (Effort `high`) im selben, günstigen Modell.
+Runde 3 zeigt: Mehr Denken macht die Arbeit an festen Feldern genauer, aber die Einschätzung
+eher ausführlicher und damit öfter unbelegt; insgesamt kein Gewinn für 36 % mehr Kosten. Runde 4
+prüfte den letzten Hebel, ein größeres Modell: Sonnet 5.5 mit Effort `low` macht dieselben
+Lesefehler, verliert öfter den Abschlussmonat und kostet rund zehnmal so viel je Analyse. Das
+Ergebnis: Der Prompt aus Runde 2 hat gewirkt, Effort und Modell nicht. Für die Lebenslauf-Analyse
+reicht das günstigste Modell; die verbleibenden Fehler in der Einschätzung (Stärken, Schwächen,
+Tipps) sind eine bekannte Grenze.
+
+## Stand und Grenzen
+
+Das Projekt ist abgeschlossen; weitere Use Cases sind nicht geplant.
+
+- **Gebaut:** UC-01 bis UC-11 (Login, Coach-Chat, Lebenslauf, Stellen, Match-Analyse,
+  Bewerbungen, Coach mit lesendem Werkzeug, Firmenrecherche per Websuche) und UC-14, die
+  Stellen-Vorauswahl mit RAG: Lebenslauf und Stellen liegen als Vektoren in ChromaDB, eingebettet
+  mit einem lokalen Modell über Ollama; die Liste „Passt zu dir“ zeigt die 20 ähnlichsten Stellen
+  ohne Sprachmodell und wird bei jeder Änderung nachgeführt und mit PostgreSQL abgeglichen.
 - **Alle Prompts sind neu geschrieben,** Unit für Unit nach dem Prompt-Leitfaden: `cv_analysis`,
   `job_extract`, `match_analysis`, `company_research`, `coach_agent`.
-- **Die Stellen-Vorauswahl mit RAG ist gebaut (UC-14).** Lebenslauf und Stellen liegen als Vektoren
-  in ChromaDB, eingebettet mit einem lokalen Modell über Ollama; die Liste „Passt zu dir“ zeigt die
-  20 ähnlichsten Stellen ohne Sprachmodell und wird bei jeder Änderung nachgeführt und mit PostgreSQL
-  abgeglichen.
-- **Die Evals sind nicht begonnen.** Der Leitfaden steht; gemessen werden `cv_analysis` und
-  `coach_agent`. Die Modellwahl je Unit ist bis dahin eine begründete Schätzung, keine Messung. Die
-  Reihenfolge ist bewusst gewählt: `cv_analysis` zuerst, weil die Suche den Text aus der
-  gespeicherten Analyse einbettet und eine vorher gemessene Suche nicht vergleichbar bliebe;
-  `coach_agent` erst, wenn der Coach sein neues Werkzeug hat.
-- **Die Güte der Suche ist nicht gemessen (UC-15).** Geplant ist ein Prüfbestand aus wenigen
-  Lebensläufen mit eigenen Urteilen je Stelle und den Kennzahlen Recall@20, nDCG@20 und MRR. Erst
-  diese Zahlen entscheiden, ob Reranking (UC-16) oder die hybride Suche über ganze Skills (UC-17)
-  gebaut wird.
-- **Der Coach kann den Stellen-Pool nicht durchsuchen (UC-20, UC-22).** Geplant ist ein
-  Werkzeug-Register, in dem jedes Werkzeug einmal definiert ist, und daraus ein zweites lesendes
-  Werkzeug für den Coach.
-- **Go-live fehlt:** Registrieren und Konto (UC-13).
-- **Nach dem Go-live geplant:** ein lesender MCP-Server mit den Werkzeugen aus dem Register und
-  eigenen Zugriffstoken (UC-21), eine Seite mit Kosten, Dauer und Fehlerquote je Modellaufruf
-  (UC-26) und ein Hinweis auf neue passende Stellen nach dem täglichen Import (UC-23).
+- **Gemessen ist nur `cv_analysis`** (siehe oben). Für `job_extract`, `match_analysis`,
+  `company_research` und `coach_agent` sind Modell und Effort begründete Schätzungen; sie werden
+  von Hand im Browser geprüft.
+- **Die Güte der Suche ist nicht gemessen;** Reranking oder eine hybride Suche gibt es nicht.
+- **Keine Registrierung;** Konten entstehen per Skript.
 
 ## Leseweg für 15 Minuten
 
