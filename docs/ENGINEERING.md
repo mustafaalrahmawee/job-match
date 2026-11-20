@@ -156,7 +156,7 @@ als fehlend nennen, ist eine bekannte Grenze, und sie ist bewusst in Kauf genomm
 Einschätzung ist ein Rat für die Person auf der Lebenslauf-Seite und Hintergrund für Match-Analyse
 und Coach. Stationen, Kenntnisse, Abschlüsse und Sprachen, auf denen Match-Analyse und Suche
 aufbauen, kommen gleichbleibend und zu niedrigen Kosten. Bericht mit allen Urteilen:
-`docs/evals/cv_analysis-auto.md`.
+[docs/evals/cv_analysis-auto.md](evals/cv_analysis-auto.md).
 
 ## Stand und Grenzen
 
