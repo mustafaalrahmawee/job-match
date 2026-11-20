@@ -123,6 +123,9 @@ einem Modell, nicht von einem Menschen.
 | 2 | Prompt: fünf Spezifikationsfehler als Regeln (Arbeitgeber nur der Name, nur erworbene Abschlüsse, Anschreiben allein ist kein Lebenslauf, Beförderung, internes Projekt keine Station) | Ort im Arbeitgeber 19 → 0, Vertragszusatz 3 → 0, Anschreiben 3 → 0, Beförderung 2 → 0, internes Projekt 2 → 0; die großen Lesefehler blieben (27 → 29, 25 → 21); 11 von 60 annehmbar | 0,27 $ |
 | 3 | Kein neuer Prompt, Effort `high` statt `medium` bei Haiku 5.5 | gemischt: Kenntnisse falsch geschnitten 18 → 10, Abschlussmonat verloren 8 → 3; aber Einschätzung ohne Beleg 29 → 38, vorhandene Angabe als fehlend 21 → 27, unbelegter Wert in einem Feld 3 → 10; 11 von 60 annehmbar wie in Runde 2 | 0,36 $ (+36 %) |
 | 4 | Kein neuer Prompt, Sonnet 5.5 mit Effort `low` statt Haiku 5.5 `medium` | kein Gewinn: Einschätzung ohne Beleg 29 → 37, vorhandene Angabe als fehlend 21 → 31, Abschlussmonat verloren 8 → 27, Teilnahme als Abschluss 6 → 10; schneller (rund 4 statt 8 Minuten je Lauf); 13 von 60 annehmbar | 2,67 $ (rund zehnmal Haiku) |
+| 5 | Prompt aus Runde 2 auf Haiku 5.5 `medium`, dazu eine Regel für die Einschätzung (Zahlen, Umfang, Einschränkung und Stufe der Tätigkeit so, wie die Stelle sie nennt; vor „fehlt“ den ganzen Lebenslauf durchsehen) | ohne Wirkung: Einschätzung ohne Beleg 29 → 31, vorhandene Angabe als fehlend 21 → 20; 10 von 60 annehmbar; Regel zurückgenommen | 0,31 $ |
+| 6 | Few-Shot statt der Regel: drei kleine, erfundene Beispiele (eine Zeile aus einem Lebenslauf und der passende Eintrag), ausdrücklich gekennzeichnet | ohne Wirkung: 29 → 25 und 21 → 27; kein Detail aus den Beispielen in den Antworten; 10 von 60 annehmbar; Beispiele zurückgenommen | 0,28 $ |
+| 7 | Zitat je Eintrag nach der Claude-Doku („Reduce hallucinations“): Stärken, Schwächen und Tipps schreiben zuerst den Wortlaut der Stelle (`quote`), dann den Eintrag; gespeichert wird nur der Eintrag | ohne Wirkung: 29 → 25 und 21 → 23; alle 626 Zitate stehen im Lebenslauf, aber der Eintrag geht trotzdem darüber hinaus (aus „fachliche Leitung der QS für drei Teams“ wird „Leitung von drei Produktteams“); 28 % mehr Ausgabe; 9 von 60 annehmbar; Zitate zurückgenommen | 0,32 $ |
 
 **Warum diese Reihenfolge.** Runde 2 zeigt den Unterschied der beiden Fehlerarten: Wo der Prompt
 eine Regel nicht nannte, reichte eine Zeile, und der Fehler verschwand in allen drei Läufen. Die
@@ -134,8 +137,26 @@ eher ausführlicher und damit öfter unbelegt; insgesamt kein Gewinn für 36 % m
 prüfte den letzten Hebel, ein größeres Modell: Sonnet 5.5 mit Effort `low` macht dieselben
 Lesefehler, verliert öfter den Abschlussmonat und kostet rund zehnmal so viel je Analyse. Das
 Ergebnis: Der Prompt aus Runde 2 hat gewirkt, Effort und Modell nicht. Für die Lebenslauf-Analyse
-reicht das günstigste Modell; die verbleibenden Fehler in der Einschätzung (Stärken, Schwächen,
-Tipps) sind eine bekannte Grenze.
+reicht das günstigste Modell.
+
+**Runden 5 bis 7.** Für die beiden großen Lesefehler blieben drei Mittel am Prompt: eine
+ausdrückliche Regel, Beispiele (Few-Shot) und ein wörtliches Zitat vor jedem Eintrag, wie es die
+Claude-Doku gegen Halluzinationen empfiehlt (die Citations-Funktion der API geht nicht zusammen mit
+Structured Outputs). Jedes lief eine Runde lang gegen Runde 2, mit einem
+vorher festgelegten Ziel: beide Fehlerarten je unter 15 von 60. Keines hat es erreicht. Über alle
+sieben Runden liegen die beiden Zahlen zwischen 20 und 38, egal ob Effort, Modell, Regel,
+Beispiele oder Zitate; ein Teil der Schwankung kommt vom Judge, der nicht in jeder Runde gleich streng urteilt
+(die fehlende Du-Anrede zählte er erst ab Runde 5, obwohl sie seit Runde 1 vorkommt). Runde 7 zeigt den Grund: Das Modell findet die
+richtige Stelle und zitiert sie wörtlich, übertreibt aber beim Formulieren. Regel, Beispiele und
+Zitate sind zurückgenommen, weil ein längerer Prompt oder eine längere Antwort ohne messbaren Gewinn
+nur Tokens kostet.
+Das Ergebnis: Haiku 5.5 mit Effort `medium` und dem Prompt aus Runde 2 bleibt. Dass Stärken,
+Schwächen und Tipps manchmal mehr behaupten, als die Stelle belegt, oder eine vorhandene Angabe
+als fehlend nennen, ist eine bekannte Grenze, und sie ist bewusst in Kauf genommen: Die
+Einschätzung ist ein Rat für die Person auf der Lebenslauf-Seite und Hintergrund für Match-Analyse
+und Coach. Stationen, Kenntnisse, Abschlüsse und Sprachen, auf denen Match-Analyse und Suche
+aufbauen, kommen gleichbleibend und zu niedrigen Kosten. Bericht mit allen Urteilen:
+`docs/evals/cv_analysis-auto.md`.
 
 ## Stand und Grenzen
 
@@ -148,7 +169,9 @@ Das Projekt ist abgeschlossen; weitere Use Cases sind nicht geplant.
   ohne Sprachmodell und wird bei jeder Änderung nachgeführt und mit PostgreSQL abgeglichen.
 - **Alle Prompts sind neu geschrieben,** Unit für Unit nach dem Prompt-Leitfaden: `cv_analysis`,
   `job_extract`, `match_analysis`, `company_research`, `coach_agent`.
-- **Gemessen ist nur `cv_analysis`** (siehe oben). Für `job_extract`, `match_analysis`,
+- **Gemessen ist nur `cv_analysis`** (siehe oben), in sieben Runden; die Einschätzung (Stärken,
+  Schwächen, Tipps) geht in etwa jeder zweiten Analyse an mindestens einer Stelle über den Beleg
+  hinaus, und kein Mittel am Prompt, an Effort oder Modell hat das gesenkt; das ist bewusst in Kauf genommen. Für `job_extract`, `match_analysis`,
   `company_research` und `coach_agent` sind Modell und Effort begründete Schätzungen; sie werden
   von Hand im Browser geprüft.
 - **Die Güte der Suche ist nicht gemessen;** Reranking oder eine hybride Suche gibt es nicht.

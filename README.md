@@ -15,8 +15,14 @@ Stellen, Match-Analyse, Bewerbungen, Coach mit lesendem Werkzeug, Firmenrecherch
 die Liste „Passt zu dir“ per Vektorsuche. Alle Prompts sind nach dem Prompt-Leitfaden neu
 geschrieben. Weitere Use Cases sind nicht geplant.
 
-**Grenzen:** Gemessen ist nur `cv_analysis`, in vier Runden mit 20 Fällen (Prompt, Effort,
-Modell; Ergebnis in [docs/ENGINEERING.md](docs/ENGINEERING.md#die-eval-von-cv_analysis)). Für die
+**Grenzen:** Gemessen ist nur `cv_analysis`, in sieben Runden mit 20 Fällen (Prompt, Effort,
+Modell, Regel, Few-Shot, Zitate; Ergebnis in [docs/ENGINEERING.md](docs/ENGINEERING.md#die-eval-von-cv_analysis)).
+Bekannte Grenze dort: Stärken, Schwächen und Tipps behaupten in etwa jeder zweiten Analyse an
+mindestens einer Stelle mehr, als der Lebenslauf belegt, oder nennen eine vorhandene Angabe als
+fehlend; weder mehr Effort, ein größeres Modell, eine Regel, Beispiele noch ein Zitat je Eintrag haben das
+gesenkt. Diese Grenze ist bewusst in Kauf genommen: Die Einschätzung ist ein Rat für die Person,
+die Angaben, auf denen Match-Analyse und Suche aufbauen, sind davon nicht betroffen, und Haiku 5.5
+liefert sie gleichbleibend zu niedrigen Kosten. Für die
 übrigen Prompt-Units sind Modell und Effort begründete Schätzungen; geprüft wird von Hand im
 Browser. Die Güte der Suche ist nicht gemessen. Es gibt keine Registrierung; Konten entstehen per
 Skript.
